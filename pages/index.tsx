@@ -1,14 +1,13 @@
 import Link from 'next/link'
 import Layout from '../components/Layout'
+import Paragraphs from '../components/Paragraphs'
+import Timer from '../components/Timer'
+import TypeHere from '../components/TypeHere'
 
 const IndexPage = () => (
-  <Layout title="Home | Next.js + TypeScript Example">
-    <h1>Hello Next.js 👋</h1>
-    <p>
-      <Link href="/about">
-        <a>About</a>
-      </Link>
-    </p>
+  <Layout title="Home | Type Speed Test">
+    <Paragraphs />
+    <TypeHere />
   </Layout>
 )
 

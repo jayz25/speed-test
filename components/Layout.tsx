@@ -14,24 +14,11 @@ const Layout = ({ children, title = 'This is the default title' }: Props) => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
     </Head>
-    <header>
-      <nav>
-        <Link href="/">
-          <a>Home</a>
-        </Link>{' '}
-        |{' '}
-        <Link href="/about">
-          <a>About</a>
-        </Link>{' '}
-        |{' '}
-        <Link href="/users">
-          <a>Users List</a>
-        </Link>{' '}
-        | <a href="/api/users">Users API</a>
-      </nav>
-    </header>
+    <h1 className="m-5 text-3xl font-bold text-blue-400">
+      Type Speed Test
+    </h1>
     {children}
-    <footer>
+    <footer className='bottom-0 left-0 w-full align-bottom'>
       <hr />
       <span>I'm here to stay (Footer)</span>
     </footer>
