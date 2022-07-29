@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 const Paragraphs = () => {
     // Try to get random paragraphs later here 
     return (
