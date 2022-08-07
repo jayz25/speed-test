@@ -18,7 +18,7 @@ const Layout = ({ children, title = 'This is the default title' }: Props) => (
       Type Speed Test
     </h1>
     {children}
-    <footer className='bottom-0 left-0 w-full align-bottom'>
+    <footer className='fixed bottom-0 left-0 w-full align-bottom'>
       <hr />
       <span>I'm here to stay (Footer)</span>
     </footer>
