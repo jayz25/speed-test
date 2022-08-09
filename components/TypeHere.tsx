@@ -40,9 +40,9 @@ const TypeHere = () => {
         setIsPlaying(false);
     }
 
-    const fireStartEvent = () => {
+    const fireStartEvent = async () => {
         setIsPlaying(true);
-        setInputDisabled(false);
+        await setInputDisabled(false);
         //Waiting here to let it disable then focus. Synchrounous does not work here.
         inputRef.current.focus();
     }
@@ -50,7 +50,7 @@ const TypeHere = () => {
     return (
         <div className='p-4'>
             <div className='w-[10px] h-[10px]'>
-                <Timer inputDisabled={inputDisabled} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
+                <Timer inputDisabled={inputDisabled} setIsPlaying={setIsPlaying} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
             </div>
             <div className='w-1/5 m-auto'>
                 {`Accuracy: ${percentage} %`}

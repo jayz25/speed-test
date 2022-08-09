@@ -2,13 +2,15 @@ import { useState } from "react";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import { Modal } from "./Modal";
 
-const Timer = ({inputDisabled, setInputDisabled, timerKey, isPlaying}) => {
+const Timer = ({inputDisabled, setInputDisabled, timerKey, isPlaying, setIsPlaying}) => {
     const [isModalVisible, setModalVisibility] = useState(false);
     const onCompleteTimer = () => {
         //Fire input Disabled event or reset stats 
         //Fire Modal dislay here
         setInputDisabled(true);
         setModalVisibility(true);
+        setIsPlaying(false);
+        //Can Call reset stats here 
     }
     return (
         <>
