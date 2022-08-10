@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import StatsPill from './StatsPill';
 import Timer from './Timer';
 
 const TypeHere = () => {
+    const [wpm, setWpm] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [timerKey, setTimerKey] = useState(0);
     const [typedData, setTypedData] = useState('');
@@ -13,7 +15,7 @@ const TypeHere = () => {
 
     const getData = (e) => {
         e.preventDefault();
-        
+
         setTypedData(e.target.value);
         setNumberOfWordsTyped(typedData.split(' ').length);
         var i = 0;
@@ -28,7 +30,7 @@ const TypeHere = () => {
             }
 
         });
-        setPercentage(matchedCount/numberOfWordsTyped * 100);
+        setPercentage(parseFloat((matchedCount/numberOfWordsTyped * 100).toFixed(2)));
     }
 
     const resetStats = () => {
@@ -38,6 +40,7 @@ const TypeHere = () => {
         setTypedData('');
         setTimerKey(prevKey => prevKey + 1);
         setIsPlaying(false);
+        setWpm(0);
     }
 
     const fireStartEvent = async () => {
@@ -48,31 +51,36 @@ const TypeHere = () => {
     }
 
     return (
-        <div className='p-4'>
-            <div className='w-[10px] h-[10px]'>
-                <Timer inputDisabled={inputDisabled} setIsPlaying={setIsPlaying} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
+        <>
+        <div className='bg-[#FAEBD7]'>
+            <div className='flex justify-between w-1/5 m-auto'>
+                <StatsPill stat={percentage} statName={'Accuracy'} />
+                <StatsPill stat={numberOfWordsTyped} statName={'Words'} />
+                <StatsPill stat={'wpm'} statName={'WPM'} />
             </div>
-            <div className='w-1/5 m-auto'>
-                {`Accuracy: ${percentage} %`}
-                {`Words typed: ${numberOfWordsTyped}`}
+            <div className='input-container flex justify-center'>
+                <input
+                    className="bg-[#ffffff] p-3 rounded-2xl mt-[5px] text-center w-3/4 shadow-md"
+                    placeholder="Type above text here"
+                    onChange={getData}
+                    disabled={inputDisabled}
+                    ref={inputRef}
+                    value={typedData}
+                />
             </div>
-            <input 
-                className="w-full p-2 m-auto text-center border-b-2"
-                placeholder="Type above text here"
-                onChange={getData}
-                disabled={inputDisabled}
-                ref={inputRef}
-                value={typedData}
-            />
-            <button className='mr-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
-                onClick={fireStartEvent}
-            >Start
-            </button>
-            <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
-                onClick={resetStats}    
-            >Reset
-            </button>
+            <div className='buttons flex flex-row justify-center mt-[1rem]'>
+                <button className='mr-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' onClick={fireStartEvent}>
+                    Start
+                </button>
+                {/* Remove start button and fire start event once user starts typing ???  */}
+                <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded' onClick={resetStats}>
+                    Reset
+                </button>
+            </div>
+
+        <Timer setWpm={setWpm} inputDisabled={inputDisabled} setIsPlaying={setIsPlaying} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
         </div>
+     </>
     )
 }
 
