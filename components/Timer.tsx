@@ -2,26 +2,23 @@ import { useEffect, useState } from "react";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import { Modal } from "./Modal";
 
-const Timer = ({inputDisabled, setInputDisabled, timerKey, isPlaying, setIsPlaying, setWpm}) => {
+const Timer = ({timerKey, isPlaying, setIsPlaying, setInputDisabled, ...stats}) => {
     const [isModalVisible, setModalVisibility] = useState(false);
     const onCompleteTimer = () => {
-        //Fire input Disabled event or reset stats
-        //Fire Modal dislay here
-        setInputDisabled(true);
         setModalVisibility(true);
         setIsPlaying(false);
+        setInputDisabled(true);
         //Can Call reset stats here
+        //Shall we save results into database while resetting?
     }
     return (
         <>
-        {(isModalVisible ? <Modal setModalVisibility={setModalVisibility}></Modal> :
+        {(isModalVisible && <Modal setModalVisibility={setModalVisibility} stats={stats}></Modal>)}
         <div className="flex justify-center p-4">
-            {/* This condition !isModaiVisible causing reset timer to bug out as it gets called again and again once we close modal
-                due to state change in react, it's gonna re-render again and again otherwise find out why */}
             <CountdownCircleTimer
                 key={timerKey}
                 isPlaying = {isPlaying}
-                duration={5}
+                duration={60}
                 colors={['#004777', '#F7B801', '#A30000', '#A30000']}
                 colorsTime={[60, 45, 25, 10]}
                 onComplete={onCompleteTimer}
@@ -33,7 +30,7 @@ const Timer = ({inputDisabled, setInputDisabled, timerKey, isPlaying, setIsPlayi
                     )
                 }
             </CountdownCircleTimer>
-        </div>)}
+        </div>
         </>
     )
 }
