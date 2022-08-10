@@ -1,5 +1,6 @@
 export const Modal = ({setModalVisibility}) => {
         return (
+
             <>
             {/* Add transition effect for modal opening and closing and get a good close icon */}
             <div className="flex bg-[#EFEFEF] absolute top-0 right-0 left-0 bottom-0 justify-center bg-opacity-70 items-center">
