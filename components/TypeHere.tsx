@@ -50,15 +50,12 @@ const TypeHere = () => {
     return (
         <div className='p-4'>
             <div className='w-[10px] h-[10px]'>
-            <Timer inputDisabled={inputDisabled} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
-
+                <Timer inputDisabled={inputDisabled} setIsPlaying={setIsPlaying} setInputDisabled={setInputDisabled} timerKey={timerKey} isPlaying={isPlaying} />
             </div>
             <div className='w-1/5 m-auto'>
                 {`Accuracy: ${percentage} %`}
                 {`Words typed: ${numberOfWordsTyped}`}
-                
             </div>
-
             <input 
                 className="w-full p-2 m-auto text-center border-b-2"
                 placeholder="Type above text here"
