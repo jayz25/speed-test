@@ -1,4 +1,5 @@
 import React, { EventHandler, SyntheticEvent, useEffect, useRef, useState } from 'react'
+import Paragraphs from './Paragraphs';
 import StatsPill from './StatsPill';
 import Timer from './Timer';
 
@@ -11,7 +12,26 @@ const TypeHere = () => {
     const [accuracy, setAccuracy] = useState(0);
     const [inputDisabled, setInputDisabled] = useState(false);
     const inputRef = useRef(null);
-    const givenString = 'Generating random paragraphs can be an excellent way for writers to get their creative flow going at the beginning of the day. The writer has no idea what topic the random paragraph will be about when it appears. This forces the writer to use creativity to complete one of three common writing challenges. The writer can use the paragraph as the first one of a short story and build upon it. A second option is to use the random paragraph somewhere in a short story they create. The third option is to have the random paragraph be the ending paragraph in a short story. No matter which of these challenges is undertaken, the writer is forced to use creativity to incorporate the paragraph into their writing'.split(' ')
+    const [givenString, setGivenString] = useState(' ');
+    const [refresh, setRefresh] = useState(0);
+
+    useEffect(() => {
+        let isRefresh = true; // We're doing this to avoid repeatative calls to setGivenString()
+
+        const availableParagraphs = async() => {
+            const response = await fetch('http://127.0.0.1:8000/getPara/')
+            const result = await response.json()
+            const property = result[Math.floor(Math.random() * result.length)];
+            if(isRefresh) {
+                setGivenString(property.paragraph);
+            }
+        }
+        availableParagraphs()
+            .catch((err)=> console.log(err));
+
+        return () => {isRefresh = false}
+    },[refresh]);
+
 
     const getData = (e: React.ChangeEvent) => {
         e.preventDefault();
@@ -23,12 +43,12 @@ const TypeHere = () => {
         var accuracyValue = 0;
 
         typedData.split('').forEach((char) => {
-            if(char === givenString[word][character]) {
+            if(char === givenString.split(' ')[word][character]) {
                 matchedChars++;
                 character++;
             }
             if(char === ' ') {
-                if(typedData.split(' ').at(word) === givenString[word]){
+                if(typedData.split(' ').at(word) === givenString.split(' ')[word]){
                     matchedWords++;
                 }
                 word++;
@@ -39,7 +59,7 @@ const TypeHere = () => {
         setNumberOfCharTyped(matchedChars);
         setNumberOfWordsTyped(matchedWords);
 
-        accuracyValue = parseFloat(((matchedWords/givenString.slice(0,word).length)*100).toFixed(2));
+        accuracyValue = parseFloat(((matchedWords/givenString.split(' ').slice(0,word).length)*100).toFixed(2));
 
         setAccuracy(
             Number.isNaN(accuracyValue)
@@ -63,6 +83,7 @@ const TypeHere = () => {
 
     return (
         <>
+        <Paragraphs paragraph={givenString}/>
         <div className='bg-[#FAEBD7]'>
             <div className='flex justify-between w-1/5 m-auto'>
                 <StatsPill
@@ -90,9 +111,14 @@ const TypeHere = () => {
             </div>
             <div className='buttons flex flex-row justify-center mt-[1rem]'>
                 <button
-                    className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'
+                    className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-[.5rem]'
                     onClick={resetStats}
                 >Reset
+                </button>
+                <button
+                    className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'
+                    onClick={()=> setRefresh(refresh+1)}
+                >Refresh
                 </button>
             </div>
 

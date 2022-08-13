@@ -6,7 +6,6 @@ import TypeHere from '../components/TypeHere'
 
 const IndexPage = () => (
   <Layout title="Home | Type Speed Test">
-    <Paragraphs />
     <TypeHere />
   </Layout>
 )
