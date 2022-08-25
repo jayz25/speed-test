@@ -1,5 +1,6 @@
-import React, { EventHandler, SyntheticEvent, useEffect, useRef, useState } from 'react'
-import Paragraphs from './Paragraphs';
+import React, { useRef, useState } from 'react'
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
 import StatsPill from './StatsPill';
 import Timer from './Timer';
 
@@ -12,28 +13,13 @@ const TypeHere = () => {
     const [accuracy, setAccuracy] = useState(0);
     const [inputDisabled, setInputDisabled] = useState(false);
     const inputRef = useRef(null);
-    const [givenString, setGivenString] = useState(' ');
-    const [refresh, setRefresh] = useState(0);
+    const {paragraph: givenString} = useSelector<RootState>(state=>state.currentParagraph);
 
-    useEffect(() => {
-        let isRefresh = true; // We're doing this to avoid repeatative calls to setGivenString()
 
-        const availableParagraphs = async() => {
-            const response = await fetch('http://127.0.0.1:8000/getPara/')
-            const result = await response.json()
-            const property = result[Math.floor(Math.random() * result.length)];
-            if(isRefresh) {
-                setGivenString(property.paragraph);
-            }
-        }
-        availableParagraphs()
-            .catch((err)=> console.log(err));
-
-        return () => {isRefresh = false}
-    },[refresh]);
 
 
     const getData = (e: React.ChangeEvent) => {
+        console.log(givenString)
         e.preventDefault();
         setTypedData((e.target as HTMLInputElement).value);
         var word = 0;
@@ -83,7 +69,6 @@ const TypeHere = () => {
 
     return (
         <>
-        <Paragraphs paragraph={givenString}/>
         <div className='bg-[#FAEBD7]'>
             <div className='flex justify-between w-1/5 m-auto'>
                 <StatsPill
@@ -117,7 +102,7 @@ const TypeHere = () => {
                 </button>
                 <button
                     className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'
-                    onClick={()=> setRefresh(refresh+1)}
+                    onClick={()=> {}}
                 >Refresh
                 </button>
             </div>
