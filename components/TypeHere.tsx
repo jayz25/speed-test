@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
+import { RootState } from '../types/types';
 import StatsPill from './StatsPill';
 import Timer from './Timer';
 
@@ -13,13 +13,11 @@ const TypeHere = () => {
     const [accuracy, setAccuracy] = useState(0);
     const [inputDisabled, setInputDisabled] = useState(false);
     const inputRef = useRef(null);
-    const {paragraph: givenString} = useSelector<RootState>(state=>state.currentParagraph);
-
+    const givenString = useSelector((state: RootState) => state.paragraph.currentParagraph?.paragraph);
 
 
 
     const getData = (e: React.ChangeEvent) => {
-        console.log(givenString)
         e.preventDefault();
         setTypedData((e.target as HTMLInputElement).value);
         var word = 0;
@@ -69,7 +67,7 @@ const TypeHere = () => {
 
     return (
         <>
-        <div className='bg-[#FAEBD7]'>
+        <div className='bg-[#FAEBD7] h-full'>
             <div className='flex justify-between w-1/5 m-auto'>
                 <StatsPill
                     stat={accuracy}

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { apiCall, refreshParagraph } from "../redux/api";
-import { AppDispatch } from "../redux/store";
+import { apiCall } from "../redux/paragraph";
+import { AppDispatch } from "../types/types";
 import Paragraphs from "./Paragraphs"
 import TypeHere from "./TypeHere"
 
@@ -11,11 +11,10 @@ export const Home = () => {
         dispatch(apiCall());
     },[]);
     return (
-        <>
-            <Paragraphs />
-            <TypeHere />
-        </>
-
+            <>
+                <Paragraphs />
+                <TypeHere />
+            </>
         )
 
 }

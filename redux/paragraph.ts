@@ -1,17 +1,20 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { paragraphState } from "../types/types";
 import { getRandomElementFromArray } from "../utils/getRandomElement";
+
 
 const initialState = {
     paragraphCollection: [],
-    currentParagraph: {},
+    currentParagraph: null,
     status: '',
-}
+} as paragraphState
+
 const paragraphSlice = createSlice({
     name: 'paragraph',
-    initialState: initialState,
+    initialState: initialState as paragraphState,
     reducers: {
         refreshParagraph: (state) => {
-            state.currentParagraph = getRandomElementFromArray([...state.paragraphCollection]);
+            state.currentParagraph = getRandomElementFromArray(state.paragraphCollection);
         }
     },
     extraReducers(builder) {
@@ -21,7 +24,7 @@ const paragraphSlice = createSlice({
         })
             .addCase(apiCall.fulfilled, (state, action) => {
             state.status = 'Success',
-            state.paragraphCollection = [...action.payload],
+            state.paragraphCollection = action.payload,
             state.currentParagraph = state.paragraphCollection[0]
         })
             .addCase(apiCall.rejected, (state, action) => {
@@ -34,10 +37,11 @@ export const apiCall = createAsyncThunk(
     'paragraphs/getParagraphs',
     async (thunkAPI) => {
         const response = await fetch("http://127.0.0.1:8000/getPara/");
-        // const data = await response.json()
         return response.json();
 
     }
 )
+
+
 export const { refreshParagraph } = paragraphSlice.actions;
 export default paragraphSlice.reducer;
