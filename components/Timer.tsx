@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import { Modal } from "./Modal";
 
 const Timer = ({timerKey, isPlaying, setIsPlaying, setInputDisabled, ...stats}) => {
     const [isModalVisible, setModalVisibility] = useState(false);
     const onCompleteTimer = () => {
+        // saveStats
         setModalVisibility(true);
         setIsPlaying(false);
         setInputDisabled(true);
@@ -18,7 +19,7 @@ const Timer = ({timerKey, isPlaying, setIsPlaying, setInputDisabled, ...stats}) 
             <CountdownCircleTimer
                 key={timerKey}
                 isPlaying = {isPlaying}
-                duration={60}
+                duration={5}
                 colors={['#004777', '#F7B801', '#A30000', '#A30000']}
                 colorsTime={[60, 45, 25, 10]}
                 onComplete={onCompleteTimer}

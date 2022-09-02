@@ -1,7 +1,11 @@
 import { useEffect } from "react"
+import { useDispatch } from "react-redux";
+import { addStatCall } from "../redux/stat";
+import { AppDispatch } from "../types/types";
 
 export const Modal = ({setModalVisibility, ...stats}) => {
-
+        const dispatch = useDispatch<AppDispatch>();
+        dispatch(addStatCall(stats.stats));
         useEffect(() => {
             const closeModal = (event: KeyboardEvent) => {
                 var key = event.key || event.keyCode;

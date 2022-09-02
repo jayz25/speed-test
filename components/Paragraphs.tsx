@@ -1,10 +1,10 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { refreshParagraph } from '../redux/api';
-import { AppDispatch, RootState } from '../redux/store';
+import { refreshParagraph } from '../redux/paragraph';
 import refresh from '../static/refresh.png';
+import { AppDispatch, RootState } from '../types/types';
 
 const Paragraphs = () => {
-    const paragraph = useSelector<RootState>(state=>state.currentParagraph);
+    const paragraph = useSelector((state: RootState)=>state.paragraph.currentParagraph);
     const dispatch = useDispatch<AppDispatch>();
     return (
         <div className='bg-[#FAEBD7] w-full p-3 m-auto text-xl text-cyan-900'>
