@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
-import Link from 'next/link'
 import Head from 'next/head'
+import { Navbar } from './Navbar'
 
 type Props = {
   children?: ReactNode
@@ -14,10 +14,8 @@ const Layout = ({ children, title = 'This is the default title' }: Props) => (
       <meta charSet="utf-8" />
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
     </Head>
-    <div className='flex-1 bg-[#D7E6FA] '>
-      <h1 className="m-5 text-3xl font-bold text-blue-400">
-        Typing Speed
-      </h1>
+    <div className='bg-[#D7E6FA]'>
+        <Navbar />
     </div>
 
     {children}
@@ -28,4 +26,4 @@ const Layout = ({ children, title = 'This is the default title' }: Props) => (
   </div>
 )
 
-export default Layout
+export default Layout;

@@ -67,7 +67,7 @@ const TypeHere = () => {
 
     return (
         <>
-        <div className='bg-[#FAEBD7] h-full'>
+        <div className='bg-[#FAEBD7]'>
             <div className='flex justify-between w-1/5 m-auto'>
                 <StatsPill
                     stat={accuracy}
@@ -98,11 +98,11 @@ const TypeHere = () => {
                     onClick={resetStats}
                 >Reset
                 </button>
-                <button
+                {/* <button
                     className='bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded'
                     onClick={()=> {}}
                 >Refresh
-                </button>
+                </button> */}
             </div>
 
         <Timer

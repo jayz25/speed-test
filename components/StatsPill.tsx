@@ -1,4 +1,9 @@
-const StatsPill = ({stat, statName}) => {
+interface Props {
+    stat: number,
+    statName: string
+}
+
+const StatsPill = ({stat, statName}: Props) => {
     return (
         <>
         <div className='flex-col items-center justfiy-center'>
