@@ -10,7 +10,6 @@ export const GlobalStats = () => {
         dispatch(getStatCall());
     },[])
     const stats = useSelector((state:RootState) => state.globalStats.stats);
-    console.log(stats);
 
     return (
         <>

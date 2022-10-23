@@ -11,10 +11,10 @@ export const Home = () => {
         dispatch(apiCall());
     },[]);
     return (
-            <>
+            <div className="relative flex flex-1 justify-center bg-[#525252]">
                 <Paragraphs />
-                <TypeHere />
-            </>
+                {/* <TypeHere /> */}
+            </div>
         )
 
 }

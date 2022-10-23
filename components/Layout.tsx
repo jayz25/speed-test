@@ -8,15 +8,15 @@ type Props = {
 }
 
 const Layout = ({ children, title = 'This is the default title' }: Props) => (
-  <div className='flex flex-col'>
+  <div className='flex flex-col h-screen'>
     <Head>
       <title>{title}</title>
       <meta charSet="utf-8" />
       <meta name="viewport" content="initial-scale=1.0, width=device-width" />
     </Head>
-    <div className='flex-1 bg-[#D7E6FA] '>
-      <h1 className="m-5 text-3xl font-bold text-blue-400">
-        Typing Speed
+    <div className='flex-.2 bg-[#525252] '>
+      <h1 className="m-5 pt-5 pl-10 text-3xl font-bold text-[#FFD523]">
+        SpeedType
       </h1>
     </div>
 

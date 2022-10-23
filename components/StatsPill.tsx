@@ -1,15 +1,20 @@
-const StatsPill = ({stat, statName}) => {
+
+const StatsPill = ({stat, statImg, unit}: {stat: number, statImg: string, unit: string}) => {
     return (
-        <>
-        <div className='flex-col items-center justfiy-center'>
-            <div className='flex items-center justify-center mr-2 rounded-full w-[5rem] h-[5rem] shadow-lg bg-[#ffffff]'>
-                <span className="text-2xl">{`${stat}`}</span>
+            <div className='mr-5 overflow-auto flex flex-row items-center justify-around rounded-lg mt-3 mr-2 w-[6.5rem] h-[2.5rem] shadow-lg bg-[#ffffff]'>
+                <div className="flex items-center flex-1 bg-[#D8D8D8] h-full w-full px-1 justifyy-center">
+                    <img className=""
+                        src={statImg}
+                        alt='Alt'
+                        width={30}
+                        height={30}
+                        />
+                </div>
+                <div className="flex-1 justify-center h-full w-full p-1">
+                    <span className="text-2xl font-bold">{stat}</span>
+                    <span className="text-xs self-end pl-1">{unit}</span>
+                </div>
             </div>
-            <div className="flex justify-center w-[5rem] pt-[.5rem]">
-                <span>{statName}</span>
-            </div>
-        </div>
-        </>
     )
 }
 export default StatsPill;
