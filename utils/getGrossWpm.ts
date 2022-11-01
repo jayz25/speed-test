@@ -1,3 +1,3 @@
 export const getGrossWpm = (typedData) => {
-    return (characters/5);
+    return (typedData/5);
 }
