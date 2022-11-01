@@ -36,7 +36,7 @@ const paragraphSlice = createSlice({
 export const apiCall = createAsyncThunk(
     'paragraphs/getParagraphs',
     async (thunkAPI) => {
-        const response = await fetch("http://speedtype-api.herokuapp.com/getPara/");
+        const response = await fetch("https://speedtype-api.herokuapp.com/getPara/");
         return response.json();
 
     }
