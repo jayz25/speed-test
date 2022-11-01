@@ -18,8 +18,10 @@ const Paragraphs = () => {
     const dispatch = useDispatch<AppDispatch>();
     const words = (paragraph?.paragraph)?.split(' ');
     const [activeWordIndex, setActiveWordIndex] = useState(0);
+    const [activeLetterIndex, setActiveLetterIndex] = useState(0);
     const [activeWord, setActiveWord] = useState(paragraph?.paragraph[activeWordIndex]);
     const [charactersMatched, setCharactersMatched] = useState(0);
+    const [incorrectLetterIndex, setIncorrectLetterIndex] = useState(null);
     const [wordsMatched, setWordsMatched] = useState(0);
     const [cpm, setCpm] = useState(0);
     const [wpm, setWpm] = useState(0);
@@ -32,7 +34,8 @@ const Paragraphs = () => {
         start,
         reset,
         timeout,
-    } = useTimer(60);
+    } = useTimer(60); 
+    const [backSpaceTapped, setBackSpaceTapped] = useState(false);
     const bgColorOne = 'bg-[#C5C5C5]';
     const bgColorTwo = 'bg-[#1E293B]';
     const [isStarted, setIsStarted] = useState(false);
@@ -79,6 +82,8 @@ const Paragraphs = () => {
     }
     const keyBoardHandler = (_e: React.KeyboardEvent) => {
         if(_e.key == " " || _e.code == 'Space') {
+            setActiveLetterIndex(0); 
+            
             if(currentTypedWord.length === activeWord.length && currentTypedWord === activeWord) {
                 setWordsMatched(wordsMatched => wordsMatched + 1);
                 setCharactersMatched(charactersMatched => charactersMatched + currentTypedWord.length);
@@ -93,12 +98,15 @@ const Paragraphs = () => {
             setActiveWord(words[activeWordIndex]);
             textInput.current.value = '';
         }
-        // activeWord.split('').forEach((letter) => {
-        //     if(_e.key === letter) {
-        //         console.log('Correct letter types');
-
-        //     }
-        // })
+        else if(activeWord[activeLetterIndex] == _e.key) {
+            console.log('messing with ya head', activeWord, activeLetterIndex, activeWord[activeLetterIndex])
+            setActiveLetterIndex(activeLetterIndex => activeLetterIndex + 1);
+        } else {
+            if(_e.key !== 'Shift') {
+                setIncorrectLetterIndex(activeLetterIndex);
+                setActiveLetterIndex(activeLetterIndex => activeLetterIndex + 1);
+            }
+        }
     }
     
     const setInputFocus = () => {
@@ -120,30 +128,48 @@ const Paragraphs = () => {
     useEffect(() => {
         const textInputElement = textInput.current;
         textInputElement.addEventListener('blur', handleBlurContainer);
+        setActiveWord(paragraph?.paragraph.split(' ')[activeWordIndex]);
         const container = document.querySelector<HTMLElement>('#given-paragraph');
         const activeWordElement = container.querySelectorAll<HTMLElement>('#word-element')[activeWordIndex];
-        activeWordElement?.classList.add('bg-yellow-300');
-        activeWordElement?.classList.add('text-slate-700');
-        setActiveWord(paragraph?.paragraph.split(' ')[activeWordIndex]);
+        const activeLetterElement = activeWordElement?.querySelectorAll<HTMLElement>('#letter-element')[activeLetterIndex];
+        activeLetterElement?.classList.add('underline');
+        if(activeLetterIndex > 0) {
+            const previousLetterElement = activeWordElement?.querySelectorAll<HTMLElement>('#letter-element')[activeLetterIndex - 1];
+            previousLetterElement?.classList.replace('underline','text-white');
+        }
         if(seconds <= 0) {
             setIsStarted(false);
             setInputDisabled(true);
 
         }
+        if(backSpaceTapped) {
+            activeLetterElement?.classList.remove('text-white');
+            activeLetterElement?.classList.remove('underline');
+            setBackSpaceTapped(false);
+        }
         if(activeWordIndex > 0) {
             const clearStyleElement = container.querySelectorAll<HTMLElement>('#word-element')[activeWordIndex - 1];
             clearStyleElement?.classList.remove('bg-yellow-300'); 
-            clearStyleElement?.classList.remove('text-slate-700'); 
+            clearStyleElement?.classList.remove('text-slate-700');     
         }
         if(recentIncorrectIndex) {
+            console.log('recent Incorrect index', recentIncorrectIndex);
             const redFlag = container.querySelectorAll<HTMLElement>('#word-element')[recentIncorrectIndex];
-            redFlag?.classList.add('text-red-700');
-            redFlag?.classList.add('underline');
+            // redFlag?.classList.add('text-red-700');
+            // redFlag?.classList.add('underline');
+            redFlag?.classList.add('line-through')
+        }
+        if(incorrectLetterIndex) {
+            console.log('Hello you make me feel love')
+            const redLetter = activeWordElement?.querySelectorAll<HTMLElement>('#letter-element')[incorrectLetterIndex];
+            console.log('redletter', redLetter)
+            redLetter?.classList.replace('text-white','text-red-700');
+            setIncorrectLetterIndex(null);
         }
         return () => {
             textInputElement.removeEventListener('focusout', handleBlurContainer);
         }
-    },[paragraph, words, activeWord, seconds, recentIncorrectIndex, activeWordIndex]) //ref
+    },[backSpaceTapped, paragraph, words, activeWord, seconds, recentIncorrectIndex, activeWordIndex, activeLetterIndex]) //ref
     
     return (
         <div className='w-3/5 pt-[5rem] p-3 text-xl text-cyan-900' >
@@ -158,11 +184,11 @@ const Paragraphs = () => {
                 onKeyDown={keyBoardHandler}
                 onFocus={handleClickMeFocus}
                 />
-            <p 
+            <div 
                 ref={paraRef}
                 id='given-paragraph' 
                 onClick={handleClickMeFocus} 
-                className="rounded-2xl p-4 bg-[#C5C5C5] font-bold text-[#444444] text-opacity-40"
+                className="rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
             >
                 <span 
                     id='click-me'
@@ -173,12 +199,26 @@ const Paragraphs = () => {
                 </span>
                 
                 {
-                    (paragraph?.paragraph)?.split((' ')).map((word, index) => { 
-                        return (
-                        <span id='word-element' key={index}>{`${word} `}</span>);
-                    })
+                    <div className='flex flex-wrap'>{
+                        (paragraph?.paragraph)?.split((' ')).map((word, index) => {
+
+                            return (
+                            <div className='flex flex-row p-1' id='word-element' key={index}>
+                                {word.split('').map((letter, letterIndex) => {
+                                    return (
+                                        <div id='letter-element' key={index+letterIndex}>{letter}</div>
+                                        )
+                                    })
+                                }
+                            </div>
+                             
+                            )
+                        })
+                    }
+                    </div>
+
                 }
-            </p>
+            </div>
             <div className='flex justify-between mt-4'>
                 <div className='flex flex-row'>
                     <StatsPill stat={wpm} statImg={speedometer.src} unit={'wpm'}/>
