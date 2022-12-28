@@ -36,7 +36,7 @@ const paragraphSlice = createSlice({
 export const apiCall = createAsyncThunk(
     'paragraphs/getParagraphs',
     async (thunkAPI) => {
-        const response = await fetch("http://web-production-3dee.up.railway.app/getPara/");
+        const response = await fetch("https://web-production-3dee.up.railway.app/getPara/");
         return response.json();
 
     }
