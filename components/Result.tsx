@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { addStatCall } from "../redux/stat";
 import { AppDispatch } from "../types/types";
 
-export const Modal = ({setModalVisibility, ...stats}) => {
+export const Result = ({setModalVisibility, ...stats}) => {
         const dispatch = useDispatch<AppDispatch>();
         dispatch(addStatCall(stats.stats));
         useEffect(() => {
