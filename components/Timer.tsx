@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
-import { Modal } from "./Modal";
+import { Result } from "./Result";
 
 const Timer = ({timerKey, isPlaying, setIsPlaying, setInputDisabled, ...stats}) => {
     const [isModalVisible, setModalVisibility] = useState(false);
@@ -14,7 +14,7 @@ const Timer = ({timerKey, isPlaying, setIsPlaying, setInputDisabled, ...stats}) 
     }
     return (
         <>
-        {(isModalVisible && <Modal setModalVisibility={setModalVisibility} stats={stats}></Modal>)}
+        {(isModalVisible && <Result setModalVisibility={setModalVisibility} stats={stats}></Result>)}
         <div className="flex justify-center p-4">
             <CountdownCircleTimer
                 key={timerKey}

@@ -11,6 +11,9 @@ import { calculateWPM } from "../utils/calculateWPM";
 import useTimer from "../utils/hooks/useTimer";
 import { calculateAccuracy } from "../utils/calculateAccuracy";
 import { refreshParagraph } from "../redux/paragraph";
+import { handleBlurContainer, handleClickMeFocus, setInputFocus } from "../utils/focusHandlers";
+import { removeStyling } from "../utils/removeStyling";
+import Link from "next/link";
 
 const Paragraphs = () => {
   const paragraph = useSelector(
@@ -18,69 +21,65 @@ const Paragraphs = () => {
   );
   const dispatch = useDispatch<AppDispatch>();
   const words = paragraph?.paragraph?.split(" ");
-  //Use this as reset stats 
+
+  // Use this to reset stats 
   // const [indexState, setIndexState] = useState({
-  //   activeWord: 0,
-  //   activeLetter: 0,
+  //   wordsMatched: 0,
+  //   activeWordIndex: 0,
+  //   activeLetterIndex: 0,
+  //   charactersMatched: 0,
+  //   incorrectLetterIndex: null,
+  //   cpm: 0,
+  //   wpm: 0,
+  //   accuracy: 0,
+  //   wordsIncorrect: 0,
+  //   recentIncorrectIndex: null,
+  //   isStarted: false,
+  //   inputDisabled: false,
   // });
+
+  const [wordsMatched, setWordsMatched] = useState(0);
   const [activeWordIndex, setActiveWordIndex] = useState(0);
   const [activeLetterIndex, setActiveLetterIndex] = useState(0);
-  const [activeWord, setActiveWord] = useState(
-    paragraph?.paragraph[activeWordIndex]
-  );
   const [charactersMatched, setCharactersMatched] = useState(0);
   const [incorrectLetterIndex, setIncorrectLetterIndex] = useState(null);
-  const [wordsMatched, setWordsMatched] = useState(0);
   const [cpm, setCpm] = useState(0);
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(0);
-  const textInput = useRef(null);
-  const paraRef = useRef(null);
   const [wordsIncorrect, setWordsIncorrect] = useState(0);
+  const [recentIncorrectIndex, setRecentIncorrectIndex] = useState(null);
+  const textInput = useRef<HTMLInputElement>(null);
+  const paraRef = useRef<HTMLParagraphElement>(null);
   const { seconds, start, reset, timeout } = useTimer(60);
-  const [backSpaceTapped, setBackSpaceTapped] = useState(false);
-  const bgColorOne = "bg-[#C5C5C5]";
-  const bgColorTwo = "bg-[#1E293B]";
   const [isStarted, setIsStarted] = useState(false);
   const [inputDisabled, setInputDisabled] = useState(false);
-  const [recentIncorrectIndex, setRecentIncorrectIndex] = useState(null);
   const [currentTypedWord, setCurrentTypedWord] = useState("");
-  const callRefresh = () => {
-    setIsStarted(false);
-    reset();
-    resetStats();
-    setInputDisabled(false);
-  };
-  const [globalIndex, setGlobalIndex] = useState(0);
+  const [activeWord, setActiveWord] = useState(
+    paragraph?.paragraph[activeWordIndex]
+  );
+  
   const resetStats = () => {
-    setWpm(0);
-    setCpm(0);
-    setAccuracy(0);
-    textInput.current.value = "";
-    setActiveWordIndex(0);
+    setInputFocus(textInput);
+    reset(); // useTimer
+    // setIndexState(indexState => indexState);
     setWordsMatched(0);
+    setActiveWordIndex(0);
+    setActiveLetterIndex(0);
     setCharactersMatched(0);
-    dispatch(refreshParagraph());
+    setIncorrectLetterIndex(null);
+    setCpm(0);
+    setWpm(0);
+    setAccuracy(0);
+    setWordsIncorrect(0);
     setRecentIncorrectIndex(null);
-    setGlobalIndex(0);
+    setIsStarted(false);
+    setInputDisabled(false);
+    // dispatch(refreshParagraph());
     removeStyling();
-    setInputFocus();
+    textInput.current.value = "";
     //active word also needs to be set
   };
-  const removeStyling = () => {
-    const container = document.querySelector<HTMLElement>("#given-paragraph");
-    container
-      .querySelectorAll<HTMLElement>("#word-element")
-      .forEach((element) => {
-        element.classList.remove(
-          "bg-yellow-300",
-          "text-red-700",
-          "text-slate-700",
-          "underline",
-          "text-white"
-        );
-      });
-  };
+  
   const inputCapture = (_e: React.ChangeEvent) => {
     _e.preventDefault();
 
@@ -110,9 +109,6 @@ const Paragraphs = () => {
         setRecentIncorrectIndex(activeWordIndex);
         setWordsIncorrect((wordsIncorrect) => wordsIncorrect + 1);
       }
-      setCpm(calculateCPM(charactersMatched, timeout));
-      setWpm(calculateWPM(wordsMatched, timeout));
-      setAccuracy(calculateAccuracy(wordsIncorrect, wordsMatched));
       setActiveWordIndex((activeWordIndex) => activeWordIndex + 1);
       setActiveWord(words[activeWordIndex]);
       textInput.current.value = "";
@@ -130,23 +126,13 @@ const Paragraphs = () => {
     }
   };
 
-  const setInputFocus = () => {
-    textInput.current.focus();
-  };
-  const handleBlurContainer = () => {
-    const target = document.querySelector("#given-paragraph");
-    target.classList.replace(bgColorOne, bgColorTwo);
-    document.querySelector("#click-me")?.classList.remove("hidden");
-  };
-  const handleClickMeFocus = () => {
-    const target = document.querySelector("#given-paragraph");
-    target.classList.replace(bgColorTwo, bgColorOne);
-    document.querySelector("#click-me")?.classList.add("hidden");
-    setInputFocus();
-  };
   useEffect(() => {
+    setCpm(calculateCPM(charactersMatched, timeout));
+    setWpm(calculateWPM(wordsMatched, timeout));
+    setAccuracy(calculateAccuracy(wordsIncorrect, wordsMatched));
     const textInputElement = textInput.current;
     textInputElement.addEventListener("blur", handleBlurContainer);
+    // textInputElement.addEventListener("focus", () => handleClickMeFocus(textInput));
     setActiveWord(paragraph?.paragraph.split(" ")[activeWordIndex]);
     const container = document.querySelector<HTMLElement>("#given-paragraph");
     const activeWordElement =
@@ -155,23 +141,24 @@ const Paragraphs = () => {
       activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
         activeLetterIndex
       ];
-    activeLetterElement?.classList.remove("text-white");
-    activeLetterElement?.classList.add("underline");
+    let previousLetterElement: HTMLElement;
+    activeLetterElement?.querySelector('#letter').classList.remove('text-white'); // this is used for backspacing
+    activeLetterElement?.querySelector('#cursor').classList.remove('hidden');
 
     if (activeLetterIndex > 0) {
-      const previousLetterElement =
+      previousLetterElement =
         activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
           activeLetterIndex - 1
         ];
+    }
 
       const nextElement =
-        activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
-          activeLetterIndex + 1
-        ];
-
-      nextElement?.classList.remove("text-white", "underline");
-      previousLetterElement?.classList.replace("underline", "text-white");
-    }
+      activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
+        activeLetterIndex + 1
+      ];
+      nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
+      previousLetterElement?.querySelector('#letter').classList.add('text-white');
+      previousLetterElement?.querySelector('#cursor').classList.add('hidden');
 
     if (seconds <= 0) {
       setIsStarted(false);
@@ -186,27 +173,35 @@ const Paragraphs = () => {
       clearStyleElement?.classList.remove("bg-yellow-300");
       clearStyleElement?.classList.remove("text-slate-700");
     }
+
     if (recentIncorrectIndex) {
-      console.log("recent Incorrect index", recentIncorrectIndex);
       const redFlag =
         container.querySelectorAll<HTMLElement>("#word-element")[
           recentIncorrectIndex
         ];
       redFlag?.classList.add("line-through");
+      redFlag?.querySelectorAll<HTMLElement>("#letter-element").forEach((element: HTMLElement) => {
+        element.querySelector(
+          '#cursor'
+        ).classList.add('hidden')
+      });
     }
+
     if (incorrectLetterIndex) {
       const redLetter =
         activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
           incorrectLetterIndex
         ];
-      redLetter?.classList.replace("text-white", "text-red-700");
+      redLetter?.querySelector('#letter').classList.remove("text-white");
+      redLetter?.querySelector('#letter').classList.add("text-red-700");
       setIncorrectLetterIndex(null);
     }
+
     return () => {
-      textInputElement.removeEventListener("focusout", handleBlurContainer);
+      textInputElement.removeEventListener("blur", handleBlurContainer);
+      // textInputElement.removeEventListener("focus", () => handleClickMeFocus(textInput));
     };
   }, [
-    backSpaceTapped,
     paragraph,
     words,
     activeWord,
@@ -214,10 +209,13 @@ const Paragraphs = () => {
     recentIncorrectIndex,
     activeWordIndex,
     activeLetterIndex,
+    wordsMatched,
+    charactersMatched,
+    accuracy
   ]); //ref
 
   return (
-    <div className="w-3/5 pt-[5rem] p-3 text-xl text-cyan-900">
+    <div className="flex justify-center items-center flex-col">
       <input
         className="h-0 w-0"
         id="input-text"
@@ -226,37 +224,35 @@ const Paragraphs = () => {
         disabled={inputDisabled}
         ref={textInput}
         onKeyDown={keyBoardHandler}
-        onFocus={handleClickMeFocus}
+        onFocus={() => handleClickMeFocus}
       />
       <div
         ref={paraRef}
         id="given-paragraph"
-        onClick={handleClickMeFocus}
-        className="rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
+        onClick={() => handleClickMeFocus(textInput)}
+        className="flex w-1/2 h-1/2 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
       >
-        <span
+        <div
           id="click-me"
-          className="flex h-[100%] w-[100%] relative z-10 hidden font-bold text-slate-50"
+          className="absolute justify-center rounded-2xl items-center h-full w-full flex hidden font-bold text-slate-50 bg-[#525252]/[.85] m-[-1rem]"
         >
-          <strong className="justify-center align-center">
-            Out of Focus, click here!
-          </strong>
-        </span>
+          <span className="text-xl">Out of Focus! Click here or press any key to return</span>
+        </div>
 
         {
-          <div className="flex flex-wrap">
+          <div id="text-container" className="flex flex-wrap pb-[1rem] overflow-hidden text-2xl font-medium">
             {paragraph?.paragraph?.split(" ").map((word, index) => {
               return (
                 <div
-                  className="flex flex-row p-1"
+                  className="flex flex-row p-1 relative"
                   id="word-element"
                   key={index}
                 >
                   {word.split("").map((letter, letterIndex) => {
                     return (
-                      <div id="letter-element" key={index + letterIndex}>
-                        {letter}
-                      </div>
+                        <div id="letter-element" className="relative px-[0.01rem] flex flex-row" key={index + letterIndex}>
+                          <div id="cursor" className="hidden absolute animate-flash h-[2rem] w-[1.5px] bg-red-400"></div><span id='letter' className="">{letter}</span>
+                        </div>
                     );
                   })}
                 </div>
@@ -265,21 +261,24 @@ const Paragraphs = () => {
           </div>
         }
       </div>
-      <div className="flex justify-between mt-4">
+      <div className="flex w-1/2 justify-between mt-4">
         <div className="flex flex-row">
           <StatsPill stat={wpm} statImg={speedometer.src} unit={"wpm"} />
-          <StatsPill stat={accuracy} statImg={sandClock.src} unit={"%"} />
-          <StatsPill stat={seconds} statImg={checkMark.src} unit={"sec"} />
+          <StatsPill stat={accuracy} statImg={checkMark.src} unit={"%"} />
+          <StatsPill stat={seconds} statImg={sandClock.src} unit={"sec"} />
         </div>
-        <div className="self-center">
-          <img
-            role="button"
-            className=""
-            src={refreshing.src}
-            alt="refresh button"
-            onClick={callRefresh}
-          />
-        </div>
+        <Link href="/">
+          <div className="self-center">
+            <img
+              role="button"
+              tabIndex={0}
+              className="p-2 rounded-lg hover:bg-[#D8D8D8] focus:bg-[#D8D8D8]"
+              src={refreshing.src}
+              alt="refresh button"
+              onClick={resetStats}
+              />
+          </div>
+        </Link>
       </div>
     </div>
   );
