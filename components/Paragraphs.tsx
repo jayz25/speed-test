@@ -74,7 +74,13 @@ const Paragraphs = () => {
     setRecentIncorrectIndex(null);
     setIsStarted(false);
     setInputDisabled(false);
+<<<<<<< Updated upstream
     // dispatch(refreshParagraph());
+=======
+    // setActiveLine(0);
+    setActiveLineOffset(0);
+    dispatch(refreshParagraph());
+>>>>>>> Stashed changes
     removeStyling();
     textInput.current.value = "";
     //active word also needs to be set
@@ -92,7 +98,16 @@ const Paragraphs = () => {
     );
   };
   const keyBoardHandler = (_e: React.KeyboardEvent) => {
+<<<<<<< Updated upstream
     if (_e.key == "Backspace") {
+=======
+    if (_e.key === "Backspace") {
+      // Don't allow correcting the previous word
+      if (activeLetterIndex == 0) {
+        return null;
+      }
+      removeStyling(true, activeLetterIndex - 1, activeWordIndex);
+>>>>>>> Stashed changes
       setActiveLetterIndex((activeLetterIndex) => activeLetterIndex - 1);
     } else if (_e.key == " " || _e.code == "Space") {
       setActiveLetterIndex(0);
@@ -117,8 +132,10 @@ const Paragraphs = () => {
       _e.key <= "z" &&
       activeWord[activeLetterIndex] == _e.key
     ) {
+      // If keys are alphabets and they match then it's good to go
       setActiveLetterIndex((activeLetterIndex) => activeLetterIndex + 1);
     } else {
+      // exclude shift as it's used for capitalization
       if (_e.key !== "Shift") {
         setIncorrectLetterIndex(activeLetterIndex);
         setActiveLetterIndex((activeLetterIndex) => activeLetterIndex + 1);
@@ -174,7 +191,7 @@ const Paragraphs = () => {
       clearStyleElement?.classList.remove("text-slate-700");
     }
 
-    if (recentIncorrectIndex) {
+    if (recentIncorrectIndex != null) {
       const redFlag =
         container.querySelectorAll<HTMLElement>("#word-element")[
           recentIncorrectIndex
@@ -187,7 +204,7 @@ const Paragraphs = () => {
       });
     }
 
-    if (incorrectLetterIndex) {
+    if (incorrectLetterIndex != null) {
       const redLetter =
         activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
           incorrectLetterIndex
@@ -211,7 +228,8 @@ const Paragraphs = () => {
     activeLetterIndex,
     wordsMatched,
     charactersMatched,
-    accuracy
+    accuracy,
+    incorrectLetterIndex
   ]); //ref
 
   return (
