@@ -14,6 +14,7 @@ import { refreshParagraph } from "../redux/paragraph";
 import { handleBlurContainer, handleClickMeFocus, setInputFocus } from "../utils/focusHandlers";
 import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
+import { scrollWithNextLine } from "../utils/scrollWithNextLine";
 
 const Paragraphs = () => {
   const paragraph = useSelector(
@@ -57,6 +58,7 @@ const Paragraphs = () => {
   const [activeWord, setActiveWord] = useState(
     paragraph?.paragraph[activeWordIndex]
   );
+  const [activeLineOffset, setActiveLineOffset] = useState(0);
   
   const resetStats = () => {
     setInputFocus(textInput);
@@ -74,7 +76,9 @@ const Paragraphs = () => {
     setRecentIncorrectIndex(null);
     setIsStarted(false);
     setInputDisabled(false);
-    // dispatch(refreshParagraph());
+    // setActiveLine(0);
+    setActiveLineOffset(0);
+    dispatch(refreshParagraph());
     removeStyling();
     textInput.current.value = "";
     //active word also needs to be set
@@ -92,9 +96,14 @@ const Paragraphs = () => {
     );
   };
   const keyBoardHandler = (_e: React.KeyboardEvent) => {
-    if (_e.key == "Backspace") {
+    if (_e.key === "Backspace") {
+      // Don't allow correcting the previous word
+      if (activeLetterIndex == 0) {
+        return null;
+      }
+      removeStyling(true, activeLetterIndex - 1, activeWordIndex);
       setActiveLetterIndex((activeLetterIndex) => activeLetterIndex - 1);
-    } else if (_e.key == " " || _e.code == "Space") {
+    } else if (_e.key === " " || _e.code === "Space") {
       setActiveLetterIndex(0);
 
       if (
@@ -137,6 +146,10 @@ const Paragraphs = () => {
     const container = document.querySelector<HTMLElement>("#given-paragraph");
     const activeWordElement =
       container.querySelectorAll<HTMLElement>("#word-element")[activeWordIndex];
+    
+      if (activeLineOffset === 0 && activeWordElement?.getBoundingClientRect().top) {
+      setActiveLineOffset(activeWordElement?.getBoundingClientRect().top);
+    }
     const activeLetterElement =
       activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
         activeLetterIndex
@@ -152,17 +165,18 @@ const Paragraphs = () => {
         ];
     }
 
-      const nextElement =
+    const nextElement =
       activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
         activeLetterIndex + 1
       ];
-      nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
-      previousLetterElement?.querySelector('#letter').classList.add('text-white');
-      previousLetterElement?.querySelector('#cursor').classList.add('hidden');
-
+    nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
+    previousLetterElement?.querySelector('#letter').classList.add('text-white');
+    previousLetterElement?.querySelector('#cursor').classList.add('hidden');
+   
     if (seconds <= 0) {
       setIsStarted(false);
       setInputDisabled(true);
+      document.querySelector("#click-me")?.classList.remove("hidden");
     }
 
     if (activeWordIndex > 0) {
@@ -172,9 +186,13 @@ const Paragraphs = () => {
         ];
       clearStyleElement?.classList.remove("bg-yellow-300");
       clearStyleElement?.classList.remove("text-slate-700");
+      if (activeWordElement.getBoundingClientRect().top > activeLineOffset) {
+        scrollWithNextLine();
+        setActiveLineOffset(activeWordElement.getBoundingClientRect().top);
+      }
     }
 
-    if (recentIncorrectIndex) {
+    if (recentIncorrectIndex != null) {
       const redFlag =
         container.querySelectorAll<HTMLElement>("#word-element")[
           recentIncorrectIndex
@@ -187,7 +205,7 @@ const Paragraphs = () => {
       });
     }
 
-    if (incorrectLetterIndex) {
+    if (incorrectLetterIndex != null) {
       const redLetter =
         activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
           incorrectLetterIndex
@@ -230,36 +248,38 @@ const Paragraphs = () => {
         ref={paraRef}
         id="given-paragraph"
         onClick={() => handleClickMeFocus(textInput)}
-        className="flex w-1/2 h-1/2 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
+        className="flex w-1/2 h-1/3 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
       >
-        <div
-          id="click-me"
-          className="absolute justify-center rounded-2xl items-center h-full w-full flex hidden font-bold text-slate-50 bg-[#525252]/[.85] m-[-1rem]"
-        >
-          <span className="text-xl">Out of Focus! Click here or press any key to return</span>
-        </div>
-
-        {
-          <div id="text-container" className="flex flex-wrap pb-[1rem] overflow-hidden text-2xl font-medium">
-            {paragraph?.paragraph?.split(" ").map((word, index) => {
-              return (
-                <div
-                  className="flex flex-row p-1 relative"
-                  id="word-element"
-                  key={index}
-                >
-                  {word.split("").map((letter, letterIndex) => {
-                    return (
-                        <div id="letter-element" className="relative px-[0.01rem] flex flex-row" key={index + letterIndex}>
-                          <div id="cursor" className="hidden absolute animate-flash h-[2rem] w-[1.5px] bg-red-400"></div><span id='letter' className="">{letter}</span>
-                        </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+        <div id="scrolling-div" className="overflow-hidden">
+          <div
+            id="click-me"
+            className="absolute justify-center rounded-2xl items-center h-full w-full flex hidden font-bold text-slate-50 bg-[#525252]/[.85] m-[-1rem]"
+          >
+            <span className="text-xl">Out of Focus! Click here or press any key to return</span>
           </div>
-        }
+
+          {
+            <div id="text-container" className="flex flex-wrap pb-[1rem] text-2xl font-medium">
+                {paragraph?.paragraph?.split(" ").map((word, index) => {
+                  return (
+                    <div
+                      className="flex flex-row p-1 relative"
+                      id="word-element"
+                      key={index}
+                    >
+                      {word.split("").map((letter, letterIndex) => {
+                        return (
+                            <div id="letter-element" className="px-[0.01rem] flex flex-row" key={index + letterIndex}>
+                              <div id="cursor" className="hidden absolute h-[2rem] w-[1.5px] bg-red-400"></div><span id='letter' className="">{letter}</span>
+                            </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+            </div>
+          }
+        </div>
       </div>
       <div className="flex w-1/2 justify-between mt-4">
         <div className="flex flex-row">
@@ -268,16 +288,17 @@ const Paragraphs = () => {
           <StatsPill stat={seconds} statImg={sandClock.src} unit={"sec"} />
         </div>
         <Link href="/">
-          <div className="self-center">
+          <button
+            className="self-center"
+            onClick={resetStats}
+            >
             <img
-              role="button"
               tabIndex={0}
               className="p-2 rounded-lg hover:bg-[#D8D8D8] focus:bg-[#D8D8D8]"
               src={refreshing.src}
               alt="refresh button"
-              onClick={resetStats}
               />
-          </div>
+          </button>
         </Link>
       </div>
     </div>
