@@ -76,8 +76,9 @@ const Paragraphs = () => {
     setRecentIncorrectIndex(null);
     setIsStarted(false);
     setInputDisabled(false);
-    setActiveLine(0);
-    // dispatch(refreshParagraph());
+    // setActiveLine(0);
+    setActiveLineOffset(0);
+    dispatch(refreshParagraph());
     removeStyling();
     textInput.current.value = "";
     //active word also needs to be set
@@ -96,7 +97,11 @@ const Paragraphs = () => {
   };
   const keyBoardHandler = (_e: React.KeyboardEvent) => {
     if (_e.key === "Backspace") {
-      removeStyling(true, activeLetterIndex - 1, activeWordIndex)
+      // Don't allow correcting the previous word
+      if (activeLetterIndex == 0) {
+        return null;
+      }
+      removeStyling(true, activeLetterIndex - 1, activeWordIndex);
       setActiveLetterIndex((activeLetterIndex) => activeLetterIndex - 1);
     } else if (_e.key === " " || _e.code === "Space") {
       setActiveLetterIndex(0);
@@ -187,7 +192,7 @@ const Paragraphs = () => {
       }
     }
 
-    if (recentIncorrectIndex) {
+    if (recentIncorrectIndex != null) {
       const redFlag =
         container.querySelectorAll<HTMLElement>("#word-element")[
           recentIncorrectIndex
@@ -200,7 +205,7 @@ const Paragraphs = () => {
       });
     }
 
-    if (incorrectLetterIndex) {
+    if (incorrectLetterIndex != null) {
       const redLetter =
         activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
           incorrectLetterIndex

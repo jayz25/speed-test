@@ -2,8 +2,7 @@
 export const removeStyling = (backSpaceStyling = false, letterIndex = null, wordIndex = null) => {
   const container = document.querySelector<HTMLElement>("#given-paragraph");
     
-  if (backSpaceStyling && letterIndex && wordIndex) {
-      console.log('hate')
+  if (backSpaceStyling && letterIndex != null && wordIndex != null) {
       const activeWordEl = container.querySelectorAll<HTMLElement>("#word-element")[wordIndex]
       const activeLetterEl = activeWordEl.querySelectorAll<HTMLElement>("#letter-element #letter")[letterIndex]
       activeLetterEl.classList.remove(
@@ -31,7 +30,13 @@ export const removeStyling = (backSpaceStyling = false, letterIndex = null, word
               "hidden"
             );
           });
-        }
-      );
-    }
-  };
+
+        element.querySelectorAll("#letter-element #cursor").forEach((cursorElement) => {
+          cursorElement.classList.add(
+            "hidden"
+          );
+        });
+      }
+    );
+  }
+}
