@@ -33,8 +33,7 @@ const typingSpeedParagraphs = [
   ];
 
 const initialState = {
-    paragraphCollection: [],
-    currentParagraph: null,
+    wordsCollection: [],
     status: '',
 } as paragraphState
 
@@ -43,9 +42,7 @@ const paragraphSlice = createSlice({
   initialState: initialState as paragraphState,
   reducers: {
     refreshParagraph: (state) => {
-      state.currentParagraph = removePunc(
-        getRandomElementFromArray(state.paragraphCollection)
-      );
+      state.wordsCollection = state.wordsCollection
     },
   },
   extraReducers(builder) {
@@ -55,8 +52,7 @@ const paragraphSlice = createSlice({
       })
       .addCase(apiCall.fulfilled, (state, action) => {
             state.status = 'Success';
-            state.paragraphCollection = action.payload;  
-            state.currentParagraph = removePunc(state.paragraphCollection[0]);
+            state.wordsCollection = action.payload;
       })
       .addCase(apiCall.rejected, (state, action) => {
         state.status = "Rejected";
@@ -67,7 +63,8 @@ const paragraphSlice = createSlice({
 export const apiCall = createAsyncThunk(
   "paragraphs/getParagraphs",
   async (thunkAPI) => {
-    return typingSpeedParagraphs;
+    const response = await fetch("https://random-word-api.vercel.app/api?words=500");
+    return response.json();
   }
 );
 

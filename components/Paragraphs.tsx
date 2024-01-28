@@ -18,26 +18,10 @@ import { scrollWithNextLine } from "../utils/scrollWithNextLine";
 
 const Paragraphs = () => {
   const paragraph = useSelector(
-    (state: RootState) => state.paragraph.currentParagraph
+    (state: RootState) => state.paragraph.wordsCollection
   );
-  const dispatch = useDispatch<AppDispatch>();
-  const words = paragraph?.paragraph?.split(" ");
 
-  // Use this to reset stats 
-  // const [indexState, setIndexState] = useState({
-  //   wordsMatched: 0,
-  //   activeWordIndex: 0,
-  //   activeLetterIndex: 0,
-  //   charactersMatched: 0,
-  //   incorrectLetterIndex: null,
-  //   cpm: 0,
-  //   wpm: 0,
-  //   accuracy: 0,
-  //   wordsIncorrect: 0,
-  //   recentIncorrectIndex: null,
-  //   isStarted: false,
-  //   inputDisabled: false,
-  // });
+  const dispatch = useDispatch<AppDispatch>();
 
   const [wordsMatched, setWordsMatched] = useState(0);
   const [activeWordIndex, setActiveWordIndex] = useState(0);
@@ -56,7 +40,7 @@ const Paragraphs = () => {
   const [inputDisabled, setInputDisabled] = useState(false);
   const [currentTypedWord, setCurrentTypedWord] = useState("");
   const [activeWord, setActiveWord] = useState(
-    paragraph?.paragraph[activeWordIndex]
+    paragraph[activeWordIndex]
   );
   const [activeLineOffset, setActiveLineOffset] = useState(0);
   
@@ -119,7 +103,7 @@ const Paragraphs = () => {
         setWordsIncorrect((wordsIncorrect) => wordsIncorrect + 1);
       }
       setActiveWordIndex((activeWordIndex) => activeWordIndex + 1);
-      setActiveWord(words[activeWordIndex]);
+      setActiveWord(paragraph[activeWordIndex]);
       textInput.current.value = "";
     } else if (
       _e.key >= "a" &&
@@ -142,7 +126,7 @@ const Paragraphs = () => {
     const textInputElement = textInput.current;
     textInputElement.addEventListener("blur", handleBlurContainer);
     // textInputElement.addEventListener("focus", () => handleClickMeFocus(textInput));
-    setActiveWord(paragraph?.paragraph.split(" ")[activeWordIndex]);
+    setActiveWord(paragraph[activeWordIndex]);
     const container = document.querySelector<HTMLElement>("#given-paragraph");
     const activeWordElement =
       container.querySelectorAll<HTMLElement>("#word-element")[activeWordIndex];
@@ -221,7 +205,6 @@ const Paragraphs = () => {
     };
   }, [
     paragraph,
-    words,
     activeWord,
     seconds,
     recentIncorrectIndex,
@@ -260,7 +243,7 @@ const Paragraphs = () => {
 
           {
             <div id="text-container" className="flex flex-wrap pb-[1rem] text-2xl font-medium">
-                {paragraph?.paragraph?.split(" ").map((word, index) => {
+                {paragraph.map((word, index) => {
                   return (
                     <div
                       className="flex flex-row p-1 relative"

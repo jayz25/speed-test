@@ -1,14 +1,9 @@
 import store from "../redux/store";
 
-export type ParagraphCollection = Array<ParagraphObject>;
-export interface ParagraphObject {
-    id: number,
-    paragraph: string,
-}
+export type WordsCollection = Array<string>;
 
 export interface paragraphState {
-    paragraphCollection: ParagraphCollection,
-    currentParagraph: ParagraphObject,
+    wordsCollection: WordsCollection,
     status: string | null,
 }
 
