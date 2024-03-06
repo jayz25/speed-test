@@ -10,7 +10,8 @@ export const Home = () => {
         dispatch(apiCall());
     },[]);
     return (
-            <div className="relative flex flex-1 justify-center bg-[#525252]">
+        // TODO: Find out issue with unnecessary Y-axis scrollbar, currently fixed with overflow hidden here
+            <div className="relative h-full overflow-hidden flex flex-1 justify-center bg-[#525252]">
                 <Paragraphs />
             </div>
         )
