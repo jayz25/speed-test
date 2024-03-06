@@ -1,9 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { paragraphState } from "../types/types";
+import { WordsCollection, paragraphState } from "../types/types";
 import { getRandomElementFromArray } from "../utils/getRandomElement";
 import { removePunc } from "../utils/removePunc";
 
-
+// TODO: Remove this once API is used for paragraphs
 const typingSpeedParagraphs = [
     {
       id: 1,
@@ -37,12 +37,21 @@ const initialState = {
     status: '',
 } as paragraphState
 
+function shuffleWords(array: WordsCollection) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 const paragraphSlice = createSlice({
   name: "paragraph",
   initialState: initialState as paragraphState,
   reducers: {
     refreshParagraph: (state) => {
-      state.wordsCollection = state.wordsCollection
+      // TODO: Shuffling existing words doesn't feel right, maybe try fetching new words or something else??
+      state.wordsCollection = shuffleWords(state.wordsCollection)
     },
   },
   extraReducers(builder) {
@@ -63,7 +72,7 @@ const paragraphSlice = createSlice({
 export const apiCall = createAsyncThunk(
   "paragraphs/getParagraphs",
   async (thunkAPI) => {
-    const response = await fetch("https://random-word-api.vercel.app/api?words=500");
+    const response = await fetch("https://random-word-api.vercel.app/api?words=300");
     return response.json();
   }
 );
