@@ -27,7 +27,7 @@ export const Result = ({setModalVisibility, ...stats}) => {
                     </button>
                     <div className="p-[10px]">
                         <p>
-                            {`YOOOOOOO!  Congratulations! You're dumb, your Typing speed is ${stats.stats.words} WPM (${stats.stats.chars} CPM) with ${stats.stats.accuracy}% Accuracy. Wow dude. Just wow.`}
+                            {`You're doing great, your Typing speed is ${stats.stats.words} WPM (${stats.stats.chars} CPM) with ${stats.stats.accuracy}% Accuracy!`}
                         </p>
                     </div>
                 </div>
