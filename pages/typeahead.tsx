@@ -42,6 +42,7 @@ const typeahead = () => {
     const textInput = useRef<HTMLInputElement>(null);
     // TODO: Either use tracked "users" or use tracked "displayedUsers"
     const [displayedUsers, setDisplayedUsers] = useState<User[]>(users);
+    const [isHovering, setIsHovering] = useState<boolean>(false);
 
     const onInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
         toggleSuggestionsDropdown();
@@ -60,7 +61,8 @@ const typeahead = () => {
         setSelectedUsers((users) => users.filter(user => user.name !== lastSelectedUser.name));
     }
 
-    const onSelectListItem = (selectedUser: User) => {
+    const onSelectListItem = (e, selectedUser: User) => {
+        e.preventDefault();
         setDisplayedUsers((users) => users.filter(user => user.name !== selectedUser.name));
         setSelectedUsers((users) => [...users, selectedUser]);
     }
@@ -71,7 +73,7 @@ const typeahead = () => {
     }
 
     const getUserswithMatchingName = (inputValue: string): User[] => {
-        return users.filter((user) => (user.name.slice(0, inputValue.length) === inputValue)) || [];
+        return users.filter((user) => (user.name.toLowerCase().slice(0, inputValue.length) === inputValue.toLowerCase())) || [];
     }
 
     const onTypeaheadInput = (event: React.ChangeEvent) => {
@@ -92,7 +94,7 @@ const typeahead = () => {
     }
 
     const onSelectedItemKeyUp = (e: React.KeyboardEvent, user: User) => {
-        if (e.key === "Backspace" && document.activeElement === (e.target)) {
+        if ((e.key === "Enter" || e.key === "Backspace") && document.activeElement === (e.target)) {
             onDeselectItem(user);
             const selected = document.querySelector(".selected-users-container .selected-user-item:nth-last-of-type(2)");
             if (selected) {
@@ -105,7 +107,14 @@ const typeahead = () => {
 
     const onKeyUpDisplayedItem = (e: React.KeyboardEvent, user: User) => {
         if (e.key === "Enter") {
-            onSelectListItem(user);
+            onSelectListItem(e, user);
+        }
+    }
+
+    const onInputBlur = (e) => {
+        e.preventDefault();
+        if (!isHovering) {
+            setIsDropdownOpen(false);
         }
     }
 
@@ -124,6 +133,8 @@ const typeahead = () => {
                                     key={user.name+index}
                                     tabIndex={0} //Use interactive HTML element instead
                                     onClick={() => onDeselectItem(user)}
+                                    onMouseEnter={() => setIsHovering(true)}
+                                    onMouseLeave={() => setIsHovering(false)}
                                 >
                                     {user.name}
                                 </div>
@@ -136,17 +147,17 @@ const typeahead = () => {
         <div className="">
             <input
                 className="user-typeahead"
-                ref={textInput}
                 onKeyUp={onKeyUpInput}
                 onClick={onInputClick}
                 onChange={onTypeaheadInput}
                 value={typeaheadValue}
+                onBlur={onInputBlur}
                 placeholder="Enter user name"/>
         </div>
         {
             isDropdownOpen &&
             (   
-                <div className="suggestions-box">
+                <div className="suggestions-box" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
                     <ul 
                     // onBlur={closeDropdown}
                     >
@@ -154,7 +165,7 @@ const typeahead = () => {
                             displayedUsers && 
                             displayedUsers.map((user: User) => {
                                     return (
-                                        <li tabIndex={0} onClick={() => onSelectListItem(user)} onKeyUp={(e) => onKeyUpDisplayedItem(e, user)}>
+                                        <li tabIndex={0} onClick={(e) => onSelectListItem(e, user)} onKeyUp={(e) => onKeyUpDisplayedItem(e, user)}>
                                             {user.name}
                                         </li>
                                     )
