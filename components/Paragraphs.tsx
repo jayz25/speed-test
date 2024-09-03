@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import refreshing from "../static/refreshing.png";
-import { AppDispatch, RootState } from "../types/types";
+import { AppDispatch, RootState, TypingStats } from "../types/types";
 import StatsPill from "./StatsPill";
 import speedometer from "../static/speedometer.png";
 import sandClock from "../static/sandClock.png";
@@ -23,164 +23,208 @@ const Paragraphs = () => {
 
   const dispatch = useDispatch<AppDispatch>();
 
-  const [wordsMatched, setWordsMatched] = useState(0);
-  const [activeWordIndex, setActiveWordIndex] = useState(0);
-  const [activeLetterIndex, setActiveLetterIndex] = useState(0);
-  const [charactersMatched, setCharactersMatched] = useState(0);
-  const [incorrectLetterIndex, setIncorrectLetterIndex] = useState(null);
-  const [cpm, setCpm] = useState(0);
-  const [wpm, setWpm] = useState(0);
-  const [accuracy, setAccuracy] = useState(0);
-  const [wordsIncorrect, setWordsIncorrect] = useState(0);
-  const [recentIncorrectIndex, setRecentIncorrectIndex] = useState(null);
+  const initialStats: TypingStats = {
+    wordsMatched: 0,
+    activeWordIndex: 0,
+    activeLetterIndex: 0,
+    charactersMatched: 0,
+    incorrectLetterIndex: null,
+    wpm: 0,
+    cpm: 0,
+    accuracy: 0,
+    wordsIncorrect: 0,
+    recentIncorrectIndex: null,
+    activeWord: paragraph[0],
+    currentTypedWord: "",
+    activeLineOffset: 0,
+    isStarted: false,
+    inputDisabled: false
+  };
+
+  const [typingStats, setTypingStats] = useState<TypingStats>({
+    ...initialStats,
+  });
+
+  const updateTypingStats = (updates: Partial<TypingStats>) => {
+    setTypingStats(prevStats => ({ ...prevStats, ...updates }));
+  };
+
   const textInput = useRef<HTMLInputElement>(null);
-  const paraRef = useRef<HTMLParagraphElement>(null);
+  const paragraphContainerRef = useRef<HTMLParagraphElement>(null);
+  const container = useRef<HTMLElement>();
+  const wordElementsRef = useRef<HTMLElement[]>([]);
   const { seconds, start, reset, timeout } = useTimer(60);
-  const [isStarted, setIsStarted] = useState(false);
-  const [inputDisabled, setInputDisabled] = useState(false);
-  const [currentTypedWord, setCurrentTypedWord] = useState("");
-  const [activeWord, setActiveWord] = useState(
-    paragraph[activeWordIndex]
-  );
-  const [activeLineOffset, setActiveLineOffset] = useState(0);
   
   const resetStats = () => {
-    setInputFocus(textInput);
-    reset(); // useTimer
-    // setIndexState(indexState => indexState);
-    setWordsMatched(0);
-    setActiveWordIndex(0);
-    setActiveLetterIndex(0);
-    setCharactersMatched(0);
-    setIncorrectLetterIndex(null);
-    setCpm(0);
-    setWpm(0);
-    setAccuracy(0);
-    setWordsIncorrect(0);
-    setRecentIncorrectIndex(null);
-    setIsStarted(false);
-    setInputDisabled(false);
-    // setActiveLine(0);
-    setActiveLineOffset(0);
     dispatch(refreshParagraph());
     removeStyling();
+    reset(); // useTimer
+    updateTypingStats(initialStats);
     textInput.current.value = "";
-    //active word also needs to be set
+    setInputFocus(textInput);
   };
   
   const inputCapture = (_e: React.ChangeEvent) => {
     _e.preventDefault();
 
-    if (!isStarted) {
-      setIsStarted(true);
+    if (!typingStats.isStarted) {
+      updateTypingStats({
+        isStarted: true,
+      });
       start();
     }
-    setCurrentTypedWord(
-      ((_e.target as HTMLInputElement).value as string).trim()
-    );
+    updateTypingStats({
+      currentTypedWord: ((_e.target as HTMLInputElement).value as string).trim() 
+    });
   };
+
   const keyBoardHandler = (_e: React.KeyboardEvent) => {
+    const { activeLetterIndex, activeWord } = typingStats;
     if (_e.key === "Backspace") {
       // Don't allow correcting the previous word
       if (activeLetterIndex == 0) {
         return null;
       }
-      removeStyling(true, activeLetterIndex - 1, activeWordIndex);
-      setActiveLetterIndex((activeLetterIndex) => activeLetterIndex - 1);
+      removeStyling(true, activeLetterIndex - 1, typingStats.activeWordIndex);
+
+      updateTypingStats({
+        activeLetterIndex: activeLetterIndex - 1
+      });
     } else if (_e.key === " " || _e.code === "Space") {
-      setActiveLetterIndex(0);
+      const {
+        currentTypedWord,
+        wordsMatched,
+        wordsIncorrect,
+        activeWordIndex,
+        charactersMatched
+      } = typingStats;
+
+      updateTypingStats({
+        activeLetterIndex: 0,
+      });
 
       if (
         currentTypedWord.length === activeWord.length &&
         currentTypedWord === activeWord
       ) {
-        setWordsMatched((wordsMatched) => wordsMatched + 1);
-        setCharactersMatched(
-          (charactersMatched) => charactersMatched + currentTypedWord.length
-        );
+        updateTypingStats({
+          wordsMatched: wordsMatched + 1,
+          charactersMatched: charactersMatched + currentTypedWord.length,
+        });
       } else {
-        setRecentIncorrectIndex(activeWordIndex);
-        setWordsIncorrect((wordsIncorrect) => wordsIncorrect + 1);
+        updateTypingStats({
+          recentIncorrectIndex: activeWordIndex,
+          wordsIncorrect: wordsIncorrect + 1,
+        });
       }
-      setActiveWordIndex((activeWordIndex) => activeWordIndex + 1);
-      setActiveWord(paragraph[activeWordIndex]);
+      updateTypingStats({
+        activeWordIndex: activeWordIndex + 1,
+        activeWord: paragraph[activeWordIndex],
+      });
       textInput.current.value = "";
     } else if (
       _e.key >= "a" &&
       _e.key <= "z" &&
       activeWord[activeLetterIndex] == _e.key
     ) {
-      setActiveLetterIndex((activeLetterIndex) => activeLetterIndex + 1);
+      updateTypingStats({
+        activeLetterIndex: activeLetterIndex + 1,
+      });
     } else {
       if (_e.key !== "Shift") {
-        setIncorrectLetterIndex(activeLetterIndex);
-        setActiveLetterIndex((activeLetterIndex) => activeLetterIndex + 1);
+        updateTypingStats({
+          incorrectLetterIndex: activeLetterIndex,
+          activeLetterIndex: activeLetterIndex + 1,
+        });
       }
     }
   };
 
   useEffect(() => {
-    setCpm(calculateCPM(charactersMatched, timeout));
-    setWpm(calculateWPM(wordsMatched, timeout));
-    setAccuracy(calculateAccuracy(wordsIncorrect, wordsMatched));
-    const textInputElement = textInput.current;
-    textInputElement.addEventListener("blur", handleBlurContainer);
-    // textInputElement.addEventListener("focus", () => handleClickMeFocus(textInput));
-    setActiveWord(paragraph[activeWordIndex]);
-    const container = document.querySelector<HTMLElement>("#given-paragraph");
-    const activeWordElement =
-      container.querySelectorAll<HTMLElement>("#word-element")[activeWordIndex];
-    
-      if (activeLineOffset === 0 && activeWordElement?.getBoundingClientRect().top) {
-      setActiveLineOffset(activeWordElement?.getBoundingClientRect().top);
+    if (paragraphContainerRef.current) {
+      
+      updateTypingStats({
+        activeWord: paragraph[typingStats.activeWordIndex],
+      });
+      wordElementsRef.current = Array.from(paragraphContainerRef.current.querySelectorAll<HTMLElement>("#word-element"));
+    }  
+  }, [paragraph]);
+
+  useEffect(() => {
+    if (wordElementsRef.current.length === 0) {
+      return;
     }
-    const activeLetterElement =
-      activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
-        activeLetterIndex
-      ];
+    const {
+      charactersMatched,
+      wordsMatched,
+      wordsIncorrect,
+      activeWordIndex,
+      activeLineOffset,
+      activeLetterIndex,
+      recentIncorrectIndex,
+      incorrectLetterIndex,
+    } = typingStats;
+
+    updateTypingStats({
+      cpm: calculateCPM(charactersMatched, timeout),
+      wpm: calculateWPM(wordsMatched, timeout),
+      accuracy: calculateAccuracy(wordsIncorrect, wordsMatched),
+      activeWord: paragraph[activeWordIndex],
+    });
+  
+    const textInputElement = textInput.current;
+    const activeWordElement = wordElementsRef.current[activeWordIndex];
+    const activeWordLetters = activeWordElement?.querySelectorAll<HTMLElement>("#letter-element");
+    const activeLetterElement = activeWordLetters[activeLetterIndex];
+    const nextElement = activeWordLetters[activeLetterIndex + 1];
     let previousLetterElement: HTMLElement;
+
+    textInputElement.addEventListener("blur", handleBlurContainer);
+
+    
+    
+    if (activeLineOffset === 0 && activeWordElement?.getBoundingClientRect().top) {
+      updateTypingStats({
+        activeLineOffset: activeWordElement?.getBoundingClientRect().top,
+      });
+    }
+    
     activeLetterElement?.querySelector('#letter').classList.remove('text-white'); // this is used for backspacing
     activeLetterElement?.querySelector('#cursor').classList.remove('hidden');
 
     if (activeLetterIndex > 0) {
       previousLetterElement =
-        activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
+      activeWordLetters[
           activeLetterIndex - 1
         ];
     }
-
-    const nextElement =
-      activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
-        activeLetterIndex + 1
-      ];
+    
     nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
     previousLetterElement?.querySelector('#letter').classList.add('text-white');
     previousLetterElement?.querySelector('#cursor').classList.add('hidden');
    
     if (seconds <= 0) {
-      setIsStarted(false);
-      setInputDisabled(true);
+      updateTypingStats({
+        isStarted: false,
+        inputDisabled: true
+      });
       document.querySelector("#click-me")?.classList.remove("hidden");
     }
 
     if (activeWordIndex > 0) {
-      const clearStyleElement =
-        container.querySelectorAll<HTMLElement>("#word-element")[
-          activeWordIndex - 1
-        ];
+      const clearStyleElement = wordElementsRef.current[activeWordIndex - 1];
       clearStyleElement?.classList.remove("bg-yellow-300");
       clearStyleElement?.classList.remove("text-slate-700");
       if (activeWordElement.getBoundingClientRect().top > activeLineOffset) {
         scrollWithNextLine();
-        setActiveLineOffset(activeWordElement.getBoundingClientRect().top);
+        updateTypingStats({
+          activeLineOffset: activeWordElement.getBoundingClientRect().top,
+        });
       }
     }
 
     if (recentIncorrectIndex != null) {
-      const redFlag =
-        container.querySelectorAll<HTMLElement>("#word-element")[
-          recentIncorrectIndex
-        ];
+      const redFlag = wordElementsRef.current[recentIncorrectIndex];
       redFlag?.classList.add("line-through");
       redFlag?.querySelectorAll<HTMLElement>("#letter-element").forEach((element: HTMLElement) => {
         element.querySelector(
@@ -190,45 +234,35 @@ const Paragraphs = () => {
     }
 
     if (incorrectLetterIndex != null) {
-      const redLetter =
-        activeWordElement?.querySelectorAll<HTMLElement>("#letter-element")[
-          incorrectLetterIndex
-        ];
+      const redLetter = activeWordLetters[incorrectLetterIndex];
       redLetter?.querySelector('#letter').classList.remove("text-white");
       redLetter?.querySelector('#letter').classList.add("text-red-700");
-      setIncorrectLetterIndex(null);
+      updateTypingStats({
+        incorrectLetterIndex: null,
+      });
     }
 
     return () => {
       textInputElement.removeEventListener("blur", handleBlurContainer);
-      // textInputElement.removeEventListener("focus", () => handleClickMeFocus(textInput));
     };
   }, [
-    paragraph,
-    activeWord,
-    seconds,
-    recentIncorrectIndex,
-    activeWordIndex,
-    activeLetterIndex,
-    wordsMatched,
-    charactersMatched,
-    accuracy
-  ]); //ref
+    typingStats.activeWordIndex, typingStats.activeLetterIndex,
+  ]);
 
   return (
     <div className="flex justify-center items-center flex-col">
       <input
         className="h-0 w-0"
         id="input-text"
-        placeholder={activeWord}
+        placeholder={typingStats.activeWord}
         onChange={inputCapture}
-        disabled={inputDisabled}
+        disabled={typingStats.inputDisabled}
         ref={textInput}
         onKeyDown={keyBoardHandler}
         onFocus={() => handleClickMeFocus}
       />
       <div
-        ref={paraRef}
+        ref={paragraphContainerRef}
         id="given-paragraph"
         onClick={() => handleClickMeFocus(textInput)}
         className="flex w-1/2 h-1/3 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
@@ -266,8 +300,8 @@ const Paragraphs = () => {
       </div>
       <div className="flex w-1/2 justify-between mt-4">
         <div className="flex flex-row">
-          <StatsPill stat={wpm} statImg={speedometer.src} unit={"wpm"} />
-          <StatsPill stat={accuracy} statImg={checkMark.src} unit={"%"} />
+          <StatsPill stat={typingStats.wpm} statImg={speedometer.src} unit={"wpm"} />
+          <StatsPill stat={typingStats.accuracy} statImg={checkMark.src} unit={"%"} />
           <StatsPill stat={seconds} statImg={sandClock.src} unit={"sec"} />
         </div>
         <Link href="/">
