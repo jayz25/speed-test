@@ -8,16 +8,13 @@ export const Result = ({setModalVisibility, ...stats}) => {
         dispatch(addStatCall(stats.stats));
         useEffect(() => {
             const closeModal = (event: KeyboardEvent) => {
-                var key = event.key || event.keyCode;
-                // event.keyCode is deprecated since inconsistency on platforms, this is us gracefully degrading from event.key to event.keyCode
-                if(key === 'Esc' || key === 'Escape' || key === 27) {
+                if(event.key === 'Esc' ||event.key === 'Escape') {
                     setModalVisibility(false);
                 }
             }
             window.addEventListener('keydown', closeModal);
         })
         return (
-
             <>
             {/* Add transition effect for modal opening and closing and get a good close icon */}
             <div className="flex bg-[#EFEFEF] absolute top-0 right-0 left-0 bottom-0 justify-center bg-opacity-70 items-center">

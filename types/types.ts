@@ -27,6 +27,24 @@ export interface statsInstancePayload {
     accuracy: number
 }
 
+export interface TypingStats {
+    wordsMatched: number,
+    activeWordIndex: number,
+    activeLetterIndex: number,
+    charactersMatched: number,
+    incorrectLetterIndex: null | number,
+    wpm: number,
+    cpm: number,
+    accuracy: number,
+    wordsIncorrect: number,
+    recentIncorrectIndex: null | number,
+    activeWord: string,
+    currentTypedWord: string,
+    activeLineOffset: number,
+    isStarted: boolean,
+    inputDisabled: boolean
+};
+
 export type AppDispatch = typeof store.dispatch;
 
 export type RootState = ReturnType<typeof store.getState>;
