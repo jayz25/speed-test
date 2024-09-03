@@ -14,7 +14,7 @@ import { refreshParagraph } from "../redux/paragraph";
 import { handleBlurContainer, handleClickMeFocus, setInputFocus } from "../utils/focusHandlers";
 import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
-import { scrollWithNextLine } from "../utils/scrollWithNextLine";
+import { scrollWithNextLine, scrollReset } from "../utils/scrollHelpers";
 
 const Paragraphs = () => {
   const paragraph = useSelector(
@@ -51,12 +51,12 @@ const Paragraphs = () => {
 
   const textInput = useRef<HTMLInputElement>(null);
   const paragraphContainerRef = useRef<HTMLParagraphElement>(null);
-  const container = useRef<HTMLElement>();
   const wordElementsRef = useRef<HTMLElement[]>([]);
   const { seconds, start, reset, timeout } = useTimer(60);
   
   const resetStats = () => {
     dispatch(refreshParagraph());
+    scrollReset();
     removeStyling();
     reset(); // useTimer
     updateTypingStats(initialStats);
@@ -99,10 +99,6 @@ const Paragraphs = () => {
         charactersMatched
       } = typingStats;
 
-      updateTypingStats({
-        activeLetterIndex: 0,
-      });
-
       if (
         currentTypedWord.length === activeWord.length &&
         currentTypedWord === activeWord
@@ -117,10 +113,13 @@ const Paragraphs = () => {
           wordsIncorrect: wordsIncorrect + 1,
         });
       }
+
       updateTypingStats({
+        activeLetterIndex: 0,
         activeWordIndex: activeWordIndex + 1,
         activeWord: paragraph[activeWordIndex],
       });
+      
       textInput.current.value = "";
     } else if (
       _e.key >= "a" &&
@@ -142,12 +141,16 @@ const Paragraphs = () => {
 
   useEffect(() => {
     if (paragraphContainerRef.current) {
-      
+      const textInputElement = textInput.current;
+      textInputElement.addEventListener("blur", handleBlurContainer);
       updateTypingStats({
         activeWord: paragraph[typingStats.activeWordIndex],
       });
       wordElementsRef.current = Array.from(paragraphContainerRef.current.querySelectorAll<HTMLElement>("#word-element"));
-    }  
+      return () => {
+        textInputElement.removeEventListener("blur", handleBlurContainer);
+      };
+    }
   }, [paragraph]);
 
   useEffect(() => {
@@ -172,34 +175,26 @@ const Paragraphs = () => {
       activeWord: paragraph[activeWordIndex],
     });
   
-    const textInputElement = textInput.current;
     const activeWordElement = wordElementsRef.current[activeWordIndex];
     const activeWordLetters = activeWordElement?.querySelectorAll<HTMLElement>("#letter-element");
     const activeLetterElement = activeWordLetters[activeLetterIndex];
     const nextElement = activeWordLetters[activeLetterIndex + 1];
     let previousLetterElement: HTMLElement;
 
-    textInputElement.addEventListener("blur", handleBlurContainer);
+    activeLetterElement?.querySelector('#letter').classList.remove('text-white'); // this is used for backspacing
+    activeLetterElement?.querySelector('#cursor').classList.remove('hidden');
+    nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
 
-    
-    
     if (activeLineOffset === 0 && activeWordElement?.getBoundingClientRect().top) {
       updateTypingStats({
         activeLineOffset: activeWordElement?.getBoundingClientRect().top,
       });
     }
     
-    activeLetterElement?.querySelector('#letter').classList.remove('text-white'); // this is used for backspacing
-    activeLetterElement?.querySelector('#cursor').classList.remove('hidden');
-
     if (activeLetterIndex > 0) {
-      previousLetterElement =
-      activeWordLetters[
-          activeLetterIndex - 1
-        ];
+      previousLetterElement = activeWordLetters[activeLetterIndex - 1];
     }
-    
-    nextElement?.querySelector('#cursor').classList.add('hidden'); // this is used for backspacing
+
     previousLetterElement?.querySelector('#letter').classList.add('text-white');
     previousLetterElement?.querySelector('#cursor').classList.add('hidden');
    
@@ -213,8 +208,7 @@ const Paragraphs = () => {
 
     if (activeWordIndex > 0) {
       const clearStyleElement = wordElementsRef.current[activeWordIndex - 1];
-      clearStyleElement?.classList.remove("bg-yellow-300");
-      clearStyleElement?.classList.remove("text-slate-700");
+      clearStyleElement?.classList.remove("bg-yellow-300", "text-slate-700");
       if (activeWordElement.getBoundingClientRect().top > activeLineOffset) {
         scrollWithNextLine();
         updateTypingStats({
@@ -235,16 +229,13 @@ const Paragraphs = () => {
 
     if (incorrectLetterIndex != null) {
       const redLetter = activeWordLetters[incorrectLetterIndex];
-      redLetter?.querySelector('#letter').classList.remove("text-white");
-      redLetter?.querySelector('#letter').classList.add("text-red-700");
+      const letterEl = redLetter?.querySelector('#letter');
+      letterEl?.classList.remove("text-white");
+      letterEl?.classList.add("text-red-700");
       updateTypingStats({
         incorrectLetterIndex: null,
       });
     }
-
-    return () => {
-      textInputElement.removeEventListener("blur", handleBlurContainer);
-    };
   }, [
     typingStats.activeWordIndex, typingStats.activeLetterIndex,
   ]);
@@ -255,6 +246,7 @@ const Paragraphs = () => {
         className="h-0 w-0"
         id="input-text"
         placeholder={typingStats.activeWord}
+        autoComplete="off"
         onChange={inputCapture}
         disabled={typingStats.inputDisabled}
         ref={textInput}
