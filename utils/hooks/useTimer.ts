@@ -6,17 +6,19 @@ const useTimer = (timeout) => {
   
   const start = () => {
     setTimerId(setInterval(() => {
-      if(seconds <= 0)
+      if(seconds <= 0) {
         return;
+      }
       else
-        setSeconds((seconds) => seconds - 1);
-    },1000));
+        setSeconds((seconds: number) => seconds - 1);
+    },  1000));
   }
 
   const reset = () => {
     clearInterval(timerId)
     setSeconds(60);
   };
+  
   useEffect(() => {
     if(seconds <= 0) {
       clearInterval(timerId);
@@ -24,7 +26,7 @@ const useTimer = (timeout) => {
     }
   },[seconds]);
 
-  return {start, reset, seconds, timeout};
+  return {start, reset, seconds};
 };
 
 export default useTimer;
