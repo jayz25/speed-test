@@ -66,7 +66,7 @@ const Paragraphs = () => {
 
   const inputCapture = (_e: React.ChangeEvent) => {
     _e.preventDefault();
-
+    textInput.current.focus();
     if (!typingStats.isStarted) {
       updateTypingStats({
         isStarted: true,
@@ -182,7 +182,7 @@ const Paragraphs = () => {
 
     updateTypingStats({
       cpm: calculateCPM(charactersMatched),
-      wpm: calculateWPM(wordsMatched),
+      wpm: calculateWPM(charactersMatched, seconds),
       accuracy: calculateAccuracy(wordsIncorrect, wordsMatched),
       activeWord: paragraph[activeWordIndex],
     });
