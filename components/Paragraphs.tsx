@@ -11,7 +11,6 @@ import { calculateWPM } from "../utils/calculateWPM";
 import useTimer from "../utils/hooks/useTimer";
 import { calculateAccuracy } from "../utils/calculateAccuracy";
 import { refreshParagraph } from "../redux/paragraph";
-import { handleBlurContainer, handleClickMeFocus, setInputFocus } from "../utils/focusHandlers";
 import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
 import { scrollWithNextLine, scrollReset } from "../utils/scrollHelpers";
@@ -51,6 +50,7 @@ const Paragraphs = () => {
   const textInput = useRef<HTMLInputElement>(null);
   const paragraphContainerRef = useRef<HTMLParagraphElement>(null);
   const wordElementsRef = useRef<HTMLElement[]>([]);
+  const clickMeFocusEl = useRef<HTMLDivElement>(null);
   
   const resetStats = () => {
     dispatch(refreshParagraph());
@@ -59,14 +59,15 @@ const Paragraphs = () => {
     updateTypingStats(initialStats);
     scrollReset();
     textInput.current.value = "";
-    setInputFocus(textInput);
+    textInput.current?.focus();
   };
 
   const { seconds, start, reset } = useTimer(60);
 
   const inputCapture = (_e: React.ChangeEvent) => {
     _e.preventDefault();
-    textInput.current.focus();
+    textInput.current?.focus();
+    hideFocusMePopUp();
     if (!typingStats.isStarted) {
       updateTypingStats({
         isStarted: true,
@@ -141,17 +142,12 @@ const Paragraphs = () => {
 
   useEffect(() => {
     if (paragraphContainerRef.current) {
-      const textInputElement = textInput.current;
-      textInput.current.focus();
-      textInputElement.addEventListener("blur", handleBlurContainer);
+      textInput.current?.focus();
       updateTypingStats({
         activeWord: paragraph[typingStats.activeWordIndex],
       });
       wordElementsRef.current = Array.from(paragraphContainerRef.current.querySelectorAll<HTMLElement>("#word-element"));
       wordElementsRef.current[0]?.querySelector('#cursor').classList.remove('hidden');
-      return () => {
-        textInputElement.removeEventListener("blur", handleBlurContainer);
-      };
     }
   }, [paragraph]);
 
@@ -161,7 +157,6 @@ const Paragraphs = () => {
         isStarted: false,
         inputDisabled: true
       });
-      document.querySelector("#click-me")?.classList.remove("hidden");
     }
   }, [seconds]);
 
@@ -244,6 +239,44 @@ const Paragraphs = () => {
     typingStats.activeWordIndex, typingStats.activeLetterIndex
   ]);
 
+  const handleInputBlur = (_event: React.FocusEvent<HTMLDivElement>) => {
+    const relatedTarget = _event.relatedTarget as HTMLElement | null;
+    if (relatedTarget && relatedTarget?.id === "reset-stats-btn") {
+      _event.preventDefault();
+      return;
+    }
+    showFocusMePopUp();
+  };
+
+  const hideFocusMePopUp = () => {    
+    clickMeFocusEl.current.classList.add("hidden");
+  }
+
+  const showFocusMePopUp = () => {
+    clickMeFocusEl.current.classList.remove("hidden");
+  }
+
+  const onResetButtonMouseDown = (_event: React.MouseEvent<HTMLButtonElement>) => {
+    _event.preventDefault();
+  }
+
+  const onFocusResetButton = (_event: React.FocusEvent<HTMLButtonElement>) => {
+    showFocusMePopUp();
+  }
+
+  const onFocusTextInput = (_event: React.FocusEvent<HTMLInputElement>) => {
+    hideFocusMePopUp();
+  }
+
+  const onParagraphClick = (_event: React.MouseEvent<HTMLDivElement>) => {
+    _event.preventDefault();
+    textInput.current?.focus();
+  }
+
+  const onParagraphMouseDown = (_event: React.MouseEvent<HTMLDivElement>) => {
+    _event.preventDefault();
+  }
+
   return (
     <>
        <div className="flex justify-center items-center flex-col">
@@ -256,17 +289,20 @@ const Paragraphs = () => {
             disabled={typingStats.inputDisabled}
             ref={textInput}
             onKeyDown={keyBoardHandler}
-            onFocus={() => handleClickMeFocus}
+            onFocus={onFocusTextInput}
+            onBlur={handleInputBlur}
           />
           <div
             ref={paragraphContainerRef}
             id="given-paragraph"
-            onClick={() => handleClickMeFocus(textInput)}
+            onClick={onParagraphClick}
+            onMouseDown={onParagraphMouseDown}
             className="flex w-1/2 h-1/3 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
           >
             <div id="scrolling-div" className="overflow-hidden">
               <div
                 id="click-me"
+                ref={clickMeFocusEl}
                 className="absolute justify-center rounded-2xl items-center h-full w-full flex hidden font-bold text-slate-50 bg-[#525252]/[.85] m-[-1rem]"
               >
                 <span className="text-xl">Out of Focus! Click here or press any key to return</span>
@@ -305,9 +341,11 @@ const Paragraphs = () => {
               <button
                 className="self-center"
                 onClick={resetStats}
+                id="reset-stats-btn"
+                onMouseDown={onResetButtonMouseDown}
+                onFocus={onFocusResetButton}
                 >
                 <img
-                  tabIndex={0}
                   className="p-2 rounded-lg hover:bg-[#D8D8D8] focus:bg-[#D8D8D8]"
                   src={refreshing.src}
                   alt="refresh button"
