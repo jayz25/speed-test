@@ -15,7 +15,7 @@ import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
 import { scrollWithNextLine, scrollReset } from "../utils/scrollHelpers";
 
-const TIME_TO_TYPE = 10;
+const TIME_TO_TYPE = 60;
 
 const Paragraphs = () => {
   const paragraph = useSelector(
