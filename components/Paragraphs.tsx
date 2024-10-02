@@ -15,6 +15,8 @@ import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
 import { scrollWithNextLine, scrollReset } from "../utils/scrollHelpers";
 
+const TIME_TO_TYPE = 10;
+
 const Paragraphs = () => {
   const paragraph = useSelector(
     (state: RootState) => state.paragraph.wordsCollection
@@ -39,6 +41,7 @@ const Paragraphs = () => {
     inputDisabled: false
   };
 
+  const [isEnlargedPill, setIsEnlargedPill] = useState<boolean>(false);
   const [typingStats, setTypingStats] = useState<TypingStats>({
     ...initialStats,
   });
@@ -53,6 +56,7 @@ const Paragraphs = () => {
   const clickMeFocusEl = useRef<HTMLDivElement>(null);
   
   const resetStats = () => {
+    setIsEnlargedPill(false);
     dispatch(refreshParagraph());
     removeStyling();
     reset(); // useTimer
@@ -62,7 +66,7 @@ const Paragraphs = () => {
     textInput.current?.focus();
   };
 
-  const { seconds, start, reset } = useTimer(60);
+  const { seconds, start, reset } = useTimer(TIME_TO_TYPE);
 
   const inputCapture = (_e: React.ChangeEvent) => {
     _e.preventDefault();
@@ -157,6 +161,7 @@ const Paragraphs = () => {
         isStarted: false,
         inputDisabled: true
       });
+      setIsEnlargedPill(true);
     }
   }, [seconds]);
 
@@ -279,7 +284,7 @@ const Paragraphs = () => {
 
   return (
     <>
-       <div className="flex justify-center items-center flex-col">
+      <div className="flex justify-center items-center flex-col w-full">
           <input
             className="h-0 w-0"
             id="input-text"
@@ -297,7 +302,7 @@ const Paragraphs = () => {
             id="given-paragraph"
             onClick={onParagraphClick}
             onMouseDown={onParagraphMouseDown}
-            className="flex w-1/2 h-1/3 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700"
+            className={`flex w-1/2 h-1/3 relative rounded-2xl p-4 bg-[#C5C5C5] font-bold text-slate-700 ${isEnlargedPill && "hidden"}`}
           >
             <div id="scrolling-div" className="overflow-hidden">
               <div
@@ -331,11 +336,11 @@ const Paragraphs = () => {
               }
             </div>
           </div>
-          <div className="flex w-1/2 justify-between mt-4">
-            <div className="flex flex-row">
-              <StatsPill stat={typingStats.wpm} statImg={speedometer.src} unit={"wpm"} />
-              <StatsPill stat={typingStats.accuracy} statImg={checkMark.src} unit={"%"} />
-              <StatsPill stat={seconds} statImg={sandClock.src} unit={"sec"} />
+          <div className={`flex w-1/2 justify-between mt-4 ${isEnlargedPill ? "flex-col" : "flex-row"}`}>
+            <div className="flex flex-row justify-center">
+              <StatsPill stat={typingStats.wpm} statImg={speedometer.src} unit={"wpm"} enlargedPill={isEnlargedPill} />
+              <StatsPill stat={typingStats.accuracy} statImg={checkMark.src} unit={"%"} enlargedPill={isEnlargedPill} />
+              <StatsPill stat={seconds} statImg={sandClock.src} unit={"sec"} enlargedPill={isEnlargedPill} />
             </div>
             <Link href="/">
               <button
@@ -353,7 +358,7 @@ const Paragraphs = () => {
               </button>
             </Link>
           </div>
-        </div>
+      </div>
     </>
   )
 };
