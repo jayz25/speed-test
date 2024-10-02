@@ -1,5 +1,13 @@
+import RenderStat from "./RenderStat";
 
-const StatsPill = ({stat, statImg, unit}: {stat: number, statImg: string, unit: string}) => {
+const StatsPill = ({stat, statImg, unit, enlargedPill}: {stat: number, statImg: string, unit: string, enlargedPill: boolean}) => {
+    if (enlargedPill) {
+        return (
+            <div className="flex w-40 h-40 bg-white m-1 justify-center items-center">
+                <RenderStat targetValue={stat} unit={unit} />
+            </div>
+        )
+    }
     return (
             <div className='mr-5 overflow-auto flex flex-row items-center justify-around rounded-lg mt-3 mr-2 w-[6.5rem] h-[2.5rem] shadow-lg bg-[#ffffff]'>
                 <div className="flex items-center flex-1 bg-[#D8D8D8] h-full w-full px-1 justifyy-center">

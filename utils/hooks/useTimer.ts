@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 const useTimer = (timeout) => {
+  const initialTimeout = timeout || 60;
   const [seconds, setSeconds] = useState(timeout || 60);
   const [timerId, setTimerId] = useState(null);
   
@@ -16,13 +17,13 @@ const useTimer = (timeout) => {
 
   const reset = () => {
     clearInterval(timerId)
-    setSeconds(60);
+    setSeconds(initialTimeout);
   };
   
   useEffect(() => {
     if(seconds <= 0) {
       clearInterval(timerId);
-      setSeconds(60);
+      setSeconds(initialTimeout);
     }
   },[seconds]);
 
