@@ -96,6 +96,11 @@ const Paragraphs = () => {
         activeLetterIndex: activeLetterIndex - 1
       });
     } else if (_e.key === " " || _e.code === "Space") {
+      if (activeLetterIndex === 0) {
+        // Prevent user from skipping word
+        // This will prevent infinite skipping of word if space is spammed
+        return;
+      }
       const {
         currentTypedWord,
         wordsMatched,
