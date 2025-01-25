@@ -14,6 +14,7 @@ import { refreshParagraph } from "../redux/paragraph";
 import { removeStyling } from "../utils/removeStyling";
 import Link from "next/link";
 import { scrollWithNextLine, scrollReset } from "../utils/scrollHelpers";
+import CapsLockAlert from "./CapsLockAlert";
 
 const TIME_TO_TYPE = 60;
 
@@ -42,6 +43,7 @@ const Paragraphs = () => {
   };
 
   const [isEnlargedPill, setIsEnlargedPill] = useState<boolean>(false);
+  const [isCapsLockOn, setIsCapsLockOn] = useState<boolean>(false);
   const [typingStats, setTypingStats] = useState<TypingStats>({
     ...initialStats,
   });
@@ -78,12 +80,21 @@ const Paragraphs = () => {
       });
       start();
     }
+
     updateTypingStats({
-      currentTypedWord: ((_e.target as HTMLInputElement).value as string).trim() 
+      currentTypedWord: textInput.current.value.trim() 
     });
   };
 
   const keyBoardHandler = (_e: React.KeyboardEvent) => {
+
+    setIsCapsLockOn(_e.getModifierState('CapsLock'));
+    
+    // Check if any modifier key is pressed
+    if (_e.ctrlKey || _e.altKey || _e.metaKey || _e.shiftKey || ["CapsLock", "Tab"].includes(_e.key)) {
+      return;
+    }
+
     const { activeLetterIndex, activeWord } = typingStats;
     if (_e.key === "Backspace") {
       // Don't allow correcting the previous word
@@ -113,16 +124,16 @@ const Paragraphs = () => {
         currentTypedWord.length === activeWord.length &&
         currentTypedWord === activeWord
       ) {
-        updateTypingStats({
-          wordsMatched: wordsMatched + 1,
-          charactersMatched: charactersMatched + currentTypedWord.length,
-        });
-      } else {
-        updateTypingStats({
-          recentIncorrectIndex: activeWordIndex,
-          wordsIncorrect: wordsIncorrect + 1,
-        });
-      }
+          updateTypingStats({
+            wordsMatched: wordsMatched + 1,
+            charactersMatched: charactersMatched + currentTypedWord.length,
+          });
+        } else {
+          updateTypingStats({
+            recentIncorrectIndex: activeWordIndex,
+            wordsIncorrect: wordsIncorrect + 1,
+          });
+        }
 
       updateTypingStats({
         activeLetterIndex: 0,
@@ -131,16 +142,15 @@ const Paragraphs = () => {
       });
       
       textInput.current.value = "";
-    } else if (
-      _e.key >= "a" &&
-      _e.key <= "z" &&
-      activeWord[activeLetterIndex] == _e.key
+    } else if ((_e.key >= "a" && _e.key <= "z")
+      || (_e.key >= "0" &&  _e.key <= "57")
+      || (_e.key >= "A" && _e.key <= "Z")
     ) {
-      updateTypingStats({
-        activeLetterIndex: activeLetterIndex + 1,
-      });
-    } else {
-      if (!['Shift', 'Tab', 'Alt'].includes(_e.key)) {
+      if (activeWord[activeLetterIndex] == _e.key) {
+        updateTypingStats({
+          activeLetterIndex: activeLetterIndex + 1,
+        });
+      } else {
         updateTypingStats({
           incorrectLetterIndex: activeLetterIndex,
           activeLetterIndex: activeLetterIndex + 1,
@@ -287,11 +297,16 @@ const Paragraphs = () => {
     _event.preventDefault();
   }
 
+  const handleInputSelect = (_event: React.UIEvent<HTMLInputElement>) => {
+    const inputEl = (_event.target as HTMLInputElement); 
+    inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+  }
+
   return (
     <>
       <div className="flex justify-center items-center flex-col w-full">
           <input
-            className="h-0 w-0"
+            className="h-0 w-0 select-none"
             id="input-text"
             placeholder={typingStats.activeWord}
             autoComplete="off"
@@ -301,7 +316,10 @@ const Paragraphs = () => {
             onKeyDown={keyBoardHandler}
             onFocus={onFocusTextInput}
             onBlur={handleInputBlur}
+            onSelect={handleInputSelect}
+            type="text"
           />
+          {<CapsLockAlert isVisible={isCapsLockOn} />}
           <div
             ref={paragraphContainerRef}
             id="given-paragraph"
