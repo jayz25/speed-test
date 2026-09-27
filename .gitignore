@@ -29,6 +29,9 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
-
+.env
 # vercel
 .vercel
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

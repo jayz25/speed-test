@@ -1,43 +1,57 @@
-# TypeScript Next.js example
+# SpeedType — Typing Speed Test
 
-This is a really simple project that shows the usage of Next.js with TypeScript.
+A minimal, focused typing speed test built on Next.js 15 + React 19 with Redux Toolkit for state and Tailwind CSS for styling.
 
-## Deploy your own
+Visit [demo](https://your-deployment-url.com) to try it out.
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=next-example) or preview live with [StackBlitz](https://stackblitz.com/github/vercel/next.js/tree/canary/examples/with-typescript)
+## Features
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/vercel/next.js/tree/canary/examples/with-typescript&project-name=with-typescript&repository-name=with-typescript)
+- **Real-time WPM / CPM / Accuracy** — Live stats update as you type
+- **Visual cursor tracking** — Gliding caret that follows your typing position
+- **Auto-scroll** — Words automatically scroll as you progress through the text
+- **Caps lock warning** — Visual alert when Caps Lock is accidentally enabled
+- **Result card with grade** — After the timer ends, see your final stats and a letter grade (S/A/B/C/D)
+- **Optional stats API** — Optionally save your results to a leaderboard (opt-in via `NEXT_PUBLIC_API_BASE_URL`)
 
-## How to use it?
-
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init) or [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/) to bootstrap the example:
+## How to run
 
 ```bash
-npx create-next-app --example with-typescript with-typescript-app
-# or
-yarn create next-app --example with-typescript with-typescript-app
-# or
-pnpm create next-app -- --example with-typescript with-typescript-app
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run type checker
+npm run type-check
 ```
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+## Configuration
 
-## Notes
+The app uses a single environment variable to optionally enable the stats API:
 
-This example shows how to integrate the TypeScript type system into Next.js. Since TypeScript is supported out of the box with Next.js, all we have to do is to install TypeScript.
-
-```
-npm install --save-dev typescript
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-api.com/api/stats
 ```
 
-To enable TypeScript's features, we install the type declarations for React and Node.
+- Set this env var to enable posting results and viewing the global leaderboard
+- The app works perfectly without it — API integration is completely optional
+- For local development, you can safely ignore or leave this unset
 
-```
-npm install --save-dev @types/react @types/react-dom @types/node
-```
+## Pages
 
-When we run `next dev` the next time, Next.js will start looking for any `.ts` or `.tsx` files in our project and builds it. It even automatically creates a `tsconfig.json` file for our project with the recommended settings.
+| Route | Purpose |
+|-------|---------|
+| `/` | Main typing test — start typing, see live stats, get results |
+| `/stats` | Global leaderboard (only shows if API is configured) |
+| `/about` | About page — what this app is and how to use it |
 
-Next.js has built-in TypeScript declarations, so we'll get autocompletion for Next.js' modules straight away.
+## Scripts
 
-A `type-check` script is also added to `package.json`, which runs TypeScript's `tsc` CLI in `noEmit` mode to run type-checking separately. You can then include this, for example, in your `test` scripts.
+- `dev` — Start development server
+- `build` — Build optimized production app
+- `start` — Start production server (use after `build`)
+- `type-check` — Run TypeScript type checker (separate from dev)
