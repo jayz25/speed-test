@@ -1,0 +1,19 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": "error",
+    "no-console": "warn",
+    "prefer-const": "warn"
+  },
+  "ignorePatterns": ["*.config.*", "next.config.*", ".next/", "Grafter/", "node_modules/"],
+  "reportUnusedDisableDirectives": false
+}

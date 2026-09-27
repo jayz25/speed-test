@@ -4,20 +4,29 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "type-check": "tsc"
+    "type-check": "tsc",
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",
+    "@swc/helpers": "^0.5.23",
+    "@vitejs/plugin-react-swc": "^4.3.3",
     "next": "^15.5.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/eslint": "^9.6.1",
+    "@types/node": "^22.20.4",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.1",
     "autoprefixer": "^10.4.21",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.6",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
