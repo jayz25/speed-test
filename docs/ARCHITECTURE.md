@@ -108,10 +108,13 @@ camelCase; both are fixed in `REFINEMENT_PLAN.md` 3.6.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
 - `.github/workflows/ci.yml` runs lint → type-check → test → build on
   Node 20 and 22.
-- **Not working yet:** `npm test` calls `vitest`, which isn't installed;
-  ESLint 9 runs a legacy `.eslintrc.json` through the deprecated `next
-  lint`, with `eslint-config-next@16` against `next@15`. So CI is expected
-  to fail. `REFINEMENT_PLAN.md` Phase 2 fixes this.
+- Lint: ESLint 9 flat config (`eslint.config.mjs`, `next/core-web-vitals` +
+  `next/typescript` via `FlatCompat`, `eslint-config-next@15.5`); `npm run lint` = `eslint .`.
+- Tests: Vitest 5 (`vitest.config.ts`, jsdom, `vitest.setup.ts` loads
+  jest-dom matchers, globals on); tests live next to code in `__tests__/`.
+- `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.
+- `next.config.mjs`: `reactStrictMode: true`, `poweredByHeader: false`.
+- Note: if `~/.npm` is root-owned, set `NPM_CONFIG_CACHE` to a writable dir.
 - `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
   graft instead of whole-file reads/greps on indexed source. See the graft
   protocol in `REFINEMENT_PLAN.md`.

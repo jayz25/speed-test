@@ -213,14 +213,14 @@ the docs describe the code that exists. **Everything else depends on this.**
     only matches this plan file. (Raw grep is correct here: Markdown isn't
     indexed by graft.)
 
-- [ ] **2.2 Delete dead files.**
+- [x] **2.2 Delete dead files.**
   - Do: `git rm -r interfaces static` and `git rm --cached tsconfig.tsbuildinfo`;
     add `*.tsbuildinfo` to `.gitignore`. First re-confirm zero references:
     `graft grep "interfaces"` and `graft grep "static/"` (code), plus
     `grep -rn "static/" styles` (CSS isn't indexed).
   - Done when: build succeeds; files are gone.
 
-- [ ] **2.3 Fix dependencies.**
+- [x] **2.3 Fix dependencies.** _(`@testing-library/jest-dom@^7.0.1` exists, kept. Resolved `eslint-config-next@15.5.27`, vitest 5, plugin-react 6/vite 8. Needed a writable npm cache: `~/.npm` is root-owned.)_
   - Do:
     ```bash
     npm uninstall @vitejs/plugin-react-swc @swc/helpers
@@ -230,7 +230,7 @@ the docs describe the code that exists. **Everything else depends on this.**
     @testing-library/jest-dom`); if `^7` doesn't exist, use the latest 6.x.
   - Done when: `npm ci` on a clean checkout succeeds with no peer-dep errors.
 
-- [ ] **2.4 ESLint flat config.**
+- [x] **2.4 ESLint flat config.** _(Also ignored `.claude/**` and `next-env.d.ts` in the config; removed unused `WordsCollection` import in `redux/paragraph.ts`.)_
   - Files: create `eslint.config.mjs`, delete `.eslintrc.json`, edit
     `package.json` script `"lint": "eslint ."`.
   - Do:
@@ -253,7 +253,7 @@ the docs describe the code that exists. **Everything else depends on this.**
     `AppProps` from `next/app`). Don't blanket-disable rules.
   - Done when: `npm run lint` exits 0.
 
-- [ ] **2.5 Vitest wiring.**
+- [x] **2.5 Vitest wiring.**
   - Files: create `vitest.config.ts`, `vitest.setup.ts`,
     `utils/__tests__/smoke.test.ts`.
   - Do:
@@ -272,7 +272,7 @@ the docs describe the code that exists. **Everything else depends on this.**
     Add `"types": ["vitest/globals"]` to `tsconfig.json` `compilerOptions`.
   - Done when: `npm test` runs 1 passing test.
 
-- [ ] **2.6 Modernize tsconfig + add next.config.**
+- [x] **2.6 Modernize tsconfig + add next.config.**
   - Do: in `tsconfig.json` set `"target": "ES2017"`,
     `"moduleResolution": "bundler"`. Create `next.config.mjs`:
     ```js
@@ -283,7 +283,7 @@ the docs describe the code that exists. **Everything else depends on this.**
     double-POST stats in dev until task 8.3. That's acceptable.
   - Done when: type-check + build pass.
 
-- [ ] **2.7 CI green.**
+- [x] **2.7 CI green.** _(`cache: npm` added; CI run verification pending a push — not pushed.)_
   - Files: `.github/workflows/ci.yml`.
   - Do: add `cache: npm` to `setup-node`. Leave the rest. Push a branch and
     confirm the run is green (`gh run watch`), or state that you couldn't.
