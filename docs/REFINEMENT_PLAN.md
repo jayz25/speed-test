@@ -724,7 +724,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     `B` ≥ 40 & ≥ 90%, `C` ≥ 25, else `D` — put thresholds in a named
     const table in `utils/getGrade.ts` with tests.
 
-- [ ] **7.9 "Your results" on `/stats`.**
+- [x] **7.9 "Your results" on `/stats`.**
+  - Note: `components/YourResults.tsx` (reads history after mount to avoid hydration mismatch): averages, PB table, last-20 table (both with `th scope` incl. row headers and captions), Clear history behind `confirm()`. Headings: sr-only h1, h2 per section, h3 within. Leaderboard section is rendered only when `isStatsApiEnabled`. Stat helpers (`getPersonalBests`, `getAverages`, `getRecent`, `formatConfig`) live in `utils/history.ts`.
   - Do: `/stats` gets two sections: "Your results" (from history: PB per
     mode/limit table + last 20 runs list + average wpm/accuracy) — always
     shown; "Global leaderboard" — only if the API is configured (Phase 8).

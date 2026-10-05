@@ -91,3 +91,47 @@ export function createHistoryEntry(key: TestConfigKey, stats: { wpm: number; raw
     accuracy: stats.accuracy,
   };
 }
+
+/** "30s mixed" (time mode) or "25 words hard" (words mode). */
+export function formatConfig(key: TestConfigKey): string {
+  const length = key.mode === "time" ? `${key.limit}s` : `${key.limit} words`;
+  return `${length} ${key.difficulty}`;
+}
+
+export interface PersonalBestRow extends TestConfigKey {
+  wpm: number;
+  /** accuracy of the run that set the best */
+  accuracy: number;
+  runs: number;
+}
+
+/** One row per mode+limit+difficulty: time mode before words mode, then by limit, then difficulty. */
+export function getPersonalBests(history: readonly HistoryEntry[]): PersonalBestRow[] {
+  const rows: PersonalBestRow[] = [];
+  for (const h of history) {
+    const i = rows.findIndex((r) => isSameConfig(r, h));
+    if (i === -1) {
+      rows.push({ mode: h.mode, limit: h.limit, difficulty: h.difficulty, wpm: h.wpm, accuracy: h.accuracy, runs: 1 });
+    } else {
+      const row = rows[i];
+      rows[i] = { ...row, runs: row.runs + 1, ...(h.wpm > row.wpm ? { wpm: h.wpm, accuracy: h.accuracy } : {}) };
+    }
+  }
+  const order = (r: PersonalBestRow) => [r.mode === "time" ? 0 : 1, r.limit, DIFFICULTIES.indexOf(r.difficulty)];
+  return rows.sort((a, b) => {
+    const [oa, ob] = [order(a), order(b)];
+    return oa[0] - ob[0] || oa[1] - ob[1] || oa[2] - ob[2];
+  });
+}
+
+/** Rounded average WPM and accuracy over all entries (zeros when empty). */
+export function getAverages(history: readonly HistoryEntry[]): { wpm: number; accuracy: number } {
+  if (history.length === 0) return { wpm: 0, accuracy: 0 };
+  const mean = (pick: (h: HistoryEntry) => number) => Math.round(history.reduce((sum, h) => sum + pick(h), 0) / history.length);
+  return { wpm: mean((h) => h.wpm), accuracy: mean((h) => h.accuracy) };
+}
+
+/** The newest `count` entries, newest first. */
+export function getRecent(history: readonly HistoryEntry[], count: number): HistoryEntry[] {
+  return history.slice(-count).reverse();
+}

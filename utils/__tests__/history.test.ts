@@ -1,5 +1,5 @@
 import {
-  appendEntry, clearHistory, createHistoryEntry, describePb, getPersonalBest, isHistoryEntry,
+  appendEntry, clearHistory, createHistoryEntry, describePb, formatConfig, getAverages, getPersonalBest, getPersonalBests, getRecent, isHistoryEntry,
   loadHistory, MAX_HISTORY_ENTRIES, saveHistory, type HistoryEntry,
 } from "../history";
 import { HISTORY_KEY } from "../storage";
@@ -83,5 +83,35 @@ describe("createHistoryEntry", () => {
     expect(isHistoryEntry(e)).toBe(true);
     expect(e.date).toBe("2026-02-03T04:05:06.000Z");
     expect(e).toMatchObject({ mode: "words", limit: 25, difficulty: "hard", wpm: 61 });
+  });
+});
+
+describe("stats helpers", () => {
+  const h = [
+    entry({ id: "1", wpm: 40, accuracy: 90 }),
+    entry({ id: "2", wpm: 60, accuracy: 96 }),
+    entry({ id: "3", wpm: 30, accuracy: 99, mode: "words", limit: 25 }),
+    entry({ id: "4", wpm: 50, accuracy: 94, limit: 15 }),
+  ];
+
+  it("formatConfig", () => {
+    expect(formatConfig({ mode: "time", limit: 30, difficulty: "mixed" })).toBe("30s mixed");
+    expect(formatConfig({ mode: "words", limit: 25, difficulty: "hard" })).toBe("25 words hard");
+  });
+
+  it("getPersonalBests groups by config, keeps the best run, and sorts", () => {
+    const rows = getPersonalBests(h);
+    expect(rows.map((r) => `${r.mode}:${r.limit}`)).toEqual(["time:15", "time:30", "words:25"]);
+    expect(rows[1]).toMatchObject({ wpm: 60, accuracy: 96, runs: 2 });
+  });
+
+  it("getAverages rounds and handles empty", () => {
+    expect(getAverages(h)).toEqual({ wpm: 45, accuracy: 95 });
+    expect(getAverages([])).toEqual({ wpm: 0, accuracy: 0 });
+  });
+
+  it("getRecent returns newest first, capped", () => {
+    expect(getRecent(h, 2).map((e) => e.id)).toEqual(["4", "3"]);
+    expect(getRecent(h, 20)).toHaveLength(4);
   });
 });

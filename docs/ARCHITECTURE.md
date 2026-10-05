@@ -15,7 +15,7 @@ app works standalone with no backend.
 | Route | File | Purpose |
 |---|---|---|
 | `/` | `pages/index.tsx` | Renders `TypingTest` — the main app. |
-| `/stats` | `pages/stats/index.tsx` | Renders `GlobalStats` — leaderboard, only populated if `NEXT_PUBLIC_API_BASE_URL` is set. Not linked from any navigation yet (see `REFINEMENT_PLAN.md` 6.1). |
+| `/stats` | `pages/stats/index.tsx` | "Your results" (`YourResults`: averages, personal bests, last 20 runs from localStorage history, Clear history) and, only if `NEXT_PUBLIC_API_BASE_URL` is set, "Global leaderboard" (`GlobalStats`). |
 | `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>` and loads the `Inter` font. |
 
 ## Core flow: the typing test
@@ -92,6 +92,7 @@ and small stat helpers were deleted in Phase 1.
 | `LiveStat.tsx`, `RestartButton.tsx` | Live stat tile, restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
+| `YourResults.tsx` | `/stats` personal results from history. |
 | `WpmChart.tsx` | Inline-SVG WPM / raw WPM line chart (+ mistake dots) on the result card; data from `utils/wpmSamples.ts`. |
 | `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
