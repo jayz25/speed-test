@@ -1,4 +1,5 @@
 import store from "../redux/store";
+import type { WordMode } from "../utils/getWords";
 
 export type WordsCollection = Array<string>;
 
@@ -16,6 +17,7 @@ export type StatStatus =
 export interface ParagraphState {
     wordsCollection: WordsCollection,
     status: ParagraphStatus,
+    mode: WordMode,
 }
 
 export interface StatsInstance {

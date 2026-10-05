@@ -11,7 +11,7 @@ vi.mock("../../utils/getWords", () => ({
 }));
 
 const renderTest = () => {
-  const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready" } });
+  const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed" } });
   render(
     <Provider store={store}>
       <TypingTest />

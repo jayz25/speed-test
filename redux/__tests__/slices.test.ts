@@ -1,6 +1,12 @@
 import { makeStore } from "../store";
 import { loadWords, refreshWords } from "../paragraph";
+import { getWords } from "../../utils/getWords";
 import { addStatCall, getStatCall } from "../stat";
+
+vi.mock("../../utils/getWords", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../utils/getWords")>();
+  return { ...actual, getWords: vi.fn(actual.getWords) };
+});
 
 describe("paragraph slice", () => {
   it("loadWords fills the collection and marks ready", () => {
@@ -19,6 +25,20 @@ describe("paragraph slice", () => {
     store.dispatch(loadWords({ count: 12 }));
     store.dispatch(refreshWords());
     expect(store.getState().paragraph.wordsCollection).toHaveLength(12);
+  });
+  it("refreshWords reuses the mode passed to loadWords", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ count: 5, mode: "easy" }));
+    expect(store.getState().paragraph.mode).toBe("easy");
+    vi.mocked(getWords).mockClear();
+    store.dispatch(refreshWords());
+    expect(getWords).toHaveBeenCalledWith(5, "easy");
+    expect(store.getState().paragraph.mode).toBe("easy");
+  });
+  it("mode defaults to mixed", () => {
+    const store = makeStore();
+    store.dispatch(loadWords());
+    expect(store.getState().paragraph.mode).toBe("mixed");
   });
   it("refreshWords falls back to 60 when empty", () => {
     const store = makeStore();
