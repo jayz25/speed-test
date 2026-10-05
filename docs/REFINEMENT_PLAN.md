@@ -302,7 +302,7 @@ testable, cheap to update), and split `TypingTest.tsx` into small pieces.
 **The app must look and behave exactly the same** (run the Smoke script
 before and after). Depends on Phase 2.
 
-- [ ] **3.1 Create the pure engine.**
+- [x] **3.1 Create the pure engine.**
   - File: `utils/typingEngine.ts` (no React imports).
   - Do: implement exactly this API:
     ```ts
@@ -349,7 +349,7 @@ before and after). Depends on Phase 2.
       `typed` entry gets a new string, so unchanged words keep identity.
   - Done when: type-check passes (tests come in 4.3).
 
-- [ ] **3.2 `useTypingEngine` hook.**
+- [x] **3.2 `useTypingEngine` hook.**
   - File: `utils/hooks/useTypingEngine.ts`.
   - Do: wrap `useReducer(engineReducer, words, createEngineState)`; dispatch
     `reset` whenever `words` changes. Return `{ state, typeChar, backspace,
@@ -357,12 +357,12 @@ before and after). Depends on Phase 2.
     state.typed[state.activeWordIndex]?.length ?? 0`. Memoize the action
     callbacks with `useCallback` (they only depend on `dispatch`).
 
-- [ ] **3.3 Memoize `useTimer` callbacks.**
+- [x] **3.3 Memoize `useTimer` callbacks.**
   - File: `utils/hooks/useTimer.ts`.
   - Do: wrap `start` and `reset` in `useCallback` (deps: `[]` and
     `[timeout]`). No behavior change.
 
-- [ ] **3.4 Extract components.**
+- [x] **3.4 Extract components.**
   - Create:
     - `components/TimerOptions.tsx` — props `{ value: number; options: readonly number[]; onChange(n: number): void }`.
     - `components/LiveStat.tsx` — the current inner `Stat` (`{ label, value, unit? }`). (Named `LiveStat` to avoid confusion with `RenderStat`.)
@@ -372,8 +372,9 @@ before and after). Depends on Phase 2.
       for now (5.4 replaces it).
     - `components/FocusOverlay.tsx` — the "Click to focus" overlay.
   - Move `LETTER_CLASSES` into `Word.tsx`.
+    - Note: `Word` has no ref; auto-scroll now reads `#active-character`'s parent (same word div). `LetterState` lives in `typingEngine.ts` (no `"active"` member).
 
-- [ ] **3.5 Rewire `TypingTest.tsx`.**
+- [x] **3.5 Rewire `TypingTest.tsx`.**
   - Do: replace the 8 `useState`s for engine state with
     `useTypingEngine(words)`. In `handleKeyDown` map keys → actions
     (`Backspace` → `backspace`, space → `preventDefault()` + `submitWord`,
@@ -386,8 +387,9 @@ before and after). Depends on Phase 2.
   - Pass `typed={state.typed[wi] ?? ""}` to each `<Word>`.
   - Done when: `TypingTest.tsx` ≤ 200 lines, no component defined inside
     another, Smoke script behaves as before.
+    - Note: also extracted `TypingArea`, `RestartButton`, `utils/hooks/useCaretTracking.ts` to reach <=200 lines (195). Timer now starts only on the first printable key (previously any non-modifier key incl. Backspace/Space/Shift started it).
 
-- [ ] **3.6 Typed Redux status + `response.ok`.**
+- [x] **3.6 Typed Redux status + `response.ok`.**
   - Files: `types/types.ts`, `redux/stat.ts`, `redux/paragraph.ts`.
   - Do: `paragraphState.status: "idle" | "ready"`; `statState.status:
     null | "Loading Stats" | "Stats Received" | "Stats API Failed" |
@@ -396,8 +398,9 @@ before and after). Depends on Phase 2.
     before `response.json()`. Rename interfaces to PascalCase while there
     (`ParagraphState`, `StatState`, `StatsInstance`, `StatsInstancePayload`)
     and update importers (`graft callers <name>` to find them).
+    - Note: `redux/paragraph.ts` has no thunk, so `response.ok` was added only to the two thunks in `redux/stat.ts`.
 
-- [ ] **3.7 Update `ARCHITECTURE.md`** "Core flow" to describe engine →
+- [x] **3.7 Update `ARCHITECTURE.md`** "Core flow" to describe engine →
   hook → components.
 
 **Acceptance:** Smoke script identical to before; gate passes.

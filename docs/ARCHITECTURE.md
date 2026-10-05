@@ -20,33 +20,27 @@ app works standalone with no backend.
 
 ## Core flow: the typing test
 
-`components/TypingTest.tsx` is the app's hub. It currently owns, in one
-component:
+The flow is **engine -> hook -> components**:
 
-- **Word source**: dispatches `loadWords`/`refreshWords` (see Redux below)
-  to populate `state.paragraph.wordsCollection`.
-- **Keystroke state machine**: tracks `activeWordIndex`, `activeLetterIndex`,
-  and a per-word/per-letter `wordStates` array (`idle | correct | incorrect |
-  active`) built by `buildWordStates()`. Handles backspace, space
-  (word-submit), and printable-character input via `onKeyDown` (the
-  `<input>` is visually hidden — this is a "hidden input" typing-test
-  pattern, not a real text field).
-- **Timer**: delegates countdown to `utils/hooks/useTimer.ts` (interval-based
-  `start`/`reset`/`seconds`), and reacts to `seconds === 0` to end the test.
-- **Cursor rendering**: a `useLayoutEffect` reads the DOM position of the
-  element with `id="active-character"` and moves a cursor `<div>` via
-  direct style mutation, for a low-latency caret feel that a React re-render
-  would be too slow for.
-- **Auto-scroll**: a separate effect scrolls the word container when the
-  active word's vertical offset increases (i.e. the text wrapped a line).
-- **Result stats**: computed each render via the pure functions in `utils/`
-  (`calculateWPM`, `calculateCPM`, `calculateAccuracy`) from
-  `charsMatched`/`wordsIncorrect`/`wordsMatched`/`seconds`, and frozen into
-  `finalStats` when the test ends.
-
-This concentration of concerns is the primary refactor target in
-`REFINEMENT_PLAN.md` Phase 3, which moves the state machine into a pure
-reducer (`utils/typingEngine.ts`) and splits out the sub-components.
+1. **Engine** (`utils/typingEngine.ts`, pure, no React): `engineReducer`
+   is the keystroke state machine over `EngineState` (`words`, `typed`,
+   `activeWordIndex`, `status`, keystroke counters) with actions `reset`,
+   `typeChar`, `backspace`, `submitWord`, `finish`. Pure selectors
+   `getLetterStates`, `isWordWrong`, `getWordCounts` derive display and
+   stats. The reducer never mutates; unchanged `typed` entries keep identity.
+2. **Hook** (`utils/hooks/useTypingEngine.ts`): wraps `useReducer`, resets
+   when `words` changes, returns memoized action callbacks and
+   `activeLetterIndex`. `useTimer` (countdown) and `useCaretTracking`
+   (caret positioning from `#active-character` via direct DOM style, plus
+   auto-scroll when the active word wraps) are sibling hooks.
+3. **Components**: `components/TypingTest.tsx` is the thin orchestrator. It
+   loads words from Redux (`loadWords`/`refreshWords`), maps `onKeyDown`
+   on the visually hidden `<input>` to engine actions, starts the timer on
+   the first printable key, and on `seconds === 0` dispatches `finish` and
+   freezes `finalStats` from `calculateWPM`/`calculateCPM`/
+   `calculateAccuracy`. It renders `TimerOptions`, `LiveStat`,
+   `TypingArea` (which renders memoized `Word`s and `FocusOverlay`),
+   `RestartButton`, and `ResultCard` once finished.
 
 ## State management (`redux/`)
 
@@ -79,13 +73,18 @@ and small stat helpers were deleted in Phase 1.
 | `calculateAccuracy.ts` | `% = correct / (correct + incorrect)` style calc from matched/incorrect word counts. |
 | `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`. Exports `getWords` and `WordMode`; `fisherYatesShuffle` is module-private. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
+| `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
+| `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
+| `hooks/useCaretTracking.ts` | Caret positioning and line-wrap auto-scroll (DOM-based). |
 | `hooks/useTimer.ts` | Countdown hook: `start()`, `reset(newTimeout?)`, `seconds`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
 
 | File | Status |
 |---|---|
-| `TypingTest.tsx` | Core, see above. |
+| `TypingTest.tsx` | Orchestrator, see above. |
+| `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
+| `TimerOptions.tsx`, `LiveStat.tsx`, `RestartButton.tsx` | Duration picker, live stat tile, restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; uses `RenderStat.tsx` to animate each stat value. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
