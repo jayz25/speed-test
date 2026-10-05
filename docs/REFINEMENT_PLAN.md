@@ -416,11 +416,11 @@ Depends on Phase 2 (runner) and Phase 3 (engine). Tests live next to code in
 `utils/hooks/__tests__/*.test.ts`, `components/__tests__/*.test.tsx`.
 Use Arrange/Act/Assert and descriptive names.
 
-- [ ] **4.1 Pure utils** — `calculateWPM`, `calculateCPM`,
+- [x] **4.1 Pure utils** — `calculateWPM`, `calculateCPM`,
   `calculateAccuracy`, `getWords` (length == count; every word comes from
   the chosen pool; `count` > pool size cycles; each mode uses its pool).
   Edge cases: elapsed 0 → 0, zero words → 0. Delete the smoke test from 2.5.
-- [ ] **4.2 `useTimer`** with `vi.useFakeTimers()` + `renderHook`: starts at
+- [x] **4.2 `useTimer`** with `vi.useFakeTimers()` + `renderHook`: starts at
   timeout, reaches exactly 0, never negative, double `start()` no-op,
   `reset(n)` stops the interval and sets `n`, unmount clears interval.
 - [ ] **4.3 `typingEngine`** — one `describe` per action: first `typeChar`
