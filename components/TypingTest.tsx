@@ -55,6 +55,7 @@ const TypingTest = () => {
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
+  const didKeyDownBackspace = useRef(false);
 
   const { seconds, start, reset, elapsedMs } = useTimer(timeLimit);
 
@@ -133,22 +134,47 @@ const TypingTest = () => {
     if (e.ctrlKey || e.altKey || e.metaKey || e.key === "CapsLock") return;
     if (words.length === 0 || isFinished) return;
 
+    if (e.key === "Unidentified" || e.nativeEvent.isComposing) return; // handled via the input event
+
     if (e.key === "Backspace") {
+      didKeyDownBackspace.current = true;
       backspace();
       return;
     }
 
+    // Space must not reach the input; printable characters are handled in handleInput
     if (e.key === " " || e.code === "Space") {
       e.preventDefault();
       submitWord();
+    }
+  }, [words, isFinished, backspace, submitWord]);
+
+  const handleKeyUp = useCallback(() => {
+    didKeyDownBackspace.current = false;
+  }, []);
+
+  // Printable characters (and soft-keyboard backspace) arrive here so mobile keyboards,
+  // which send key "Unidentified" on keydown, work as well as desktop ones.
+  const handleInput = useCallback((e: React.FormEvent<HTMLInputElement>) => {
+    const { inputType, data } = e.nativeEvent as InputEvent;
+    if (words.length === 0 || isFinished) return;
+
+    if (inputType === "deleteContentBackward") {
+      // Desktop already handled Backspace on keydown
+      if (!didKeyDownBackspace.current) backspace();
       return;
     }
+    if (inputType !== "insertText" || !data) return;
 
-    // Regular printable character (length===1 guards modifiers)
-    if (e.key.length !== 1) return;
-    if (state.status === "idle") start();
-    typeChar(e.key);
-  }, [words, isFinished, state.status, start, typeChar, backspace, submitWord]);
+    for (const char of data) {
+      if (char === " ") {
+        submitWord();
+      } else {
+        start(); // no-op if already running
+        typeChar(char);
+      }
+    }
+  }, [words, isFinished, start, typeChar, backspace, submitWord]);
 
   const handleSelect = useCallback((e: React.UIEvent<HTMLInputElement>) => {
     const el = e.target as HTMLInputElement;
@@ -190,24 +216,6 @@ const TypingTest = () => {
         />
       ) : (
     <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">
-      <input
-        ref={textInput}
-        autoFocus
-        className="absolute w-0 h-0 opacity-0 pointer-events-none"
-        id="typing-input"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        value=""
-        onKeyDown={handleKeyDown}
-        onChange={() => {}}
-        onFocus={() => setIsFocused(true)}
-        onBlur={handleBlur}
-        onSelect={handleSelect}
-        type="text"
-        aria-label="Typing input"
-      />
 
       <div className="flex flex-wrap items-center justify-between w-full min-h-8 gap-2 px-1">
         <CapsLockAlert isVisible={isCapsLockOn} />
@@ -237,7 +245,28 @@ const TypingTest = () => {
         viewportRef={viewportRef}
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
-      />
+      >
+        <input
+          ref={textInput}
+          autoFocus
+          className="absolute left-0 top-0 w-px h-px opacity-0 pointer-events-none"
+          id="typing-input"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          value=""
+          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
+          onInput={handleInput}
+          onChange={() => {}}
+          onFocus={() => setIsFocused(true)}
+          onBlur={handleBlur}
+          onSelect={handleSelect}
+          type="text"
+          aria-label="Typing input"
+        />
+      </TypingArea>
 
       <p data-focus-fade className={`text-xs text-slate-400 select-none ${FADE_CLASSES}`}>tab + enter — restart · esc — restart</p>
 

@@ -14,14 +14,17 @@ interface TypingAreaProps {
   viewportRef: RefObject<HTMLDivElement | null>;
   onClick: (e: React.MouseEvent) => void;
   onMouseDown: (e: React.MouseEvent) => void;
+  /** The hidden text input; rendered inside the area so mobile keyboards open over the text. */
+  children?: React.ReactNode;
 }
 
-const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, targetRef, containerRef, viewportRef, onClick, onMouseDown }: TypingAreaProps) => (
+const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, targetRef, containerRef, viewportRef, onClick, onMouseDown, children }: TypingAreaProps) => (
   <div
     className="relative w-full cursor-text overflow-hidden p-1"
     onClick={onClick}
     onMouseDown={onMouseDown}
   >
+    {children}
     {!isFocused && <FocusOverlay />}
 
     <div ref={viewportRef} aria-hidden="true" className="relative overflow-hidden border-l-2 border-transparent">
