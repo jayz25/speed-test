@@ -717,7 +717,7 @@ Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
 - [x] **8.2 Validate API data.** Add `isStatsInstance(v: unknown)` type
   guard in `types/types.ts`; `getStatCall` filters the response through it
   (throws if the body isn't an array). Test it.
-- [ ] **8.3 Post once, from the finish transition.** Remove the mount
+- [x] **8.3 Post once, from the finish transition.** Remove the mount
   effect from `ResultCard`. Dispatch `addStatCall` in `TypingTest` when the
   engine transitions to `"finished"` (guard with a `useRef` holding the
   test round id so Strict Mode / re-renders can't double-post). Skip posting

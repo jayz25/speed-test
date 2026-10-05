@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { addStatCall, isStatsApiEnabled } from "../redux/stat";
-import { AppDispatch } from "../types/types";
 import RenderStat from "./RenderStat";
 
 interface ResultCardProps {
@@ -14,15 +11,6 @@ interface ResultCardProps {
 }
 
 export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardProps) {
-  const dispatch = useDispatch<AppDispatch>();
-
-  // Fixed: was dispatching at render-time on every render; now runs once on mount
-  useEffect(() => {
-    if (isStatsApiEnabled) {
-      dispatch(addStatCall({ words: wpm, chars: cpm, accuracy, user: "" }));
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

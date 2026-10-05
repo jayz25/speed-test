@@ -9,6 +9,7 @@ import { calculateWPM } from "../utils/calculateWPM";
 import { calculateAccuracy } from "../utils/calculateAccuracy";
 import useTimer from "../utils/hooks/useTimer";
 import { useCaretTracking } from "../utils/hooks/useCaretTracking";
+import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import { getWordCounts } from "../utils/typingEngine";
 import CapsLockAlert from "./CapsLockAlert";
@@ -59,6 +60,10 @@ const TypingTest = () => {
       setFinalStats({ wpm, cpm, accuracy });
     }
   }, [seconds, isStarted, finish, wpm, cpm, accuracy]);
+
+  usePostResultOnFinish({
+    isFinished, roundId: words, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: "Anonymous",
+  });
 
   const { resetScrollAnchor } = useCaretTracking({
     cursorRef, scrollRef, activeWordIndex, activeLetterIndex, words, isFocused, isFinished,

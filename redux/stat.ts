@@ -41,7 +41,7 @@ export const addStatCall = createAsyncThunk(
     const response = await fetch(`${API_BASE}/addStat/`, {
       method: "POST",
       body: JSON.stringify({
-        user: "Anonymous", // Fixed typo: was 'Anonymouse'
+        user: newStat.user,
         words_per_minute: newStat.words,
         characters_per_minute: newStat.chars,
         accuracy: newStat.accuracy,
