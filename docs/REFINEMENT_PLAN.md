@@ -423,20 +423,24 @@ Use Arrange/Act/Assert and descriptive names.
 - [x] **4.2 `useTimer`** with `vi.useFakeTimers()` + `renderHook`: starts at
   timeout, reaches exactly 0, never negative, double `start()` no-op,
   `reset(n)` stops the interval and sets `n`, unmount clears interval.
+  - Note: also asserts `timeout` prop changes update `seconds`.
 - [x] **4.3 `typingEngine`** — one `describe` per action: first `typeChar`
   sets running; correct/incorrect letter states; backspace; backspace at
   empty is no-op; submit empty is no-op; submit wrong word → `isWordWrong`;
   `getWordCounts`; `finish` blocks further input; reducer returns new
   objects and leaves unchanged `typed` entries referentially equal.
-- [ ] **4.4 Component test** `TypingTest.test.tsx`: render with a real
+  - Note: `typed` entries are strings, so referential-equality is trivially true; test asserts value equality of unchanged entries and that `typed` is a new array.
+- [x] **4.4 Component test** `TypingTest.test.tsx`: render with a real
   store (export a `makeStore()` factory from `redux/store.ts` for this —
   keep the default export), type `"the "` via `@testing-library/user-event`
   (install as devDependency) against a store preloaded with known words,
   assert the first word is not marked wrong and live WPM element exists.
-- [ ] **4.5 Coverage** — add `"test:coverage": "vitest run --coverage"`
+  - Note: `makeStore(preloadedState?)` added to `redux/store.ts` (default export kept). `TypingTest` dispatches `loadWords` on mount, so `utils/getWords` is mocked to return known words. Added `redux/__tests__/slices.test.ts` (paragraph reducers + stat thunks with mocked `fetch`) to meet the 80% bar.
+- [x] **4.5 Coverage** — add `"test:coverage": "vitest run --coverage"`
   (install `@vitest/coverage-v8`), set
   `coverage.include: ["utils/**", "redux/**"]` and thresholds 80%. Add it
   to CI in place of `npm test`.
+  - Note: coverage excludes `utils/hooks/useCaretTracking.ts` (DOM-heavy) and `__tests__`; vitest/coverage ignore `.worktrees/**`. CI step now `npm run test:coverage`. `package.json` deps for 4.4 (`@testing-library/user-event`) landed in the 4.5 commit together with the script.
 
 **Acceptance:** `npm run test:coverage` ≥ 80% on `utils/` + `redux/`, CI green.
 

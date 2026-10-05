@@ -7,10 +7,14 @@ const reducers = combineReducers({
   globalStats: stat,
 });
 
-const store = configureStore({
-  reducer: reducers,
-  // RTK 2.x: getDefaultMiddleware removed from import, use callback form instead
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
-});
+export const makeStore = (preloadedState?: Partial<ReturnType<typeof reducers>>) =>
+  configureStore({
+    reducer: reducers,
+    preloadedState,
+    // RTK 2.x: getDefaultMiddleware removed from import, use callback form instead
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
+  });
+
+const store = makeStore();
 
 export default store;
