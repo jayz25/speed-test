@@ -423,7 +423,7 @@ Use Arrange/Act/Assert and descriptive names.
 - [x] **4.2 `useTimer`** with `vi.useFakeTimers()` + `renderHook`: starts at
   timeout, reaches exactly 0, never negative, double `start()` no-op,
   `reset(n)` stops the interval and sets `n`, unmount clears interval.
-- [ ] **4.3 `typingEngine`** — one `describe` per action: first `typeChar`
+- [x] **4.3 `typingEngine`** — one `describe` per action: first `typeChar`
   sets running; correct/incorrect letter states; backspace; backspace at
   empty is no-op; submit empty is no-op; submit wrong word → `isWordWrong`;
   `getWordCounts`; `finish` blocks further input; reducer returns new
