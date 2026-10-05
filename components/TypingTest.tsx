@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
 import { isStatsApiEnabled } from "../redux/stat";
 import { loadWords, refreshWords } from "../redux/paragraph";
+import { setSetting, TIME_LIMITS } from "../redux/settings";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
@@ -30,18 +31,18 @@ const INITIAL_STATS: TestStats = {
   correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
 };
 const WARNING_SECONDS = 10;
-const TIME_OPTIONS = [15, 30, 45, 60] as const;
 
 const TypingTest = () => {
   const words = useSelector((state: RootState) => state.paragraph.wordsCollection);
   const dispatch = useDispatch<AppDispatch>();
 
-  const [timeLimit, setTimeLimit] = useState(60);
+  const timeLimit = useSelector((state: RootState) => state.settings.timeLimit);
+  const difficulty = useSelector((state: RootState) => state.settings.difficulty);
 
-  // Load words on first mount
+  // (Re)load words on mount and whenever the difficulty setting changes
   useEffect(() => {
-    dispatch(loadWords({ count: 300 }));
-  }, [dispatch]);
+    dispatch(loadWords({ count: 300, mode: difficulty }));
+  }, [dispatch, difficulty]);
 
   const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words);
   const { activeWordIndex } = state;
@@ -121,7 +122,7 @@ const TypingTest = () => {
 
   // Re-run timer reset if timeLimit UI button clicked
   const handleTimeChange = (newTime: number) => {
-    setTimeLimit(newTime);
+    dispatch(setSetting({ timeLimit: newTime as (typeof TIME_LIMITS)[number] }));
     reset(newTime);
     dispatch(refreshWords());
     textInput.current?.focus();
@@ -224,7 +225,7 @@ const TypingTest = () => {
       <div className="flex flex-wrap items-center justify-between w-full min-h-8 gap-2 px-1">
         <CapsLockAlert isVisible={isCapsLockOn} />
         {isStatsApiEnabled && <div data-focus-fade className={FADE_CLASSES}><PlayerNameInput value={playerName} onChange={setPlayerName} /></div>}
-        <div data-focus-fade className={`ml-auto flex items-center gap-4 text-slate-500 ${FADE_CLASSES}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_OPTIONS} onChange={handleTimeChange} /></div>
+        <div data-focus-fade className={`ml-auto flex items-center gap-4 text-slate-500 ${FADE_CLASSES}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_LIMITS} onChange={handleTimeChange} /></div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row w-full justify-between sm:items-end px-1 mb-2">

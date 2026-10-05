@@ -1,9 +1,11 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import paragraph from "./paragraph";
+import settings from "./settings";
 import stat from "./stat";
 
 const reducers = combineReducers({
   paragraph,
+  settings,
   globalStats: stat,
 });
 

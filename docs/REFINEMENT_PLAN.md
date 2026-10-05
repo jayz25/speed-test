@@ -646,7 +646,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     window`. Keys (exact): `speedtype:v1:settings`, `speedtype:v1:history`.
     Unit-test with a mocked `localStorage` that throws.
 
-- [ ] **7.2 Settings slice.**
+- [x] **7.2 Settings slice.**
+  - Note: Added `redux/persistSettings.ts` (`loadStoredSettings`, `startSettingsPersistence`: 300ms debounce, also flushes on `pagehide`) and `sanitizeSettings` (per-field fallback, so the legacy `{ playerName }` record hydrates cleanly). `usePlayerName` is now a thin wrapper over the slice; `StoredSettings` removed from `utils/playerName.ts`. `TypingTest` reads `timeLimit`/`difficulty` from the slice. Hydration runs in an `_app` effect (words load once with defaults, then reload if stored settings differ).
   - File: `redux/settings.ts`, mounted at `state.settings`.
   - Shape:
     ```ts

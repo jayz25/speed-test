@@ -107,10 +107,10 @@ describe("TypingTest", () => {
     it("marks the selected duration with aria-pressed", async () => {
       const user = userEvent.setup();
       renderTest();
-      expect(screen.getByRole("button", { name: "60s" })).toHaveAttribute("aria-pressed", "true");
-      await user.click(screen.getByRole("button", { name: "30s" }));
       expect(screen.getByRole("button", { name: "30s" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "60s" })).toHaveAttribute("aria-pressed", "false");
+      await user.click(screen.getByRole("button", { name: "60s" }));
+      expect(screen.getByRole("button", { name: "60s" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "30s" })).toHaveAttribute("aria-pressed", "false");
     });
 
     it("announces the test start in a polite live region", async () => {

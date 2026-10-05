@@ -60,6 +60,7 @@ Two slices, combined in `redux/store.ts`:
   once per round from `utils/hooks/usePostResultOnFinish.ts` (called by
   `TypingTest`); the player name (`PlayerNameInput`, persisted at
   `speedtype:v1:settings`) is the posted `user`.
+- **`settings`** (`redux/settings.ts`, `state.settings`) — `mode` (time/words), `timeLimit` (15/30/60/120), `wordCount` (10/25/50/100), `difficulty`, `punctuation`, `numbers`, `playerName`. `setSetting` (partial) / `hydrateSettings`. `redux/persistSettings.ts` loads (per-field validated) and saves (debounced 300ms + on `pagehide`) it at `speedtype:v1:settings`; `_app.tsx` wires both after mount.
 - `redux/stat.ts` is covered by `redux/__tests__/stat.test.ts`.
 
 ## Utilities (`utils/`)

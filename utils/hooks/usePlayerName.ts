@@ -1,22 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { isStoredSettings, StoredSettings } from "../playerName";
-import { readJSON, SETTINGS_KEY, writeJSON } from "../storage";
+import { useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { setSetting } from "../../redux/settings";
+import type { AppDispatch, RootState } from "../../types/types";
 
-const EMPTY_SETTINGS: StoredSettings = { playerName: "" };
-
-/** Player name persisted under `speedtype:v1:settings` as `{ playerName }`. */
+/** Player name from the settings slice (persisted with the rest of the settings). */
 export function usePlayerName() {
-  const [playerName, setPlayerNameState] = useState("");
-
-  // Hydrate after mount so server and client markup match.
-  useEffect(() => {
-    setPlayerNameState(readJSON(SETTINGS_KEY, EMPTY_SETTINGS, isStoredSettings).playerName);
-  }, []);
-
-  const setPlayerName = useCallback((name: string) => {
-    setPlayerNameState(name);
-    writeJSON(SETTINGS_KEY, { playerName: name });
-  }, []);
-
+  const playerName = useSelector((state: RootState) => state.settings.playerName);
+  const dispatch = useDispatch<AppDispatch>();
+  const setPlayerName = useCallback((name: string) => dispatch(setSetting({ playerName: name })), [dispatch]);
   return [playerName, setPlayerName] as const;
 }
