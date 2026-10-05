@@ -733,6 +733,7 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     Add a "Clear history" button with a `confirm()` prompt.
 
 - [x] **7.10 Copy result.**
+  - Note: (The box was ticked in the plan before any code existed; actually implemented here.) `utils/shareText.ts#formatResultText`; `ResultCard` takes a `config: TestConfigKey` prop; button shows Copied! for 1.5s or Couldn't copy (also when `navigator.clipboard` is missing), with an sr-only status region.
   - Do: button copies `SpeedType — 72 wpm · 96% acc · 30s mixed` via
     `navigator.clipboard.writeText`; show "Copied!" for 1.5s; on failure
     show "Couldn't copy" (no silent catch).

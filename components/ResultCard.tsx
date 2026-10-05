@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TestStats } from "../utils/calculateStats";
 import { getGrade } from "../utils/getGrade";
-import { describePb } from "../utils/history";
+import { describePb, type TestConfigKey } from "../utils/history";
+import { formatResultText } from "../utils/shareText";
 import type { WpmSample } from "../utils/wpmSamples";
 import RenderStat from "./RenderStat";
 import WpmChart from "./WpmChart";
 
 const BUTTON_BASE =
   "flex items-center gap-2 px-6 py-3 font-semibold rounded-xl transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]";
+
+const COPY_FEEDBACK_MS = 1500;
+type CopyStatus = "idle" | "copied" | "failed";
 
 interface ResultCardProps {
   stats: TestStats;
@@ -19,13 +23,31 @@ interface ResultCardProps {
   personalBest?: { previousBest: number | null };
   /** Configured test length in seconds. */
   durationSeconds: number;
+  /** Mode / limit / difficulty of this test (used in the copied text). */
+  config: TestConfigKey;
   onReset: () => void;
   /** Restart with the same words. */
   onRepeat: () => void;
 }
 
-export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, onReset, onRepeat }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  const handleCopy = useCallback(async () => {
+    let status: CopyStatus = "copied";
+    try {
+      await navigator.clipboard.writeText(formatResultText({ wpm, accuracy }, config));
+    } catch {
+      status = "failed"; // surfaced to the user below, not swallowed
+    }
+    setCopyStatus(status);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopyStatus("idle"), COPY_FEEDBACK_MS);
+  }, [wpm, accuracy, config]);
+
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -97,6 +119,16 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         >
           Repeat
         </button>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`${BUTTON_BASE} bg-white/10 text-slate-100 hover:bg-white/20`}
+        >
+          {copyStatus === "copied" ? "Copied!" : copyStatus === "failed" ? "Couldn't copy" : "Copy result"}
+        </button>
+        <span role="status" className="sr-only">
+          {copyStatus === "copied" ? "Result copied to clipboard" : copyStatus === "failed" ? "Couldn't copy the result" : ""}
+        </span>
       </div>
     </div>
   );

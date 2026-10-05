@@ -263,6 +263,7 @@ const TypingTest = () => {
           stats={finalStats}
           samples={finalSamples}
           personalBest={personalBest}
+          config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
           durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
           onReset={resetTest}
           onRepeat={repeatTest}
