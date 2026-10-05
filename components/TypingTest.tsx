@@ -3,7 +3,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
 import { loadWords, refreshWords } from "../redux/paragraph";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
 import { useCaret } from "../utils/hooks/useCaret";
@@ -46,7 +46,12 @@ const TypingTest = () => {
   const { seconds, start, reset, elapsedMs } = useTimer(timeLimit);
 
   // Computed stats
-  const { wpm, cpm, accuracy } = calculateStats(state, elapsedMs());
+  // Live stats are recomputed once per timer tick (or new test), not per keystroke
+  const { wpm, cpm, accuracy } = useMemo(
+    () => calculateStats(state, elapsedMs()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seconds, state.words],
+  );
 
   // Game over when timer reaches 0
   useEffect(() => {
@@ -165,7 +170,7 @@ const TypingTest = () => {
         <div className="flex gap-8">
           <LiveStat label="WPM" value={isStarted ? wpm : 0} />
           <LiveStat label="CPM" value={isStarted ? cpm : 0} />
-          <LiveStat label="ACC" value={accuracy} unit="%" />
+          <LiveStat label="ACC" value={isStarted ? accuracy : 100} unit="%" />
         </div>
         <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
           {seconds}

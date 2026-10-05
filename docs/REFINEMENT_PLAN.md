@@ -514,7 +514,8 @@ Depends on Phase 3. Each task must add/adjust tests in
     logic.
   - Done when: a 60s test typed with long words never hides the active line.
 
-- [ ] **5.6 Per-keystroke render cost.**
+- [x] **5.6 Per-keystroke render cost.**
+  - Note: no browser, so no DevTools Profiler commit durations. Instead `components/__tests__/TypingTest.renders.test.tsx` counts `Word` renders (via `getLetterStates` calls) with 300 words: letter keystroke = 1 Word render, space-submit = 2, never more. Before (3.x/Phase 3 code) every Word received the changing `activeLetterIndex`, so all 300 re-rendered per keystroke. Fix: non-active words get `activeLetterIndex=-1`, `caretRef` only to the active word, letter color transition removed, live stats memoised on `[seconds, state.words]`.
   - Do: confirm `Word` is memoized and receives only primitive props;
     `caretRef` passed only to the active word. Remove `transition-colors
     duration-200` from letter spans. Compute live stats once per timer tick
