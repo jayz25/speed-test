@@ -2,6 +2,7 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
+import { isStatsApiEnabled } from "../redux/stat";
 import { loadWords, refreshWords } from "../redux/paragraph";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { calculateCPM } from "../utils/calculateCPM";
@@ -10,6 +11,9 @@ import { calculateAccuracy } from "../utils/calculateAccuracy";
 import useTimer from "../utils/hooks/useTimer";
 import { useCaretTracking } from "../utils/hooks/useCaretTracking";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
+import { usePlayerName } from "../utils/hooks/usePlayerName";
+import { sanitizePlayerName } from "../utils/playerName";
+import PlayerNameInput from "./PlayerNameInput";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import { getWordCounts } from "../utils/typingEngine";
 import CapsLockAlert from "./CapsLockAlert";
@@ -61,8 +65,10 @@ const TypingTest = () => {
     }
   }, [seconds, isStarted, finish, wpm, cpm, accuracy]);
 
+  const [playerName, setPlayerName] = usePlayerName();
+
   usePostResultOnFinish({
-    isFinished, roundId: words, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: "Anonymous",
+    isFinished, roundId: words, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
   });
 
   const { resetScrollAnchor } = useCaretTracking({
@@ -168,6 +174,7 @@ const TypingTest = () => {
 
       <div className="flex items-center justify-between w-full h-8 px-1">
         <CapsLockAlert isVisible={isCapsLockOn} />
+        {!isStarted && isStatsApiEnabled && <PlayerNameInput value={playerName} onChange={setPlayerName} />}
         {!isStarted && <div className="ml-auto flex items-center gap-4 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_OPTIONS} onChange={handleTimeChange} /></div>}
       </div>
 
