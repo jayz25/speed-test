@@ -714,7 +714,7 @@ Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
   `export const isStatsApiEnabled = API_BASE !== "";` and use it in
   `GlobalStats.tsx` and `ResultCard.tsx` instead of reading
   `process.env` again.
-- [ ] **8.2 Validate API data.** Add `isStatsInstance(v: unknown)` type
+- [x] **8.2 Validate API data.** Add `isStatsInstance(v: unknown)` type
   guard in `types/types.ts`; `getStatCall` filters the response through it
   (throws if the body isn't an array). Test it.
 - [ ] **8.3 Post once, from the finish transition.** Remove the mount

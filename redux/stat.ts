@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { StatsInstancePayload, StatState } from "../types/types";
+import { isStatsInstance, StatsInstance, StatsInstancePayload, StatState } from "../types/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 export const isStatsApiEnabled = API_BASE !== "";
@@ -57,10 +57,12 @@ export const addStatCall = createAsyncThunk(
 
 export const getStatCall = createAsyncThunk(
   "stats/getStats",
-  async () => {
+  async (): Promise<StatsInstance[]> => {
     const response = await fetch(`${API_BASE}/getStats/`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    const body: unknown = await response.json();
+    if (!Array.isArray(body)) throw new Error("Invalid stats response: expected an array");
+    return body.filter(isStatsInstance);
   }
 );
 
