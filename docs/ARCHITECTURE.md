@@ -30,15 +30,14 @@ The flow is **engine -> hook -> components**:
    stats. The reducer never mutates; unchanged `typed` entries keep identity.
 2. **Hook** (`utils/hooks/useTypingEngine.ts`): wraps `useReducer`, resets
    when `words` changes, returns memoized action callbacks and
-   `activeLetterIndex`. `useTimer` (countdown) and `useCaretTracking`
-   (caret positioning from `#active-character` via direct DOM style, plus
-   auto-scroll when the active word wraps) are sibling hooks.
+   `activeLetterIndex`. `useTimer` (timestamp-based countdown) and `useCaret`
+   (ref-based caret positioning, plus 3-line translate scrolling of the
+   words container; re-runs on resize and font load) are sibling hooks.
 3. **Components**: `components/TypingTest.tsx` is the thin orchestrator. It
    loads words from Redux (`loadWords`/`refreshWords`), maps `onKeyDown`
    on the visually hidden `<input>` to engine actions, starts the timer on
    the first printable key, and on `seconds === 0` dispatches `finish` and
-   freezes `finalStats` from `calculateWPM`/`calculateCPM`/
-   `calculateAccuracy`. It renders `TimerOptions`, `LiveStat`,
+   freezes `finalStats` from `calculateStats`. It renders `TimerOptions`, `LiveStat`,
    `TypingArea` (which renders memoized `Word`s and `FocusOverlay`),
    `RestartButton`, and `ResultCard` once finished.
 
@@ -68,15 +67,13 @@ and small stat helpers were deleted in Phase 1.
 
 | File | Purpose |
 |---|---|
-| `calculateWPM.ts` | Words-per-minute from chars matched + elapsed time. |
-| `calculateCPM.ts` | Characters-per-minute. |
-| `calculateAccuracy.ts` | `% = correct / (correct + incorrect)` style calc from matched/incorrect word counts. |
+| `calculateStats.ts` | `calculateStats(state, elapsedMs)` -> net `wpm`, `rawWpm`, `cpm`, keystroke `accuracy`, correct/incorrect/extra/missed char counts. |
 | `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`. Exports `getWords` and `WordMode`; `fisherYatesShuffle` is module-private. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
-| `hooks/useCaretTracking.ts` | Caret positioning and line-wrap auto-scroll (DOM-based). |
-| `hooks/useTimer.ts` | Countdown hook: `start()`, `reset(newTimeout?)`, `seconds`. Guards against double-start; cleans up its interval on unmount. |
+| `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
+| `hooks/useTimer.ts` | Countdown hook (100ms tick, derived from `performance.now()`): `start()`, `reset(newTimeout?)`, `seconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
 
