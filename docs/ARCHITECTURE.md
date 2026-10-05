@@ -46,7 +46,7 @@ The flow is **engine -> hook -> components**:
 
 Three slices, combined in `redux/store.ts`:
 
-- **`paragraph`** (`redux/paragraph.ts`) — holds `wordsCollection: string[]`.
+- **`paragraph`** (`redux/paragraph.ts`) — holds `wordsCollection: string[]`, the last `mode`/`options`, and a `round` counter (bumped by `loadWords`/`refreshWords`/`repeatWords`; Repeat keeps the words but starts a new round).
   `loadWords({ count, mode })` and `refreshWords()` both call
   `utils/getWords.ts`, which shuffles (Fisher-Yates) a word pool from
   `utils/wordBank.ts` (`easy`/`medium`/`hard`/`mixed`) and repeats it to

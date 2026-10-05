@@ -2,7 +2,7 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
-import { loadWords, refreshWords } from "../redux/paragraph";
+import { loadWords, refreshWords, repeatWords } from "../redux/paragraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
@@ -34,6 +34,7 @@ const TIME_MODE_WORDS = 300;
 
 const TypingTest = () => {
   const words = useSelector((state: RootState) => state.paragraph.wordsCollection);
+  const round = useSelector((state: RootState) => state.paragraph.round);
   const dispatch = useDispatch<AppDispatch>();
 
   const { mode, timeLimit, wordCount, difficulty, punctuation, numbers } = useSelector((state: RootState) => state.settings);
@@ -44,7 +45,7 @@ const TypingTest = () => {
   }, [dispatch, mode, wordCount, difficulty, punctuation, numbers, timeLimit]);
 
   const isWordsMode = mode === "words";
-  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode });
+  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode, round });
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
@@ -91,12 +92,12 @@ const TypingTest = () => {
   const [playerName] = usePlayerName();
 
   usePostResultOnFinish({
-    isFinished, roundId: words, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
+    isFinished, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
   });
 
   useCaret({
     caretRef, targetRef, containerRef, viewportRef,
-    deps: [activeWordIndex, activeLetterIndex, words, isFocused, isFinished],
+    deps: [activeWordIndex, activeLetterIndex, words, round, isFocused, isFinished],
   });
 
   // Reset view state whenever the word list changes (engine resets itself)
@@ -104,7 +105,7 @@ const TypingTest = () => {
     if (words.length > 0) {
       textInput.current?.focus();
     }
-  }, [words]);
+  }, [words, round]);
 
   // The input is autoFocus'd; reflect whether it really has focus after mount
   useEffect(() => {
@@ -120,6 +121,12 @@ const TypingTest = () => {
     reset(timeLimit);
     dispatch(refreshWords());
     textInput.current?.focus();
+  }, [reset, dispatch, timeLimit]);
+
+  // Same words, fresh test (the engine restarts when the paragraph round changes)
+  const repeatTest = useCallback(() => {
+    reset(timeLimit);
+    dispatch(repeatWords());
   }, [reset, dispatch, timeLimit]);
 
   // Esc anywhere restarts the test
@@ -222,6 +229,7 @@ const TypingTest = () => {
           stats={finalStats}
           durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
           onReset={resetTest}
+          onRepeat={repeatTest}
         />
       ) : (
     <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">

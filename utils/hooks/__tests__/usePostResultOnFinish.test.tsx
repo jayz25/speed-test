@@ -16,7 +16,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   <Provider store={fakeStore as never}>{children}</Provider>
 );
 
-const base = { isFinished: true, roundId: {}, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
+const base = { isFinished: true, roundId: 1, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
 
 describe("usePostResultOnFinish", () => {
   beforeEach(() => addStatCall.mockClear());
@@ -39,10 +39,17 @@ describe("usePostResultOnFinish", () => {
     expect(addStatCall).not.toHaveBeenCalled();
   });
 
+  it("posts again for a repeated test (same words, new round)", () => {
+    const { rerender } = renderHook((p) => usePostResultOnFinish(p), { wrapper, initialProps: base });
+    rerender({ ...base, isFinished: false });
+    rerender({ ...base, roundId: base.roundId + 1 });
+    expect(addStatCall).toHaveBeenCalledTimes(2);
+  });
+
   it("posts again for a new round", () => {
     const { rerender } = renderHook((p) => usePostResultOnFinish(p), { wrapper, initialProps: base });
     rerender({ ...base, isFinished: false });
-    rerender({ ...base, roundId: {} });
+    rerender({ ...base, roundId: 2 });
     expect(addStatCall).toHaveBeenCalledTimes(2);
   });
 });

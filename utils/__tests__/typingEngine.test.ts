@@ -207,3 +207,11 @@ describe("finishOnLastWord (words mode)", () => {
     expect(run(done, ...type("b"), { type: "submitWord" })).toBe(done);
   });
 });
+
+describe("engine round", () => {
+  it("is carried by createEngineState and reset", () => {
+    expect(fresh().round).toBe(0);
+    expect(createEngineState(WORDS, false, 4).round).toBe(4);
+    expect(engineReducer(fresh(), { type: "reset", words: WORDS, round: 9 }).round).toBe(9);
+  });
+});

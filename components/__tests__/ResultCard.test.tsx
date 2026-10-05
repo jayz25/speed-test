@@ -17,7 +17,7 @@ describe("ResultCard", () => {
   });
 
   it("shows headline and detail stats", () => {
-    render(<ResultCard stats={STATS} durationSeconds={30} onReset={vi.fn()} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={vi.fn()} onRepeat={vi.fn()} />);
     expect(screen.getByText("72")).toBeInTheDocument();
     expect(screen.getByText("96")).toBeInTheDocument();
     const details = screen.getByText("Raw WPM").closest("div")!.parentElement!;
@@ -29,15 +29,19 @@ describe("ResultCard", () => {
     expect(details).toHaveTextContent("Duration30s");
   });
 
-  it("only renders the Next test button (Repeat and Copy are not implemented yet)", () => {
-    render(<ResultCard stats={STATS} durationSeconds={30} onReset={vi.fn()} />);
+  it("renders Next test and Repeat; Repeat calls onRepeat only", () => {
+    const onReset = vi.fn();
+    const onRepeat = vi.fn();
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={onReset} onRepeat={onRepeat} />);
     expect(screen.getByRole("button", { name: /next test/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /repeat|copy/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Repeat" }));
+    expect(onRepeat).toHaveBeenCalledTimes(1);
+    expect(onReset).not.toHaveBeenCalled();
   });
 
   it("resets on the button, Enter and Escape", () => {
     const onReset = vi.fn();
-    render(<ResultCard stats={STATS} durationSeconds={30} onReset={onReset} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={onReset} onRepeat={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /next test/i }));
     fireEvent.keyDown(window, { key: "Enter" });
     fireEvent.keyDown(window, { key: "Escape" });

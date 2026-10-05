@@ -8,7 +8,7 @@ export const MAX_PLAUSIBLE_WPM = 300;
 interface PostResultArgs {
   isFinished: boolean;
   /** Identifies the current test round; a new value means a new test. */
-  roundId: unknown;
+  roundId: number;
   wpm: number;
   cpm: number;
   accuracy: number;
@@ -18,7 +18,7 @@ interface PostResultArgs {
 /** Posts the result exactly once per round, on the transition to finished. */
 export function usePostResultOnFinish({ isFinished, roundId, wpm, cpm, accuracy, user }: PostResultArgs) {
   const dispatch = useDispatch<AppDispatch>();
-  const postedRound = useRef<unknown>(null);
+  const postedRound = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isFinished || !isStatsApiEnabled) return;

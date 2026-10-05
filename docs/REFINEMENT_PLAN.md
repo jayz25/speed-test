@@ -698,7 +698,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     `rng: () => number` param (default `Math.random`) so tests can be
     deterministic.
 
-- [ ] **7.6 Repeat test.**
+- [x] **7.6 Repeat test.**
+  - Note: `paragraph.round` is bumped by `loadWords`, `refreshWords` and `repeatWords`. The engine records the round it started in (`EngineState.round`, 3rd arg of `createEngineState`); `usePostResultOnFinish` now takes `roundId: number` = `state.round`, so Repeat (same words) posts again, and the finished test's id can't change during the one render between a new round and the engine reset (which previously could double-post). Button is on the result card; no keyboard shortcut.
   - Do: `paragraph` slice action `repeatWords` (keeps `wordsCollection`,
     bumps a `round` counter so `TypingTest` resets). Button on result card.
 

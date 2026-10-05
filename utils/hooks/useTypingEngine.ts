@@ -12,10 +12,10 @@ export function useTypingEngine(
   words: readonly string[],
   { finishOnLastWord = false, round = 0 }: UseTypingEngineOptions = {},
 ) {
-  const [state, dispatch] = useReducer(engineReducer, undefined, () => createEngineState(words, finishOnLastWord));
+  const [state, dispatch] = useReducer(engineReducer, undefined, () => createEngineState(words, finishOnLastWord, round));
 
   useEffect(() => {
-    dispatch({ type: "reset", words, finishOnLastWord });
+    dispatch({ type: "reset", words, finishOnLastWord, round });
   }, [words, finishOnLastWord, round]);
 
   const typeChar = useCallback((char: string) => dispatch({ type: "typeChar", char }), []);

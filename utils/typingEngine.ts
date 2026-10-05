@@ -15,16 +15,18 @@ export interface EngineState {
   incorrectKeystrokes: number;
   /** words mode: the test ends when the last word is completed instead of on a timer */
   finishOnLastWord: boolean;
+  /** paragraph round this test was started in (a new round = a new test, even with the same words) */
+  round: number;
 }
 
 export type EngineAction =
-  | { type: "reset"; words: readonly string[]; finishOnLastWord?: boolean }
+  | { type: "reset"; words: readonly string[]; finishOnLastWord?: boolean; round?: number }
   | { type: "typeChar"; char: string } // single printable char, not space
   | { type: "backspace" }
   | { type: "submitWord" } // space
   | { type: "finish" };
 
-export function createEngineState(words: readonly string[], finishOnLastWord = false): EngineState {
+export function createEngineState(words: readonly string[], finishOnLastWord = false, round = 0): EngineState {
   return {
     words,
     typed: [""],
@@ -33,6 +35,7 @@ export function createEngineState(words: readonly string[], finishOnLastWord = f
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
     finishOnLastWord,
+    round,
   };
 }
 
@@ -57,7 +60,7 @@ function submitActive(state: EngineState, finish: boolean): EngineState {
 export function engineReducer(state: EngineState, action: EngineAction): EngineState {
   switch (action.type) {
     case "reset":
-      return createEngineState(action.words, action.finishOnLastWord);
+      return createEngineState(action.words, action.finishOnLastWord, action.round);
 
     case "typeChar": {
       if (state.status === "finished" || state.words.length === 0) return state;

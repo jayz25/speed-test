@@ -20,6 +20,8 @@ export interface ParagraphState {
     mode: WordMode,
     /** punctuation/numbers flags of the last `loadWords`, reused by `refreshWords` */
     options: WordOptions,
+    /** bumped by loadWords / refreshWords / repeatWords; identifies the current test round */
+    round: number,
 }
 
 export interface StatsInstance {

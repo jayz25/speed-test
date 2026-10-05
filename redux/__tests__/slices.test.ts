@@ -1,5 +1,5 @@
 import { makeStore } from "../store";
-import { loadWords, refreshWords } from "../paragraph";
+import { loadWords, refreshWords, repeatWords } from "../paragraph";
 import { getWords } from "../../utils/getWords";
 import { addStatCall, getStatCall } from "../stat";
 
@@ -89,5 +89,23 @@ describe("paragraph slice options", () => {
     vi.mocked(getWords).mockClear();
     store.dispatch(refreshWords());
     expect(getWords).toHaveBeenCalledWith(7, "hard", { punctuation: true, numbers: true });
+  });
+});
+
+describe("paragraph round / repeatWords", () => {
+  it("repeatWords keeps the words and bumps the round", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ count: 5 }));
+    const { wordsCollection, round } = store.getState().paragraph;
+    store.dispatch(repeatWords());
+    expect(store.getState().paragraph.wordsCollection).toBe(wordsCollection);
+    expect(store.getState().paragraph.round).toBe(round + 1);
+  });
+  it("loadWords and refreshWords also start a new round", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ count: 5 }));
+    const r = store.getState().paragraph.round;
+    store.dispatch(refreshWords());
+    expect(store.getState().paragraph.round).toBe(r + 1);
   });
 });

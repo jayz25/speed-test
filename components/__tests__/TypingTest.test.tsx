@@ -14,7 +14,7 @@ vi.mock("../../utils/getWords", () => ({
 const getWordEls = () => Array.from(document.querySelectorAll<HTMLElement>("[data-word]"));
 
 const renderTest = () => {
-  const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {} } });
+  const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {}, round: 0 } });
   render(
     <Provider store={store}>
       <TypingTest />

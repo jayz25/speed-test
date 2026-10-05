@@ -7,6 +7,7 @@ const initialState: ParagraphState = {
   status: "idle",
   mode: "mixed",
   options: {},
+  round: 0,
 };
 
 const paragraphSlice = createSlice({
@@ -20,13 +21,19 @@ const paragraphSlice = createSlice({
       state.options = options;
       state.wordsCollection = getWords(action.payload?.count ?? 60, mode, options);
       state.status = "ready";
+      state.round += 1;
     },
     refreshWords: (state) => {
       state.wordsCollection = getWords(state.wordsCollection.length || 60, state.mode, { ...state.options });
       state.status = "ready";
+      state.round += 1;
+    },
+    /** Same words, new test: bumps `round` so the engine, timer and result posting restart. */
+    repeatWords: (state) => {
+      state.round += 1;
     },
   },
 });
 
-export const { loadWords, refreshWords } = paragraphSlice.actions;
+export const { loadWords, refreshWords, repeatWords } = paragraphSlice.actions;
 export default paragraphSlice.reducer;
