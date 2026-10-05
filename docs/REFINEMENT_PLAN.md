@@ -613,7 +613,7 @@ accessibility score ≥ 95 on `/` (record score in the task note).
 Depends on Phase 5 and 6.1–6.4. Settings and history live in
 `localStorage` behind one helper.
 
-- [ ] **7.1 Safe storage helper.**
+- [x] **7.1 Safe storage helper.**
   - File: `utils/storage.ts` with `readJSON<T>(key, fallback, isValid:
     (v: unknown) => v is T): T` and `writeJSON(key, value): void`; both
     wrap access in try/catch (private mode, quota) and SSR-guard `typeof
@@ -694,7 +694,7 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     Empty state: "No tests yet — take one" linking to `/`.
     Add a "Clear history" button with a `confirm()` prompt.
 
-- [ ] **7.10 Copy result.**
+- [x] **7.10 Copy result.**
   - Do: button copies `SpeedType — 72 wpm · 96% acc · 30s mixed` via
     `navigator.clipboard.writeText`; show "Copied!" for 1.5s; on failure
     show "Couldn't copy" (no silent catch).
