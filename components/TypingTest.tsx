@@ -12,6 +12,7 @@ import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
+import { makeSample, WpmSample } from "../utils/wpmSamples";
 import ConfigBar from "./ConfigBar";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveAnnouncer from "./LiveAnnouncer";
@@ -64,7 +65,7 @@ const TypingTest = () => {
   const textInput = useRef<HTMLInputElement>(null);
   const didKeyDownBackspace = useRef(false);
 
-  const { seconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
+  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
 
   // Computed stats
   // Live stats are recomputed once per timer tick (or new test), not per keystroke
@@ -80,6 +81,26 @@ const TypingTest = () => {
     if (!isWordsMode && seconds === 0 && isStarted) finish();
   }, [isWordsMode, seconds, isStarted, finish]);
 
+  // Sample WPM / raw WPM / mistakes once per elapsed second while running (for the result chart)
+  const samplesRef = useRef<WpmSample[]>([]);
+  const incorrectAtLastSample = useRef(0);
+  const [finalSamples, setFinalSamples] = useState<readonly WpmSample[]>([]);
+  const pushSample = useCallback((second: number) => {
+    const last = samplesRef.current[samplesRef.current.length - 1];
+    if (last && last.second >= second) return;
+    samplesRef.current = [...samplesRef.current, makeSample(state, second, incorrectAtLastSample.current)];
+    incorrectAtLastSample.current = state.incorrectKeystrokes;
+  }, [state]);
+
+  useEffect(() => {
+    if (state.status === "idle") {
+      samplesRef.current = [];
+      incorrectAtLastSample.current = 0;
+    } else if (isStarted && elapsedSeconds >= 1) {
+      pushSample(elapsedSeconds);
+    }
+  }, [state.status, isStarted, elapsedSeconds, pushSample]);
+
   // Freeze the clock and the result once the engine reports finished (state is stable after that)
   useEffect(() => {
     if (!isFinished) return;
@@ -87,7 +108,9 @@ const TypingTest = () => {
     const elapsed = elapsedMs();
     setFinalStats(calculateStats(state, elapsed));
     setFinalElapsedMs(elapsed);
-  }, [isFinished, state, stopTimer, elapsedMs]);
+    pushSample(Math.max(1, Math.round(elapsed / MS_PER_SECOND)));
+    setFinalSamples(samplesRef.current);
+  }, [isFinished, state, stopTimer, elapsedMs, pushSample]);
 
   const [playerName] = usePlayerName();
 
@@ -227,6 +250,7 @@ const TypingTest = () => {
       {isFinished ? (
         <ResultCard
           stats={finalStats}
+          samples={finalSamples}
           durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
           onReset={resetTest}
           onRepeat={repeatTest}

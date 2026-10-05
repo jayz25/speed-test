@@ -703,7 +703,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
   - Do: `paragraph` slice action `repeatWords` (keeps `wordsCollection`,
     bumps a `round` counter so `TypingTest` resets). Button on result card.
 
-- [ ] **7.7 WPM-over-time chart.**
+- [x] **7.7 WPM-over-time chart.**
+  - Note: Pure helpers in `utils/wpmSamples.ts` (`makeSample`, `getAxisMax` = raw WPM rounded up to a multiple of 10, `summarizeSamples`). Samples are cumulative WPM per elapsed second (from `useTimer.elapsedSeconds`), plus one final sample at finish for words mode. Chart hidden with <2 samples (e.g. a 15s test always has 15). dataviz skill applied: no dual axis, legend always visible, recessive grid, text summary in `<title>`/`aria-label`; colors fixed by the plan so the palette validator was not applicable.
   - Do: `TypingTest` samples once per second while running:
     `{ second, wpm, rawWpm, errors }` (errors = incorrect keystrokes in
     that second) into a `useRef` array; pass to result card.

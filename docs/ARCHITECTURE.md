@@ -91,6 +91,7 @@ and small stat helpers were deleted in Phase 1.
 | `LiveStat.tsx`, `RestartButton.tsx` | Live stat tile, restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
+| `WpmChart.tsx` | Inline-SVG WPM / raw WPM line chart (+ mistake dots) on the result card; data from `utils/wpmSamples.ts`. |
 | `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
 | `GlobalStats.tsx` | Active — leaderboard list for `/stats`, handles the "API not configured" state. |

@@ -2,13 +2,17 @@
 
 import { useEffect } from "react";
 import type { TestStats } from "../utils/calculateStats";
+import type { WpmSample } from "../utils/wpmSamples";
 import RenderStat from "./RenderStat";
+import WpmChart from "./WpmChart";
 
 const BUTTON_BASE =
   "flex items-center gap-2 px-6 py-3 font-semibold rounded-xl transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]";
 
 interface ResultCardProps {
   stats: TestStats;
+  /** Per-second samples for the chart; omit or pass fewer than 2 to hide it. */
+  samples?: readonly WpmSample[];
   /** Configured test length in seconds. */
   durationSeconds: number;
   onReset: () => void;
@@ -16,7 +20,7 @@ interface ResultCardProps {
   onRepeat: () => void;
 }
 
-export default function ResultCard({ stats, durationSeconds, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], durationSeconds, onReset, onRepeat }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
@@ -55,6 +59,8 @@ export default function ResultCard({ stats, durationSeconds, onReset, onRepeat }
           <Detail label="Duration" value={`${durationSeconds}s`} />
         </dl>
       </div>
+
+      <WpmChart samples={samples} />
 
       {/* Grade */}
       <div className="flex flex-col items-center gap-3 my-2">
