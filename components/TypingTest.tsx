@@ -15,6 +15,7 @@ import { sanitizePlayerName } from "../utils/playerName";
 import PlayerNameInput from "./PlayerNameInput";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import CapsLockAlert from "./CapsLockAlert";
+import LiveAnnouncer from "./LiveAnnouncer";
 import LiveStat from "./LiveStat";
 import RestartButton from "./RestartButton";
 import ResultCard from "./ResultCard";
@@ -24,6 +25,7 @@ import TypingArea from "./TypingArea";
 // Chrome that fades out in focus mode (see useFocusMode + globals.css)
 const FADE_CLASSES = "transition-opacity duration-300";
 
+const WARNING_SECONDS = 10;
 const TIME_OPTIONS = [15, 30, 45, 60] as const;
 
 const TypingTest = () => {
@@ -169,18 +171,24 @@ const TypingTest = () => {
     e.preventDefault();
   }, []);
 
+  let announcement = "";
   if (isFinished) {
-    return (
-      <ResultCard
-        wpm={finalStats.wpm}
-        cpm={finalStats.cpm}
-        accuracy={finalStats.accuracy}
-        onReset={resetTest}
-      />
-    );
+    announcement = `Test complete. ${finalStats.wpm} words per minute, ${finalStats.accuracy} percent accuracy.`;
+  } else if (isStarted) {
+    announcement = seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
   return (
+    <>
+      <LiveAnnouncer message={announcement} />
+      {isFinished ? (
+        <ResultCard
+          wpm={finalStats.wpm}
+          cpm={finalStats.cpm}
+          accuracy={finalStats.accuracy}
+          onReset={resetTest}
+        />
+      ) : (
     <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">
       <input
         ref={textInput}
@@ -231,10 +239,12 @@ const TypingTest = () => {
         onMouseDown={handleContainerMouseDown}
       />
 
-      <p data-focus-fade className={`text-xs text-slate-500 select-none ${FADE_CLASSES}`}>tab + enter — restart · esc — restart</p>
+      <p data-focus-fade className={`text-xs text-slate-400 select-none ${FADE_CLASSES}`}>tab + enter — restart · esc — restart</p>
 
       <RestartButton onClick={resetTest} />
     </div>
+      )}
+    </>
   );
 };
 

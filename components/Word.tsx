@@ -2,7 +2,7 @@ import React from "react";
 import { getLetterStates, LetterState } from "../utils/typingEngine";
 
 const LETTER_CLASSES: Record<LetterState, string> = {
-  idle: "text-slate-600 opacity-70",
+  idle: "text-slate-500",
   correct: "text-slate-100",
   incorrect: "text-red-400",
   extra: "text-red-400/70",
@@ -25,7 +25,6 @@ const Word = ({ word, typed, isActive, isWrong, activeLetterIndex, caretRef }: W
   return (
     <div
       className={`flex whitespace-pre ${isWrong ? "underline decoration-red-500/50 decoration-2 underline-offset-4" : ""}`}
-      aria-label={word}
       data-word
     >
       {letters.map((letter, li) => (

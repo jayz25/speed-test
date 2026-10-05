@@ -45,7 +45,7 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
 
       <button
         onClick={onReset}
-        className="flex items-center gap-2 px-6 py-3 bg-[#FFD523] text-black font-semibold rounded-xl hover:bg-yellow-300 transition-colors duration-200"
+        className="flex items-center gap-2 px-6 py-3 bg-[#FFD523] text-black font-semibold rounded-xl hover:bg-yellow-300 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -61,7 +61,7 @@ function StatBox({ label, value, unit = "", color, subtitle }: { label: string; 
     <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/5 border border-white/10 p-6">
       <span className="text-xs uppercase tracking-widest text-slate-500 mb-1">{label}</span>
       <RenderStat targetValue={value} unit={unit} color={color} />
-      <span className="text-xs text-slate-600 mt-1">{subtitle}</span>
+      <span className="text-xs text-slate-400 mt-1">{subtitle}</span>
     </div>
   );
 }

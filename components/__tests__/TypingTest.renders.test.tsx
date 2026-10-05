@@ -17,6 +17,8 @@ vi.mock("../../utils/typingEngine", async (importOriginal) => {
   return { ...actual, getLetterStates: vi.fn(actual.getLetterStates) };
 });
 
+const getWordEls = () => Array.from(document.querySelectorAll<HTMLElement>("[data-word]"));
+
 describe("TypingTest render cost", () => {
   beforeAll(() => {
     window.ResizeObserver ??= class {
@@ -31,7 +33,7 @@ describe("TypingTest render cost", () => {
     const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed" } });
     render(<Provider store={store}><TypingTest /></Provider>);
     await user.click(screen.getByLabelText("Typing input"));
-    expect(screen.getAllByLabelText("the").length).toBeGreaterThan(40);
+    expect(getWordEls().length).toBeGreaterThan(40);
 
     const calls = vi.mocked(getLetterStates);
     const rendersFor = async (keys: string) => {

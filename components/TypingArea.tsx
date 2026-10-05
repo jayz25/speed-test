@@ -21,13 +21,10 @@ const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, tar
     className="relative w-full cursor-text overflow-hidden p-1"
     onClick={onClick}
     onMouseDown={onMouseDown}
-    role="button"
-    tabIndex={-1}
-    aria-label="Typing area"
   >
     {!isFocused && <FocusOverlay />}
 
-    <div ref={viewportRef} className="relative overflow-hidden border-l-2 border-transparent">
+    <div ref={viewportRef} aria-hidden="true" className="relative overflow-hidden border-l-2 border-transparent">
       <div ref={containerRef} className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 transition-transform duration-150 font-mono text-2xl sm:text-3xl font-medium tracking-wide leading-relaxed select-none">
         {isFocused && state.words.length > 0 && (
           <div

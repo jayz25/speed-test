@@ -60,7 +60,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
         {children}
       </main>
 
-      <footer className="py-4 text-center text-xs text-slate-600">SpeedType</footer>
+      <footer className="py-4 text-center text-xs text-slate-400">SpeedType</footer>
     </div>
   )
 }
