@@ -7,13 +7,16 @@ interface TypingAreaProps {
   state: EngineState;
   activeLetterIndex: number;
   isFocused: boolean;
-  cursorRef: RefObject<HTMLDivElement | null>;
-  scrollRef: RefObject<HTMLDivElement | null>;
+  isIdle: boolean;
+  caretRef: RefObject<HTMLDivElement | null>;
+  targetRef: RefObject<HTMLSpanElement | null>;
+  containerRef: RefObject<HTMLDivElement | null>;
+  viewportRef: RefObject<HTMLDivElement | null>;
   onClick: (e: React.MouseEvent) => void;
   onMouseDown: (e: React.MouseEvent) => void;
 }
 
-const TypingArea = ({ state, activeLetterIndex, isFocused, cursorRef, scrollRef, onClick, onMouseDown }: TypingAreaProps) => (
+const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, targetRef, containerRef, viewportRef, onClick, onMouseDown }: TypingAreaProps) => (
   <div
     className="relative w-full cursor-text overflow-hidden p-1"
     onClick={onClick}
@@ -24,26 +27,30 @@ const TypingArea = ({ state, activeLetterIndex, isFocused, cursorRef, scrollRef,
   >
     {!isFocused && <FocusOverlay />}
 
-    <div ref={scrollRef} className="relative overflow-hidden h-40 border-l-2 border-transparent">
-      <div className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 text-3xl font-medium tracking-wide leading-relaxed select-none">
+    <div ref={viewportRef} className="relative overflow-hidden border-l-2 border-transparent">
+      <div ref={containerRef} className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 transition-transform duration-150 text-3xl font-medium tracking-wide leading-relaxed select-none">
         {isFocused && state.words.length > 0 && (
           <div
-            ref={cursorRef}
-            className="absolute bg-[#FFD523] w-[2.5px] rounded-full z-10"
+            ref={caretRef}
+            className={`absolute bg-[#FFD523] w-[2.5px] rounded-full z-10${isIdle ? " animate-flash" : ""}`}
             style={{ height: "1.35em" }}
           />
         )}
 
-        {state.words.map((word, wi) => (
-          <Word
-            key={wi}
-            word={word}
-            typed={state.typed[wi] ?? ""}
-            isActive={wi === state.activeWordIndex}
-            isWrong={isWordWrong(state, wi)}
-            activeLetterIndex={activeLetterIndex}
-          />
-        ))}
+        {state.words.map((word, wi) => {
+          const isActive = wi === state.activeWordIndex;
+          return (
+            <Word
+              key={wi}
+              word={word}
+              typed={state.typed[wi] ?? ""}
+              isActive={isActive}
+              isWrong={isWordWrong(state, wi)}
+              activeLetterIndex={isActive ? activeLetterIndex : -1}
+              caretRef={isActive ? targetRef : undefined}
+            />
+          );
+        })}
       </div>
     </div>
   </div>

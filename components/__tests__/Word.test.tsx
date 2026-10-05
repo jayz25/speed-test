@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { createRef } from "react";
 import Word from "../Word";
 
 describe("Word", () => {
@@ -15,9 +16,16 @@ describe("Word", () => {
   });
 
   it("always has a caret target, even when over-typed", () => {
-    const { container } = render(
-      <Word word="the" typed="thexy" isActive isWrong={false} activeLetterIndex={5} />,
+    const caretRef = createRef<HTMLSpanElement>();
+    render(
+      <Word word="the" typed="thexy" isActive isWrong={false} activeLetterIndex={5} caretRef={caretRef} />,
     );
-    expect(container.querySelector("#active-character")).not.toBeNull();
+    expect(caretRef.current).not.toBeNull();
+  });
+
+  it("attaches caretRef to the active letter", () => {
+    const caretRef = createRef<HTMLSpanElement>();
+    render(<Word word="the" typed="t" isActive isWrong={false} activeLetterIndex={1} caretRef={caretRef} />);
+    expect(caretRef.current?.textContent).toBe("h");
   });
 });

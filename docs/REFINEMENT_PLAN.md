@@ -491,7 +491,8 @@ Depends on Phase 3. Each task must add/adjust tests in
     `Word.tsx` renders extra chars in `text-red-400/70`. Caret now always
     has a target element.
 
-- [ ] **5.4 Caret: ref-based + resize-safe.**
+- [x] **5.4 Caret: ref-based + resize-safe.**
+  - Note: implemented together with 5.5 in one commit (same hook). `useCaretTracking.ts` was `git mv`d to `utils/hooks/useCaret.ts` (single hook). Signature: `useCaret({ caretRef /* caret div */, targetRef /* active letter, passed to Word as caretRef */, containerRef, viewportRef, deps })`. `Word` also got a `data-word` attribute (used to measure line pitch) and non-active words get `activeLetterIndex = -1`.
   - File: new `utils/hooks/useCaret.ts`; remove the `useLayoutEffect` and
     `getElementById` from `TypingTest.tsx`, and `id="active-character"`
     from `Word.tsx`.
@@ -503,7 +504,8 @@ Depends on Phase 3. Each task must add/adjust tests in
     (`animate-flash`, already in `tailwind.config.js`) only while
     `status === "idle"`.
 
-- [ ] **5.5 Line-based scrolling.**
+- [x] **5.5 Line-based scrolling.**
+  - Note: viewport height = `VISIBLE_LINES (3) * pitch`, pitch = first word height + row gap (measured, jsdom-safe). Layout-dependent hook is excluded from coverage; pure `getLineScrollOffset` is unit-tested. Not verified in a real browser.
   - Do: replace `scrollBy(40)` with a translate: keep 3 lines visible; when
     the active word's `offsetTop` reaches line 3, set the inner word
     container's `transform: translateY(-<offsetTop of line 2>px)` with a

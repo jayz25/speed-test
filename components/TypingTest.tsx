@@ -6,7 +6,7 @@ import { loadWords, refreshWords } from "../redux/paragraph";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
-import { useCaretTracking } from "../utils/hooks/useCaretTracking";
+import { useCaret } from "../utils/hooks/useCaret";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveStat from "./LiveStat";
@@ -36,10 +36,12 @@ const TypingTest = () => {
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
   const [finalStats, setFinalStats] = useState<Pick<TestStats, "wpm" | "cpm" | "accuracy">>({ wpm: 0, cpm: 0, accuracy: 100 });
-  const cursorRef = useRef<HTMLDivElement>(null);
+  const caretRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { seconds, start, reset, elapsedMs } = useTimer(timeLimit);
 
@@ -54,18 +56,17 @@ const TypingTest = () => {
     }
   }, [seconds, isStarted, finish, wpm, cpm, accuracy]);
 
-  const { resetScrollAnchor } = useCaretTracking({
-    cursorRef, scrollRef, activeWordIndex, activeLetterIndex, words, isFocused, isFinished,
+  useCaret({
+    caretRef, targetRef, containerRef, viewportRef,
+    deps: [activeWordIndex, activeLetterIndex, words, isFocused, isFinished],
   });
 
   // Reset view state whenever the word list changes (engine resets itself)
   useEffect(() => {
     if (words.length > 0) {
-      resetScrollAnchor();
       textInput.current?.focus();
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
     }
-  }, [words, resetScrollAnchor]);
+  }, [words]);
 
   const resetTest = useCallback(() => {
     reset(timeLimit);
@@ -175,8 +176,11 @@ const TypingTest = () => {
         state={state}
         activeLetterIndex={activeLetterIndex}
         isFocused={isFocused}
-        cursorRef={cursorRef}
-        scrollRef={scrollRef}
+        isIdle={state.status === "idle"}
+        caretRef={caretRef}
+        targetRef={targetRef}
+        containerRef={containerRef}
+        viewportRef={viewportRef}
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
       />

@@ -7,7 +7,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["utils/**", "redux/**"],
-      exclude: [".worktrees/**", "**/__tests__/**", "utils/hooks/useCaretTracking.ts"],
+      exclude: [".worktrees/**", "**/__tests__/**", "utils/hooks/useCaret.ts"],
       thresholds: { statements: 80, branches: 80, functions: 80, lines: 80 },
     },
   },

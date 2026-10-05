@@ -13,28 +13,32 @@ interface WordProps {
   typed: string;
   isActive: boolean;
   isWrong: boolean;
+  /** Index of the caret within this word; -1 when the word is not active. */
   activeLetterIndex: number;
+  /** Attached to the active letter (or trailing spacer); only passed to the active word. */
+  caretRef?: React.Ref<HTMLSpanElement>;
 }
 
-const Word = ({ word, typed, isActive, isWrong, activeLetterIndex }: WordProps) => {
+const Word = ({ word, typed, isActive, isWrong, activeLetterIndex, caretRef }: WordProps) => {
   const states = getLetterStates(word, typed);
   const letters = states.map((_, i) => word[i] ?? typed[i]);
   return (
     <div
       className={`flex whitespace-pre ${isWrong ? "underline decoration-red-500/50 decoration-2 underline-offset-4" : ""}`}
       aria-label={word}
+      data-word
     >
       {letters.map((letter, li) => (
         <span
           key={li}
-          id={isActive && li === activeLetterIndex ? "active-character" : undefined}
-          className={`${LETTER_CLASSES[states[li]]} transition-colors duration-200`}
+          ref={isActive && li === activeLetterIndex ? caretRef : undefined}
+          className={`${LETTER_CLASSES[states[li]]}`}
         >
           {letter}
         </span>
       ))}
       <span
-        id={isActive && activeLetterIndex >= letters.length ? "active-character" : undefined}
+        ref={isActive && activeLetterIndex >= letters.length ? caretRef : undefined}
         className="w-[0.4em]"
       />
     </div>
