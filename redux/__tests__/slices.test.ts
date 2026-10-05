@@ -47,14 +47,14 @@ describe("stat thunks", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
     const store = makeStore();
-    await store.dispatch(addStatCall({ words: 40, chars: 200, accuracy: 95 }));
+    await store.dispatch(addStatCall({ user: "Anonymous", words: 40, chars: 200, accuracy: 95 }));
     expect(fetchMock.mock.calls[0][1].method).toBe("POST");
     expect(store.getState().globalStats.status).toBe("Stat Saved");
   });
   it("addStatCall records failure on a non-ok response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 400 }));
     const store = makeStore();
-    await store.dispatch(addStatCall({ words: 1, chars: 1, accuracy: 1 }));
+    await store.dispatch(addStatCall({ user: "Anonymous", words: 1, chars: 1, accuracy: 1 }));
     expect(store.getState().globalStats.status).toBe("Save Failed");
   });
 });

@@ -440,7 +440,7 @@ Use Arrange/Act/Assert and descriptive names.
   (install `@vitest/coverage-v8`), set
   `coverage.include: ["utils/**", "redux/**"]` and thresholds 80%. Add it
   to CI in place of `npm test`.
-  - Note: coverage excludes `utils/hooks/useCaretTracking.ts` (DOM-heavy) and `__tests__`; vitest/coverage ignore `.worktrees/**`. CI step now `npm run test:coverage`. `package.json` deps for 4.4 (`@testing-library/user-event`) landed in the 4.5 commit together with the script.
+  - Note: coverage excludes `utils/hooks/useCaretTracking.ts` (DOM-heavy) and `__tests__`; vitest/coverage ignore `.worktrees/**`. CI step now `npm run test:coverage`. `package.json` deps for 4.4 (`@testing-library/user-event`) landed in the 4.5 commit together with the script. Also added `.worktrees` to eslint ignores and tsconfig `exclude` so the Phase 8 worktree isn't linted/type-checked from the main tree.
 
 **Acceptance:** `npm run test:coverage` ≥ 80% on `utils/` + `redux/`, CI green.
 

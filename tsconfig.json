@@ -26,6 +26,7 @@
     "**/*.tsx"
   ],
   "exclude": [
+    ".worktrees",
     "node_modules"
   ]
 }
