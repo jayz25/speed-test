@@ -24,7 +24,7 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
   const gradeColor = grade === "S" ? "text-[#FFD523]" : grade === "A" ? "text-green-400" : grade === "B" ? "text-blue-400" : "text-slate-400";
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl animate-fade-in">
+    <div className="flex flex-col items-center gap-8 w-full max-w-2xl motion-safe:animate-fade-in">
       <div className="text-center">
         <h2 className="text-4xl font-bold mb-1">Test Complete</h2>
         <p className="text-slate-500 text-sm">Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs">Enter</kbd> to restart</p>

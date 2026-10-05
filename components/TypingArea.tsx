@@ -25,11 +25,11 @@ const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, tar
     {!isFocused && <FocusOverlay />}
 
     <div ref={viewportRef} aria-hidden="true" className="relative overflow-hidden border-l-2 border-transparent">
-      <div ref={containerRef} className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 transition-transform duration-150 font-mono text-2xl sm:text-3xl font-medium tracking-wide leading-relaxed select-none">
+      <div ref={containerRef} className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 motion-safe:transition-transform motion-safe:duration-150 font-mono text-2xl sm:text-3xl font-medium tracking-wide leading-relaxed select-none">
         {isFocused && state.words.length > 0 && (
           <div
             ref={caretRef}
-            className={`absolute bg-[#FFD523] w-[2.5px] rounded-full z-10${isIdle ? " animate-flash" : ""}`}
+            className={`absolute bg-[#FFD523] w-[2.5px] rounded-full z-10${isIdle ? " motion-safe:animate-flash" : ""}`}
             style={{ height: "1.35em" }}
           />
         )}

@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "../motion";
 import { RefObject, useCallback, useEffect, useLayoutEffect } from "react";
 
 export const VISIBLE_LINES = 3;
@@ -57,7 +58,8 @@ export function useCaret({ caretRef, targetRef, containerRef, viewportRef, deps 
     const top = target.offsetTop + CARET_TOP_NUDGE_PX;
     const previousTop = Number(caret.dataset.top ?? top);
     // No transition across line wraps, to prevent the caret flying diagonally
-    caret.style.transition = Math.abs(previousTop - top) > LINE_WRAP_THRESHOLD_PX ? "none" : CARET_TRANSITION;
+    const isWrap = Math.abs(previousTop - top) > LINE_WRAP_THRESHOLD_PX;
+    caret.style.transition = isWrap || prefersReducedMotion() ? "none" : CARET_TRANSITION;
     caret.style.top = `${top}px`;
     caret.style.left = `${target.offsetLeft}px`;
     caret.dataset.top = String(top);
