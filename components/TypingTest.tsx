@@ -7,6 +7,7 @@ import { loadWords, refreshWords } from "../redux/paragraph";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
+import { useFocusMode } from "../utils/hooks/useFocusMode";
 import { useCaret } from "../utils/hooks/useCaret";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
@@ -19,6 +20,9 @@ import RestartButton from "./RestartButton";
 import ResultCard from "./ResultCard";
 import TimerOptions from "./TimerOptions";
 import TypingArea from "./TypingArea";
+
+// Chrome that fades out in focus mode (see useFocusMode + globals.css)
+const FADE_CLASSES = "transition-opacity duration-300";
 
 const TIME_OPTIONS = [15, 30, 45, 60] as const;
 
@@ -37,6 +41,8 @@ const TypingTest = () => {
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
+
+  useFocusMode(isStarted);
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -197,8 +203,8 @@ const TypingTest = () => {
 
       <div className="flex flex-wrap items-center justify-between w-full min-h-8 gap-2 px-1">
         <CapsLockAlert isVisible={isCapsLockOn} />
-        {!isStarted && isStatsApiEnabled && <PlayerNameInput value={playerName} onChange={setPlayerName} />}
-        {!isStarted && <div className="ml-auto flex items-center gap-4 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_OPTIONS} onChange={handleTimeChange} /></div>}
+        {isStatsApiEnabled && <div data-focus-fade className={FADE_CLASSES}><PlayerNameInput value={playerName} onChange={setPlayerName} /></div>}
+        <div data-focus-fade className={`ml-auto flex items-center gap-4 text-slate-500 ${FADE_CLASSES}`}><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_OPTIONS} onChange={handleTimeChange} /></div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row w-full justify-between sm:items-end px-1 mb-2">
@@ -225,7 +231,7 @@ const TypingTest = () => {
         onMouseDown={handleContainerMouseDown}
       />
 
-      <p className="text-xs text-slate-500 select-none">tab + enter — restart · esc — restart</p>
+      <p data-focus-fade className={`text-xs text-slate-500 select-none ${FADE_CLASSES}`}>tab + enter — restart · esc — restart</p>
 
       <RestartButton onClick={resetTest} />
     </div>

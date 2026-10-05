@@ -29,7 +29,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
       </Head>
       <header
         data-focus-fade
-        className='h-16 flex items-center justify-between px-4 sm:px-10 border-b border-white/5 bg-black/20'
+        className='transition-opacity duration-300 h-16 flex items-center justify-between px-4 sm:px-10 border-b border-white/5 bg-black/20'
       >
         <Link
           href="/"
