@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { addStatCall } from "../redux/stat";
+import { addStatCall, isStatsApiEnabled } from "../redux/stat";
 import { AppDispatch } from "../types/types";
 import RenderStat from "./RenderStat";
 
@@ -18,7 +18,7 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
 
   // Fixed: was dispatching at render-time on every render; now runs once on mount
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    if (isStatsApiEnabled) {
       dispatch(addStatCall({ words: wpm, chars: cpm, accuracy, user: "" }));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

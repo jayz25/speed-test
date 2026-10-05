@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getStatCall } from "../redux/stat";
+import { getStatCall, isStatsApiEnabled } from "../redux/stat";
 import { AppDispatch, RootState } from "../types/types";
 
 export const GlobalStats = () => {
@@ -11,12 +11,12 @@ export const GlobalStats = () => {
   const status = useSelector((state: RootState) => state.globalStats.status);
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    if (isStatsApiEnabled) {
       dispatch(getStatCall());
     }
   }, [dispatch]);
 
-  if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  if (!isStatsApiEnabled) {
     return (
       <p className="text-slate-500 text-sm">
         Stats API not configured. Set <code className="text-slate-300 bg-white/10 px-1 rounded">NEXT_PUBLIC_API_BASE_URL</code> to enable.

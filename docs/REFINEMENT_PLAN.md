@@ -710,7 +710,7 @@ visible on `/stats`; gate passes with tests for every new util.
 
 Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
 
-- [ ] **8.1 Single config source.** In `redux/stat.ts` export
+- [x] **8.1 Single config source.** In `redux/stat.ts` export
   `export const isStatsApiEnabled = API_BASE !== "";` and use it in
   `GlobalStats.tsx` and `ResultCard.tsx` instead of reading
   `process.env` again.
