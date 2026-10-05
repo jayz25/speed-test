@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { statsInstancePayload, statState } from "../types/types";
+import { StatsInstancePayload, StatState } from "../types/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -8,7 +8,7 @@ export const statSlice = createSlice({
   initialState: {
     stats: [],
     status: null,
-  } as statState,
+  } as StatState,
   reducers: {},
   extraReducers(builder) {
     builder
@@ -36,7 +36,7 @@ export const statSlice = createSlice({
 
 export const addStatCall = createAsyncThunk(
   "stats/addStat", // Fixed: was duplicate 'stats/getStats'
-  async (newStat: statsInstancePayload) => {
+  async (newStat: StatsInstancePayload) => {
     const response = await fetch(`${API_BASE}/addStat/`, {
       method: "POST",
       body: JSON.stringify({
@@ -49,6 +49,7 @@ export const addStatCall = createAsyncThunk(
         "Content-type": "application/json; charset=UTF-8",
       },
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 );
@@ -57,6 +58,7 @@ export const getStatCall = createAsyncThunk(
   "stats/getStats",
   async () => {
     const response = await fetch(`${API_BASE}/getStats/`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 );

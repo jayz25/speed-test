@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { paragraphState } from "../types/types";
+import { ParagraphState } from "../types/types";
 import { getWords, WordMode } from "../utils/getWords";
 
-const initialState: paragraphState = {
+const initialState: ParagraphState = {
   wordsCollection: [],
   status: "idle",
 };

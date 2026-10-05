@@ -16,7 +16,7 @@ track it in `REFINEMENT_PLAN.md` instead.
 - Prefer `interface` for object shapes that represent data (matches
   `types/types.ts`), `type` for unions/aliases (matches `LetterState` in
   `TypingTest.tsx`).
-- Status/phase fields (e.g. `paragraphState.status`, `statState.status`)
+- Status/phase fields (e.g. `ParagraphState.status`, `StatState.status`)
   should be typed as string-literal unions, not bare `string | null` — the
   current bare-string typing lets a typo like `"Stats Recieved"` pass
   type-checking silently. Tighten this whenever you touch a slice, even if

@@ -2,12 +2,23 @@ import store from "../redux/store";
 
 export type WordsCollection = Array<string>;
 
-export interface paragraphState {
+export type ParagraphStatus = "idle" | "ready";
+
+export type StatStatus =
+    | null
+    | "Loading Stats"
+    | "Stats Received"
+    | "Stats API Failed"
+    | "Saving Stat"
+    | "Stat Saved"
+    | "Save Failed";
+
+export interface ParagraphState {
     wordsCollection: WordsCollection,
-    status: string | null,
+    status: ParagraphStatus,
 }
 
-export interface statsInstance {
+export interface StatsInstance {
     id: number,
     user: string,
     words_per_minute: number,
@@ -15,12 +26,12 @@ export interface statsInstance {
     accuracy: number
 }
 
-export interface statState {
-    stats: Array<statsInstance>,
-    status: string | null
+export interface StatState {
+    stats: Array<StatsInstance>,
+    status: StatStatus
 }
 
-export interface statsInstancePayload {
+export interface StatsInstancePayload {
     user: string,
     words: number,
     chars: number,

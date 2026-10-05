@@ -95,7 +95,7 @@ and small stat helpers were deleted in Phase 1.
 ## Types (`types/types.ts`)
 
 Defines `RootState`/`AppDispatch` (standard RTK typed-hooks pattern),
-`paragraphState`, `statState`, `statsInstance`/`statsInstancePayload`.
+`ParagraphState`, `StatState`, `StatsInstance`/`StatsInstancePayload`.
 Status fields are still bare `string | null`, and the interface names are
 camelCase; both are fixed in `REFINEMENT_PLAN.md` 3.6.
 `interfaces/index.ts` is leftover boilerplate with no importers (removed in
