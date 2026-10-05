@@ -25,6 +25,10 @@ import TypingArea from "./TypingArea";
 // Chrome that fades out in focus mode (see useFocusMode + globals.css)
 const FADE_CLASSES = "transition-opacity duration-300";
 
+const INITIAL_STATS: TestStats = {
+  wpm: 0, rawWpm: 0, cpm: 0, accuracy: 100,
+  correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
+};
 const WARNING_SECONDS = 10;
 const TIME_OPTIONS = [15, 30, 45, 60] as const;
 
@@ -48,7 +52,7 @@ const TypingTest = () => {
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [finalStats, setFinalStats] = useState<Pick<TestStats, "wpm" | "cpm" | "accuracy">>({ wpm: 0, cpm: 0, accuracy: 100 });
+  const [finalStats, setFinalStats] = useState<TestStats>(INITIAL_STATS);
   const caretRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,19 +65,20 @@ const TypingTest = () => {
 
   // Computed stats
   // Live stats are recomputed once per timer tick (or new test), not per keystroke
-  const { wpm, cpm, accuracy } = useMemo(
+  const liveStats = useMemo(
     () => calculateStats(state, elapsedMs()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [seconds, state.words],
   );
+  const { wpm, cpm, accuracy } = liveStats;
 
   // Game over when timer reaches 0
   useEffect(() => {
     if (seconds === 0 && isStarted) {
       finish();
-      setFinalStats({ wpm, cpm, accuracy });
+      setFinalStats(liveStats);
     }
-  }, [seconds, isStarted, finish, wpm, cpm, accuracy]);
+  }, [seconds, isStarted, finish, liveStats]);
 
   const [playerName, setPlayerName] = usePlayerName();
 
@@ -209,9 +214,8 @@ const TypingTest = () => {
       <LiveAnnouncer message={announcement} />
       {isFinished ? (
         <ResultCard
-          wpm={finalStats.wpm}
-          cpm={finalStats.cpm}
-          accuracy={finalStats.accuracy}
+          stats={finalStats}
+          durationSeconds={timeLimit}
           onReset={resetTest}
         />
       ) : (

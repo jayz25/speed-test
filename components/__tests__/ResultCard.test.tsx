@@ -1,0 +1,46 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import ResultCard from "../ResultCard";
+import type { TestStats } from "../../utils/calculateStats";
+
+const STATS: TestStats = {
+  wpm: 72, rawWpm: 80, cpm: 360, accuracy: 96,
+  correctChars: 300, incorrectChars: 12, extraChars: 3, missedChars: 5,
+};
+
+describe("ResultCard", () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    // @ts-expect-error restore jsdom default (no matchMedia)
+    delete window.matchMedia;
+  });
+
+  it("shows headline and detail stats", () => {
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={vi.fn()} />);
+    expect(screen.getByText("72")).toBeInTheDocument();
+    expect(screen.getByText("96")).toBeInTheDocument();
+    const details = screen.getByText("Raw WPM").closest("div")!.parentElement!;
+    expect(details).toHaveTextContent("80");
+    expect(details).toHaveTextContent("Correct300");
+    expect(details).toHaveTextContent("Incorrect12");
+    expect(details).toHaveTextContent("Extra3");
+    expect(details).toHaveTextContent("Missed5");
+    expect(details).toHaveTextContent("Duration30s");
+  });
+
+  it("only renders the Next test button (Repeat and Copy are not implemented yet)", () => {
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /next test/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /repeat|copy/i })).not.toBeInTheDocument();
+  });
+
+  it("resets on the button, Enter and Escape", () => {
+    const onReset = vi.fn();
+    render(<ResultCard stats={STATS} durationSeconds={30} onReset={onReset} />);
+    fireEvent.click(screen.getByRole("button", { name: /next test/i }));
+    fireEvent.keyDown(window, { key: "Enter" });
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onReset).toHaveBeenCalledTimes(3);
+  });
+});

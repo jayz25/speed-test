@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import type { TestStats } from "../utils/calculateStats";
 import RenderStat from "./RenderStat";
 
 interface ResultCardProps {
-  wpm: number;
-  cpm: number;
-  accuracy: number;
+  stats: TestStats;
+  /** Configured test length in seconds. */
+  durationSeconds: number;
   onReset: () => void;
 }
 
-export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardProps) {
+export default function ResultCard({ stats, durationSeconds, onReset }: ResultCardProps) {
+  const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -30,17 +32,29 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
         <p className="text-slate-500 text-sm">Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs">Enter</kbd> to restart</p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-4 w-full">
-        <StatBox label="WPM" value={wpm} color="text-[#FFD523]" subtitle="words/min" />
-        <StatBox label="CPM" value={cpm} color="text-blue-400" subtitle="chars/min" />
-        <StatBox label="Accuracy" value={accuracy} unit="%" color="text-green-400" subtitle="correct keystrokes" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        {/* Headline stats */}
+        <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
+          <StatBox label="WPM" value={wpm} color="text-[#FFD523]" subtitle="words/min" />
+          <StatBox label="Accuracy" value={accuracy} unit="%" color="text-green-400" subtitle="correct keystrokes" />
+        </div>
+
+        {/* Details */}
+        <dl className="grid grid-cols-2 gap-3 rounded-2xl bg-white/5 border border-white/10 p-6 content-center">
+          <Detail label="Raw WPM" value={rawWpm} />
+          <Detail label="CPM" value={cpm} />
+          <Detail label="Correct" value={correctChars} />
+          <Detail label="Incorrect" value={incorrectChars} />
+          <Detail label="Extra" value={extraChars} />
+          <Detail label="Missed" value={missedChars} />
+          <Detail label="Duration" value={`${durationSeconds}s`} />
+        </dl>
       </div>
 
       {/* Grade */}
       <div className="flex flex-col items-center gap-3 my-2">
         <span className="text-sm font-semibold uppercase tracking-widest text-[#FFD523]/70 bg-[#FFD523]/10 px-3 py-1 rounded-full">Typing Grade</span>
-        <div className={`text-[120px] font-black ${gradeColor} leading-none drop-shadow-2xl`}>{grade}</div>
+        <div className={`text-[96px] md:text-[120px] font-black ${gradeColor} leading-none drop-shadow-2xl`}>{grade}</div>
       </div>
 
       <button
@@ -50,7 +64,7 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
         <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        Try Again
+        Next test
       </button>
     </div>
   );
@@ -62,6 +76,15 @@ function StatBox({ label, value, unit = "", color, subtitle }: { label: string; 
       <span className="text-xs uppercase tracking-widest text-slate-500 mb-1">{label}</span>
       <RenderStat targetValue={value} unit={unit} color={color} />
       <span className="text-xs text-slate-400 mt-1">{subtitle}</span>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="flex flex-col">
+      <dt className="text-xs uppercase tracking-widest text-slate-400">{label}</dt>
+      <dd className="text-xl font-semibold tabular-nums text-slate-100">{value}</dd>
     </div>
   );
 }
