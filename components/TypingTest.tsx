@@ -34,7 +34,7 @@ const TypingTest = () => {
   const isFinished = state.status === "finished";
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
-  const [isFocused, setIsFocused] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
   const [finalStats, setFinalStats] = useState<Pick<TestStats, "wpm" | "cpm" | "accuracy">>({ wpm: 0, cpm: 0, accuracy: 100 });
   const caretRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLSpanElement>(null);
@@ -73,10 +73,26 @@ const TypingTest = () => {
     }
   }, [words]);
 
+  // The input is autoFocus'd; reflect whether it really has focus after mount
+  useEffect(() => {
+    setIsFocused(document.activeElement === textInput.current);
+  }, []);
+
   const resetTest = useCallback(() => {
     reset(timeLimit);
     dispatch(refreshWords());
+    textInput.current?.focus();
   }, [reset, dispatch, timeLimit]);
+
+  // Esc anywhere restarts the test
+  useEffect(() => {
+    if (isFinished) return; // ResultCard handles Esc itself
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") resetTest();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFinished, resetTest]);
 
   // Re-run timer reset if timeLimit UI button clicked
   const handleTimeChange = (newTime: number) => {
@@ -89,7 +105,13 @@ const TypingTest = () => {
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
 
-    if (e.ctrlKey || e.altKey || e.metaKey || ["Tab", "CapsLock"].includes(e.key)) return;
+    if (e.key === "Tab") {
+      // Tab + Enter restarts instead of focusing the first duration button
+      e.preventDefault();
+      document.getElementById("reset-btn")?.focus();
+      return;
+    }
+    if (e.ctrlKey || e.altKey || e.metaKey || e.key === "CapsLock") return;
     if (words.length === 0 || isFinished) return;
 
     if (e.key === "Backspace") {
@@ -145,6 +167,7 @@ const TypingTest = () => {
     <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">
       <input
         ref={textInput}
+        autoFocus
         className="absolute w-0 h-0 opacity-0 pointer-events-none"
         id="typing-input"
         autoComplete="off"
@@ -189,6 +212,8 @@ const TypingTest = () => {
         onClick={handleContainerClick}
         onMouseDown={handleContainerMouseDown}
       />
+
+      <p className="text-xs text-slate-500 select-none">tab + enter — restart · esc — restart</p>
 
       <RestartButton onClick={resetTest} />
     </div>

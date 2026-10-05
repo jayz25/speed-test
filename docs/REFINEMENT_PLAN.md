@@ -524,7 +524,8 @@ Depends on Phase 3. Each task must add/adjust tests in
     at most 2 `Word`s, and no others. Record the before/after commit
     duration in the task note.
 
-- [ ] **5.7 Focus & shortcuts.**
+- [x] **5.7 Focus & shortcuts.**
+  - Note: `isFocused` starts `false` and is set after mount from `document.activeElement`; `resetTest` now also refocuses the input (needed after Tab+Enter). Esc listener is disabled while the result card is shown (it handles Esc itself).
   - Do: initialise `isFocused` from `document.activeElement ===
     inputRef.current` after mount; `autoFocus` the input. On Tab keydown in
     the input: `preventDefault()` and focus `#reset-btn` (so Tab → Enter
