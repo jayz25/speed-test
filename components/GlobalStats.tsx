@@ -14,7 +14,8 @@ export const GlobalStats = () => {
 
   useEffect(() => {
     if (isStatsApiEnabled) {
-      dispatch(getStatCall());
+      const request = dispatch(getStatCall());
+      return () => request.abort();
     }
   }, [dispatch]);
 

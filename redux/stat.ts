@@ -20,7 +20,9 @@ export const statSlice = createSlice({
         state.stats = action.payload;
         state.status = "Stats Received";
       })
-      .addCase(getStatCall.rejected, (state) => {
+      .addCase(getStatCall.rejected, (state, action) => {
+        // An aborted request (unmount) isn't a failure; a newer request owns the status.
+        if (action.meta.aborted) return;
         state.status = "Stats API Failed";
       })
       .addCase(addStatCall.pending, (state) => {
@@ -57,8 +59,8 @@ export const addStatCall = createAsyncThunk(
 
 export const getStatCall = createAsyncThunk(
   "stats/getStats",
-  async (): Promise<StatsInstance[]> => {
-    const response = await fetch(`${API_BASE}/getStats/`);
+  async (_arg, { signal }): Promise<StatsInstance[]> => {
+    const response = await fetch(`${API_BASE}/getStats/`, { signal });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const body: unknown = await response.json();
     if (!Array.isArray(body)) throw new Error("Invalid stats response: expected an array");

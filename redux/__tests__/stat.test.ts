@@ -37,4 +37,19 @@ describe("getStatCall", () => {
     expect(result.type).toBe("stats/getStats/rejected");
     expect(store.getState().globalStats.status).toBe("Stats API Failed");
   });
+
+  it("passes an AbortSignal to fetch and does not mark aborted requests as failed", async () => {
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const store = makeStore();
+    const request = store.dispatch(getStatCall());
+    expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
+    request.abort();
+    await request;
+    expect(store.getState().globalStats.status).not.toBe("Stats API Failed");
+  });
 });

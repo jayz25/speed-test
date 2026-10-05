@@ -54,11 +54,13 @@ Two slices, combined in `redux/store.ts`:
 - **`globalStats`** (`redux/stat.ts`, slice name `"stats"`, mounted at
   `state.globalStats`) — `getStatCall` (GET) and `addStatCall` (POST) are
   `createAsyncThunk`s hitting `${NEXT_PUBLIC_API_BASE_URL}/getStats/` and
-  `/addStat/`. **Neither thunk currently checks `response.ok`** — a non-2xx
-  HTTP response is not treated as a rejection, only a network-level failure
-  or JSON-parse failure is. See `REFINEMENT_PLAN.md` 3.6. `addStatCall` is
-  dispatched from a mount effect in `ResultCard.tsx` (see 8.3).
-- Neither slice is currently exercised by any test.
+  `/addStat/`. Both reject on non-2xx; `getStatCall` validates the body with
+  `isStatsInstance` and is abortable (`GlobalStats` aborts on unmount).
+  `isStatsApiEnabled` is the single env check. `addStatCall` is dispatched
+  once per round from `utils/hooks/usePostResultOnFinish.ts` (called by
+  `TypingTest`); the player name (`PlayerNameInput`, persisted at
+  `speedtype:v1:settings`) is the posted `user`.
+- `redux/stat.ts` is covered by `redux/__tests__/stat.test.ts`.
 
 ## Utilities (`utils/`)
 

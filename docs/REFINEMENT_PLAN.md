@@ -742,7 +742,7 @@ Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
   load leaderboard" + Retry button) on `"Stats API Failed"`; sort by
   `words_per_minute` desc; show top 20 with rank column; render as a
   `<table>` with proper `<th scope="col">`.
-- [ ] **8.6 Abort on unmount.** Pass `signal` from `createAsyncThunk`'s
+- [x] **8.6 Abort on unmount.** Pass `signal` from `createAsyncThunk`'s
   `thunkAPI` to `fetch`; `GlobalStats` keeps the returned promise and
   calls `.abort()` in its effect cleanup.
 
