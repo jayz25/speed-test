@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import type { TestStats } from "../utils/calculateStats";
+import { getGrade } from "../utils/getGrade";
+import { describePb } from "../utils/history";
 import type { WpmSample } from "../utils/wpmSamples";
 import RenderStat from "./RenderStat";
 import WpmChart from "./WpmChart";
@@ -13,6 +15,8 @@ interface ResultCardProps {
   stats: TestStats;
   /** Per-second samples for the chart; omit or pass fewer than 2 to hide it. */
   samples?: readonly WpmSample[];
+  /** Best WPM for this config before this run (`null` = first run); omit while unknown. */
+  personalBest?: { previousBest: number | null };
   /** Configured test length in seconds. */
   durationSeconds: number;
   onReset: () => void;
@@ -20,7 +24,7 @@ interface ResultCardProps {
   onRepeat: () => void;
 }
 
-export default function ResultCard({ stats, samples = [], durationSeconds, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, onReset, onRepeat }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
@@ -31,7 +35,8 @@ export default function ResultCard({ stats, samples = [], durationSeconds, onRes
     return () => window.removeEventListener("keydown", handleKey);
   }, [onReset]);
 
-  const grade = accuracy >= 95 ? "S" : accuracy >= 85 ? "A" : accuracy >= 70 ? "B" : accuracy >= 50 ? "C" : "D";
+  const grade = getGrade(wpm, accuracy);
+  const pb = personalBest ? describePb(wpm, personalBest.previousBest) : null;
   const gradeColor = grade === "S" ? "text-[#FFD523]" : grade === "A" ? "text-green-400" : grade === "B" ? "text-blue-400" : "text-slate-400";
 
   return (
@@ -59,6 +64,12 @@ export default function ResultCard({ stats, samples = [], durationSeconds, onRes
           <Detail label="Duration" value={`${durationSeconds}s`} />
         </dl>
       </div>
+
+      {pb && (
+        <p className={`text-sm font-semibold px-3 py-1 rounded-full ${pb.isNew ? "bg-[#FFD523] text-black" : "bg-white/10 text-slate-300"}`}>
+          {pb.label}
+        </p>
+      )}
 
       <WpmChart samples={samples} />
 

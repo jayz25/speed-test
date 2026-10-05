@@ -714,7 +714,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     summary for screen readers. Width 100%, height 160px, `viewBox`-based.
   - Load the `dataviz` skill before building it.
 
-- [ ] **7.8 Personal bests & history.**
+- [x] **7.8 Personal bests & history.**
+  - Note: `utils/history.ts` (entry type + guard, load/save/clear, `appendEntry` keeps newest 100 oldest-first, `getPersonalBest`, `describePb`), `utils/getGrade.ts` (`GRADE_THRESHOLDS`), `utils/hooks/useRecordResult.ts` (once per round, returns the PB from before the run). Fix found on the way: final stats/elapsed are now derived with `useMemo` instead of set in an effect, so the post/record hooks see correct stats in the first finished render. Words-mode `limit` is the word count; PB label uses the real minus sign.
   - Do: on finish, append `{ id, date (ISO), mode, limit (seconds or
     words), difficulty, wpm, rawWpm, accuracy }` to `speedtype:v1:history`
     (keep newest 100). PB = max `wpm` for the same `mode+limit+difficulty`.

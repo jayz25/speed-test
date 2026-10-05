@@ -74,6 +74,7 @@ and small stat helpers were deleted in Phase 1.
 | `calculateStats.ts` | `calculateStats(state, elapsedMs)` -> net `wpm`, `rawWpm`, `cpm`, keystroke `accuracy`, correct/incorrect/extra/missed char counts. |
 | `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`, then applies optional punctuation/numbers (`applyWordOptions`, injectable `rng`). Exports `getWords`, `applyWordOptions`, `WordMode`, `WordOptions`. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
+| `history.ts`, `getGrade.ts`, `wpmSamples.ts` | Run history in `speedtype:v1:history` (newest 100, personal bests per mode+limit+difficulty); WPM-aware grade table; per-second chart samples. `hooks/useRecordResult.ts` appends the finished test once per round. |
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
 | `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |

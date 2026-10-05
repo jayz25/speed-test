@@ -9,6 +9,7 @@ import useTimer from "../utils/hooks/useTimer";
 import { useFocusMode } from "../utils/hooks/useFocusMode";
 import { useCaret } from "../utils/hooks/useCaret";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
+import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
@@ -55,8 +56,6 @@ const TypingTest = () => {
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [finalStats, setFinalStats] = useState<TestStats>(INITIAL_STATS);
-  const [finalElapsedMs, setFinalElapsedMs] = useState(0);
   const caretRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,21 +100,33 @@ const TypingTest = () => {
     }
   }, [state.status, isStarted, elapsedSeconds, pushSample]);
 
-  // Freeze the clock and the result once the engine reports finished (state is stable after that)
+  // The result is derived (not stored) so it is already correct in the first finished render,
+  // which the post/record hooks rely on. Engine state is stable once finished.
+  const finalElapsedMs = useMemo(() => (isFinished ? elapsedMs() : 0), [isFinished, elapsedMs]);
+  const finalStats = useMemo(
+    () => (isFinished ? calculateStats(state, finalElapsedMs) : INITIAL_STATS),
+    [isFinished, state, finalElapsedMs],
+  );
+
+  // Freeze the clock and finish the chart samples once the engine reports finished
   useEffect(() => {
     if (!isFinished) return;
     stopTimer();
-    const elapsed = elapsedMs();
-    setFinalStats(calculateStats(state, elapsed));
-    setFinalElapsedMs(elapsed);
-    pushSample(Math.max(1, Math.round(elapsed / MS_PER_SECOND)));
+    pushSample(Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)));
     setFinalSamples(samplesRef.current);
-  }, [isFinished, state, stopTimer, elapsedMs, pushSample]);
+  }, [isFinished, finalElapsedMs, stopTimer, pushSample]);
 
   const [playerName] = usePlayerName();
 
   usePostResultOnFinish({
     isFinished, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
+  });
+
+  const personalBest = useRecordResult({
+    isFinished,
+    roundId: state.round,
+    stats: finalStats,
+    config: { mode, limit: isWordsMode ? wordCount : timeLimit, difficulty },
   });
 
   useCaret({
@@ -251,6 +262,7 @@ const TypingTest = () => {
         <ResultCard
           stats={finalStats}
           samples={finalSamples}
+          personalBest={personalBest}
           durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
           onReset={resetTest}
           onRepeat={repeatTest}

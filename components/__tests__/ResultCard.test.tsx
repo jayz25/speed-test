@@ -48,3 +48,40 @@ describe("ResultCard", () => {
     expect(onReset).toHaveBeenCalledTimes(3);
   });
 });
+
+describe("ResultCard personal best and grade", () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    // @ts-expect-error restore jsdom default (no matchMedia)
+    delete window.matchMedia;
+  });
+  const renderCard = (personalBest?: { previousBest: number | null }, stats = STATS) =>
+    render(<ResultCard stats={stats} durationSeconds={30} onReset={vi.fn()} onRepeat={vi.fn()} personalBest={personalBest} />);
+
+  it("shows the new personal best badge on a first run or a beaten record", () => {
+    renderCard({ previousBest: null });
+    expect(screen.getByText("New personal best!")).toBeInTheDocument();
+  });
+
+  it("shows the old PB and the gap otherwise", () => {
+    renderCard({ previousBest: 80 });
+    expect(screen.getByText("PB: 80 wpm (−8)")).toBeInTheDocument();
+  });
+
+  it("shows no PB line while unknown", () => {
+    renderCard(undefined);
+    expect(screen.queryByText(/personal best|PB:/)).not.toBeInTheDocument();
+  });
+
+  it("grades by wpm and accuracy", () => {
+    renderCard(undefined, { ...STATS, wpm: 85, accuracy: 98 });
+    expect(screen.getByText("S")).toBeInTheDocument();
+  });
+
+  it("does not give S for high accuracy at low wpm", () => {
+    renderCard(undefined, { ...STATS, wpm: 20, accuracy: 100 });
+    expect(screen.getByText("D")).toBeInTheDocument();
+  });
+});
