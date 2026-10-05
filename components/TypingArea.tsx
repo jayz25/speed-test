@@ -1,6 +1,7 @@
 import React, { RefObject } from "react";
 import { EngineState, isWordWrong } from "../utils/typingEngine";
 import FocusOverlay from "./FocusOverlay";
+import TypingAreaSkeleton from "./TypingAreaSkeleton";
 import Word from "./Word";
 
 interface TypingAreaProps {
@@ -26,6 +27,8 @@ const TypingArea = ({ state, activeLetterIndex, isFocused, isIdle, caretRef, tar
   >
     {children}
     {!isFocused && <FocusOverlay />}
+
+    {state.words.length === 0 && <TypingAreaSkeleton />}
 
     <div ref={viewportRef} aria-hidden="true" className="relative overflow-hidden border-l-2 border-transparent">
       <div ref={containerRef} className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 motion-safe:transition-transform motion-safe:duration-150 font-mono text-2xl sm:text-3xl font-medium tracking-wide leading-relaxed select-none">
