@@ -36,12 +36,12 @@ const TypingTest = () => {
   const words = useSelector((state: RootState) => state.paragraph.wordsCollection);
   const dispatch = useDispatch<AppDispatch>();
 
-  const { mode, timeLimit, wordCount, difficulty } = useSelector((state: RootState) => state.settings);
+  const { mode, timeLimit, wordCount, difficulty, punctuation, numbers } = useSelector((state: RootState) => state.settings);
 
   // (Re)generate words whenever a setting changes (and on mount)
   useEffect(() => {
-    dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty }));
-  }, [dispatch, mode, wordCount, difficulty, timeLimit]);
+    dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty, punctuation, numbers }));
+  }, [dispatch, mode, wordCount, difficulty, punctuation, numbers, timeLimit]);
 
   const isWordsMode = mode === "words";
   const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode });
@@ -114,7 +114,7 @@ const TypingTest = () => {
   // A settings change restarts the test (new words arrive via the effect above)
   useEffect(() => {
     reset(timeLimit);
-  }, [reset, timeLimit, mode, wordCount, difficulty]);
+  }, [reset, timeLimit, mode, wordCount, difficulty, punctuation, numbers]);
 
   const resetTest = useCallback(() => {
     reset(timeLimit);

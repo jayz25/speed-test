@@ -689,7 +689,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     Timer counts **up** (`useTimer` gets `direction: "up" | "down"`). Live
     display shows `typed words / total` instead of seconds. Tests for both.
 
-- [ ] **7.5 Punctuation & numbers.**
+- [x] **7.5 Punctuation & numbers.**
+  - Note: Signature `getWords(count, mode, options = {}, rng = Math.random)`; transform is the exported pure `applyWordOptions(words, options, rng)` (rates are exported consts). Quotes wrap the punctuated word (`"word,"`). `paragraph` state gained `options` so `refreshWords` keeps punctuation/numbers.
   - File: `utils/getWords.ts` — `getWords(count, mode, { punctuation,
     numbers })`. Punctuation: ~20% of words get one of `, . ; ! ?` appended,
     the word after `. ! ?` is capitalized, ~5% wrapped in quotes. Numbers:

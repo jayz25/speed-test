@@ -8,7 +8,7 @@ vi.mock("../../utils/getWords", () => ({ getWords: () => mocks.loaded }));
 
 const renderWith = (wordsCollection: string[]) => {
   mocks.loaded = wordsCollection;
-  const store = makeStore({ paragraph: { wordsCollection, status: "ready", mode: "mixed" } });
+  const store = makeStore({ paragraph: { wordsCollection, status: "ready", mode: "mixed", options: {} } });
   render(<Provider store={store}><TypingTest /></Provider>);
 };
 

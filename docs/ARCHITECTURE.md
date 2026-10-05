@@ -72,7 +72,7 @@ and small stat helpers were deleted in Phase 1.
 | File | Purpose |
 |---|---|
 | `calculateStats.ts` | `calculateStats(state, elapsedMs)` -> net `wpm`, `rawWpm`, `cpm`, keystroke `accuracy`, correct/incorrect/extra/missed char counts. |
-| `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`. Exports `getWords` and `WordMode`; `fisherYatesShuffle` is module-private. |
+| `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`, then applies optional punctuation/numbers (`applyWordOptions`, injectable `rng`). Exports `getWords`, `applyWordOptions`, `WordMode`, `WordOptions`. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |

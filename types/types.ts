@@ -1,5 +1,5 @@
 import store from "../redux/store";
-import type { WordMode } from "../utils/getWords";
+import type { WordMode, WordOptions } from "../utils/getWords";
 
 export type WordsCollection = Array<string>;
 
@@ -18,6 +18,8 @@ export interface ParagraphState {
     wordsCollection: WordsCollection,
     status: ParagraphStatus,
     mode: WordMode,
+    /** punctuation/numbers flags of the last `loadWords`, reused by `refreshWords` */
+    options: WordOptions,
 }
 
 export interface StatsInstance {

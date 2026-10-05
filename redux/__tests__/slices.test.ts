@@ -32,7 +32,7 @@ describe("paragraph slice", () => {
     expect(store.getState().paragraph.mode).toBe("easy");
     vi.mocked(getWords).mockClear();
     store.dispatch(refreshWords());
-    expect(getWords).toHaveBeenCalledWith(5, "easy");
+    expect(getWords).toHaveBeenCalledWith(5, "easy", { punctuation: false, numbers: false });
     expect(store.getState().paragraph.mode).toBe("easy");
   });
   it("mode defaults to mixed", () => {
@@ -78,5 +78,16 @@ describe("stat thunks", () => {
     const store = makeStore();
     await store.dispatch(addStatCall({ user: "Anonymous", words: 1, chars: 1, accuracy: 1 }));
     expect(store.getState().globalStats.status).toBe("Save Failed");
+  });
+});
+
+describe("paragraph slice options", () => {
+  it("loadWords stores punctuation/numbers and refreshWords reuses them", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ count: 7, mode: "hard", punctuation: true, numbers: true }));
+    expect(store.getState().paragraph.options).toEqual({ punctuation: true, numbers: true });
+    vi.mocked(getWords).mockClear();
+    store.dispatch(refreshWords());
+    expect(getWords).toHaveBeenCalledWith(7, "hard", { punctuation: true, numbers: true });
   });
 });
