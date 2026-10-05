@@ -532,7 +532,7 @@ Depends on Phase 3. Each task must add/adjust tests in
     restarts). Esc anywhere: restart test. Show a hint line under the
     typing area: `tab + enter — restart · esc — restart`.
 
-- [ ] **5.8 `refreshWords` respects mode.**
+- [x] **5.8 `refreshWords` respects mode.** _(Done in 7931f16; box left unticked by the agent, ticked during final review.)_
   - File: `redux/paragraph.ts`. Store `mode: WordMode` in state (set by
     `loadWords`), and use it in `refreshWords`. Add a reducer test.
 
