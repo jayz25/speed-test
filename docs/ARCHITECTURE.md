@@ -38,7 +38,7 @@ The flow is **engine -> hook -> components**:
    (`onKeyDown` for Backspace/Space/Tab; printable characters and soft-keyboard
    backspace via `onInput`, so mobile keyboards work), starts the timer on
    the first printable character, and on `seconds === 0` dispatches `finish` and
-   freezes `finalStats` from `calculateStats`. It renders `ConfigBar`, `LiveStat`,
+   freezes `finalStats` from `calculateStats` (words mode instead finishes in the engine when the last word is completed). It renders `ConfigBar`, `LiveStat`,
    `TypingArea` (memoized `Word`s, `FocusOverlay`, `TypingAreaSkeleton` while loading, and the hidden input as children), a `LiveAnnouncer` live region, `useFocusMode` (fades chrome while running),
    `RestartButton`, and `ResultCard` once finished.
 
@@ -79,7 +79,7 @@ and small stat helpers were deleted in Phase 1.
 | `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
 | `hooks/useFocusMode.ts` | While a test runs, sets `data-focus-mode` on `<html>` so `[data-focus-fade]` chrome fades (CSS in `globals.css`); mouse move reveals it. |
 | `motion.ts` | `prefersReducedMotion()` helper (caret transition, `RenderStat`). |
-| `hooks/useTimer.ts` | Countdown hook (100ms tick, derived from `performance.now()`): `start()`, `reset(newTimeout?)`, `seconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
+| `hooks/useTimer.ts` | Timer hook, `direction` `"down"` (time mode) or `"up"` (words mode) (100ms tick, derived from `performance.now()`): `start()`, `stop()`, `reset(newTimeout?)`, `seconds`, `elapsedSeconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
 

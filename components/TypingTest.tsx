@@ -28,6 +28,7 @@ const INITIAL_STATS: TestStats = {
   correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
 };
 const WARNING_SECONDS = 10;
+const MS_PER_SECOND = 1000;
 /** Words generated for time mode; more than anyone can type in the longest limit. */
 const TIME_MODE_WORDS = 300;
 
@@ -42,7 +43,8 @@ const TypingTest = () => {
     dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty }));
   }, [dispatch, mode, wordCount, difficulty, timeLimit]);
 
-  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words);
+  const isWordsMode = mode === "words";
+  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode });
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
@@ -52,6 +54,7 @@ const TypingTest = () => {
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [finalStats, setFinalStats] = useState<TestStats>(INITIAL_STATS);
+  const [finalElapsedMs, setFinalElapsedMs] = useState(0);
   const caretRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +63,7 @@ const TypingTest = () => {
   const textInput = useRef<HTMLInputElement>(null);
   const didKeyDownBackspace = useRef(false);
 
-  const { seconds, start, reset, elapsedMs } = useTimer(timeLimit);
+  const { seconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
 
   // Computed stats
   // Live stats are recomputed once per timer tick (or new test), not per keystroke
@@ -71,13 +74,19 @@ const TypingTest = () => {
   );
   const { wpm, cpm, accuracy } = liveStats;
 
-  // Game over when timer reaches 0
+  // Time mode: game over when the countdown reaches 0 (words mode ends in the engine)
   useEffect(() => {
-    if (seconds === 0 && isStarted) {
-      finish();
-      setFinalStats(liveStats);
-    }
-  }, [seconds, isStarted, finish, liveStats]);
+    if (!isWordsMode && seconds === 0 && isStarted) finish();
+  }, [isWordsMode, seconds, isStarted, finish]);
+
+  // Freeze the clock and the result once the engine reports finished (state is stable after that)
+  useEffect(() => {
+    if (!isFinished) return;
+    stopTimer();
+    const elapsed = elapsedMs();
+    setFinalStats(calculateStats(state, elapsed));
+    setFinalElapsedMs(elapsed);
+  }, [isFinished, state, stopTimer, elapsedMs]);
 
   const [playerName] = usePlayerName();
 
@@ -202,7 +211,7 @@ const TypingTest = () => {
   if (isFinished) {
     announcement = `Test complete. ${finalStats.wpm} words per minute, ${finalStats.accuracy} percent accuracy.`;
   } else if (isStarted) {
-    announcement = seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
+    announcement = !isWordsMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
   return (
@@ -211,7 +220,7 @@ const TypingTest = () => {
       {isFinished ? (
         <ResultCard
           stats={finalStats}
-          durationSeconds={timeLimit}
+          durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
           onReset={resetTest}
         />
       ) : (
@@ -228,8 +237,8 @@ const TypingTest = () => {
           <LiveStat label="CPM" value={isStarted ? cpm : 0} />
           <LiveStat label="ACC" value={isStarted ? accuracy : 100} unit="%" />
         </div>
-        <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
-          {seconds}
+        <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${!isWordsMode && seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
+          {isWordsMode ? `${Math.min(activeWordIndex, words.length)}/${words.length}` : seconds}
         </div>
       </div>
 

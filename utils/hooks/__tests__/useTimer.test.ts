@@ -96,3 +96,51 @@ describe("useTimer", () => {
     expect(result.current.elapsedMs()).toBe(2000);
   });
 });
+
+describe("useTimer direction up", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("starts at 0 and counts up without ending", () => {
+    const { result } = renderHook(() => useTimer(30, "up"));
+    expect(result.current.seconds).toBe(0);
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(45_000));
+    expect(result.current.seconds).toBe(45);
+    expect(result.current.elapsedSeconds).toBe(45);
+  });
+
+  it("stop() freezes elapsed time", () => {
+    const { result } = renderHook(() => useTimer(30, "up"));
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(2500));
+    act(() => result.current.stop());
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current.elapsedMs()).toBe(2500);
+    expect(result.current.seconds).toBe(2);
+  });
+
+  it("reset returns to 0", () => {
+    const { result } = renderHook(() => useTimer(30, "up"));
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(3000));
+    act(() => result.current.reset());
+    expect(result.current.seconds).toBe(0);
+    expect(result.current.elapsedSeconds).toBe(0);
+  });
+});
+
+describe("useTimer elapsedSeconds (down)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("tracks whole elapsed seconds and ends at the limit", () => {
+    const { result } = renderHook(() => useTimer(3));
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(2000));
+    expect(result.current.elapsedSeconds).toBe(2);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current.elapsedSeconds).toBe(3);
+    expect(result.current.elapsedMs()).toBe(3000);
+  });
+});

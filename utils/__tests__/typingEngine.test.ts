@@ -167,3 +167,43 @@ describe("immutability", () => {
     expect(s.typed).toEqual(["the", "c"]);
   });
 });
+
+describe("finishOnLastWord (words mode)", () => {
+  const wordsMode = () => createEngineState(WORDS, true);
+
+  it("defaults to off and is set by createEngineState / reset", () => {
+    expect(fresh().finishOnLastWord).toBe(false);
+    expect(wordsMode().finishOnLastWord).toBe(true);
+    expect(engineReducer(fresh(), { type: "reset", words: WORDS, finishOnLastWord: true }).finishOnLastWord).toBe(true);
+    expect(engineReducer(wordsMode(), { type: "reset", words: WORDS }).finishOnLastWord).toBe(false);
+  });
+
+  it("finishes when the last word's final char is typed correctly", () => {
+    const state = run(wordsMode(), ...type("the"), { type: "submitWord" }, ...type("cat"), { type: "submitWord" }, ...type("sa"));
+    expect(state.status).toBe("running");
+    const done = run(state, ...type("t"));
+    expect(done.status).toBe("finished");
+    expect(done.activeWordIndex).toBe(3);
+    expect(getWordCounts(done).wordsMatched).toBe(3);
+  });
+
+  it("finishes on submitting the last word even when it is wrong", () => {
+    const state = run(wordsMode(), ...type("the"), { type: "submitWord" }, ...type("cat"), { type: "submitWord" }, ...type("sax"));
+    expect(state.status).toBe("running");
+    const done = run(state, { type: "submitWord" });
+    expect(done.status).toBe("finished");
+    expect(getWordCounts(done).wordsIncorrect).toBe(1);
+  });
+
+  it("does not finish mid-list or when the flag is off", () => {
+    expect(run(wordsMode(), ...type("the"), { type: "submitWord" }).status).toBe("running");
+    const off = run(fresh(), ...type("the"), { type: "submitWord" }, ...type("cat"), { type: "submitWord" }, ...type("sat"));
+    expect(off.status).toBe("running");
+  });
+
+  it("ignores input after finishing", () => {
+    const done = run(createEngineState(["a"], true), ...type("a"));
+    expect(done.status).toBe("finished");
+    expect(run(done, ...type("b"), { type: "submitWord" })).toBe(done);
+  });
+});

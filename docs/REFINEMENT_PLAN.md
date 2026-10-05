@@ -681,7 +681,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     Any change regenerates words and resets the test. Hidden during focus
     mode (6.3).
 
-- [ ] **7.4 Words mode.**
+- [x] **7.4 Words mode.**
+  - Note: Engine: `finishOnLastWord` lives in `EngineState` (`createEngineState(words, finishOnLastWord)`, `reset` action accepts it); the last word then counts as submitted (`activeWordIndex` = words.length). `useTimer(timeout, direction)` also returns `stop()` (freezes `elapsedMs()`) and `elapsedSeconds`. Result stats are now computed in one effect on the engine's `finished` transition for both modes (time mode: elapsed frozen at the limit). Result card duration in words mode = elapsed seconds.
   - Do: in words mode generate exactly `wordCount` words; engine gets a
     `finishOnLastWord` behaviour: `submitWord` on the last word — or typing
     the last word's final char correctly — sets `status: "finished"`.

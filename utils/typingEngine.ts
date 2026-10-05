@@ -13,16 +13,18 @@ export interface EngineState {
   /** printable keys that matched the target letter */
   correctKeystrokes: number;
   incorrectKeystrokes: number;
+  /** words mode: the test ends when the last word is completed instead of on a timer */
+  finishOnLastWord: boolean;
 }
 
 export type EngineAction =
-  | { type: "reset"; words: readonly string[] }
+  | { type: "reset"; words: readonly string[]; finishOnLastWord?: boolean }
   | { type: "typeChar"; char: string } // single printable char, not space
   | { type: "backspace" }
   | { type: "submitWord" } // space
   | { type: "finish" };
 
-export function createEngineState(words: readonly string[]): EngineState {
+export function createEngineState(words: readonly string[], finishOnLastWord = false): EngineState {
   return {
     words,
     typed: [""],
@@ -30,6 +32,7 @@ export function createEngineState(words: readonly string[]): EngineState {
     status: "idle",
     correctKeystrokes: 0,
     incorrectKeystrokes: 0,
+    finishOnLastWord,
   };
 }
 
@@ -37,10 +40,24 @@ function withActiveTyped(state: EngineState, value: string): readonly string[] {
   return state.typed.map((t, i) => (i === state.activeWordIndex ? value : t));
 }
 
+function isLastWord(state: EngineState): boolean {
+  return state.finishOnLastWord && state.activeWordIndex === state.words.length - 1;
+}
+
+/** Moves to the next word; `finish` also ends the test (words mode, last word). */
+function submitActive(state: EngineState, finish: boolean): EngineState {
+  return {
+    ...state,
+    typed: [...state.typed, ""],
+    activeWordIndex: state.activeWordIndex + 1,
+    status: finish ? "finished" : state.status,
+  };
+}
+
 export function engineReducer(state: EngineState, action: EngineAction): EngineState {
   switch (action.type) {
     case "reset":
-      return createEngineState(action.words);
+      return createEngineState(action.words, action.finishOnLastWord);
 
     case "typeChar": {
       if (state.status === "finished" || state.words.length === 0) return state;
@@ -48,13 +65,15 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
       const target = state.words[state.activeWordIndex] ?? "";
       if (active.length >= target.length + MAX_EXTRA_CHARS) return state;
       const isCorrect = action.char === target[active.length];
-      return {
+      const next: EngineState = {
         ...state,
         typed: withActiveTyped(state, active + action.char),
         status: "running",
         correctKeystrokes: state.correctKeystrokes + (isCorrect ? 1 : 0),
         incorrectKeystrokes: state.incorrectKeystrokes + (isCorrect ? 0 : 1),
       };
+      const completesLastWord = isLastWord(state) && active + action.char === target;
+      return completesLastWord ? submitActive(next, true) : next;
     }
 
     case "backspace": {
@@ -68,11 +87,7 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
       if (state.status === "finished" || state.words.length === 0) return state;
       const active = state.typed[state.activeWordIndex] ?? "";
       if (active.length === 0) return state;
-      return {
-        ...state,
-        typed: [...state.typed, ""],
-        activeWordIndex: state.activeWordIndex + 1,
-      };
+      return submitActive(state, isLastWord(state));
     }
 
     case "finish":
