@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const useTimer = (timeout: number) => {
   const [seconds, setSeconds] = useState(timeout || 60);
@@ -8,7 +8,7 @@ const useTimer = (timeout: number) => {
     setSeconds(timeout || 60);
   }, [timeout]);
 
-  const start = () => {
+  const start = useCallback(() => {
     if (intervalRef.current) return; // prevent double-start
     intervalRef.current = setInterval(() => {
       setSeconds((prev) => {
@@ -20,15 +20,15 @@ const useTimer = (timeout: number) => {
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
 
-  const reset = (newTimeout?: number) => {
+  const reset = useCallback((newTimeout?: number) => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
     setSeconds(newTimeout ?? timeout ?? 60);
-  };
+  }, [timeout]);
 
   // Cleanup on unmount
   useEffect(() => {
