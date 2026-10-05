@@ -622,6 +622,12 @@ dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
 **Acceptance:** Smoke script passes at 1280px and 375px widths; Lighthouse
 accessibility score ≥ 95 on `/` (record score in the task note).
 
+- [x] **6.9 Fix layout shift on load (CLS).**
+  - Note: CLS 1.62 -> 0 on `/` (perf 0.73 -> 0.98). The words viewport had no height until `useCaret` measured it, so it jumped when words rendered; it now has a CSS height (`calc(3*(1.625em+0.5rem))`) and the skeleton sits inside it.
+
+- [x] **6.10 Set html lang.**
+  - Note: added `pages/_document.tsx` with `<Html lang="en">`; Lighthouse a11y `/` 95 -> 100, `/stats` 94 -> 100 (see report).
+
 > Phase 6 acceptance NOT verified: no browser/Lighthouse available when implemented. Run the smoke script at 1280px/375px and Lighthouse on `/` manually.
 
 ---
