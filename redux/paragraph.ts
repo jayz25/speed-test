@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { WordsCollection, paragraphState } from "../types/types";
+import { paragraphState } from "../types/types";
 import { getWords, WordMode } from "../utils/getWords";
 
 const initialState: paragraphState = {
