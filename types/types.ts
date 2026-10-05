@@ -28,6 +28,18 @@ export interface StatsInstance {
     accuracy: number
 }
 
+export const isStatsInstance = (v: unknown): v is StatsInstance => {
+    if (typeof v !== "object" || v === null) return false;
+    const o = v as Record<string, unknown>;
+    return (
+        typeof o.id === "number" &&
+        typeof o.user === "string" &&
+        typeof o.words_per_minute === "number" &&
+        typeof o.characters_per_minute === "number" &&
+        typeof o.accuracy === "number"
+    );
+};
+
 export interface StatState {
     stats: Array<StatsInstance>,
     status: StatStatus

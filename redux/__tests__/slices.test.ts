@@ -47,15 +47,17 @@ describe("paragraph slice", () => {
   });
 });
 
+const VALID_STAT = { id: 1, user: "Anonymous", words_per_minute: 60, characters_per_minute: 300, accuracy: 95 };
+
 describe("stat thunks", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("getStatCall stores the response", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [{ id: 1 }] }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [VALID_STAT] }));
     const store = makeStore();
     await store.dispatch(getStatCall());
     expect(store.getState().globalStats.status).toBe("Stats Received");
-    expect(store.getState().globalStats.stats).toEqual([{ id: 1 }]);
+    expect(store.getState().globalStats.stats).toEqual([VALID_STAT]);
   });
   it("getStatCall rejects on a non-ok response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));

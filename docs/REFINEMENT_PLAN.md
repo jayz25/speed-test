@@ -623,7 +623,7 @@ accessibility score ≥ 95 on `/` (record score in the task note).
 Depends on Phase 5 and 6.1–6.4. Settings and history live in
 `localStorage` behind one helper.
 
-- [ ] **7.1 Safe storage helper.**
+- [x] **7.1 Safe storage helper.**
   - File: `utils/storage.ts` with `readJSON<T>(key, fallback, isValid:
     (v: unknown) => v is T): T` and `writeJSON(key, value): void`; both
     wrap access in try/catch (private mode, quota) and SSR-guard `typeof
@@ -649,6 +649,10 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     `store.subscribe` (debounced 300ms). Validate stored value with a type
     guard; fall back to defaults on mismatch. `timeLimit` local state in
     `TypingTest` is removed in favour of this slice.
+  - Note (from 8.4): `playerName` already lives in `speedtype:v1:settings`
+    as `{ playerName }` (written by `utils/hooks/usePlayerName.ts`). The
+    slice must preserve it: add `playerName` to `SettingsState`, hydrate and
+    persist it with the rest, and replace `usePlayerName` with the slice.
   - Note: this changes the duration options from 15/30/45/60 to
     15/30/60/120 — intended.
 
@@ -704,7 +708,7 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
     Empty state: "No tests yet — take one" linking to `/`.
     Add a "Clear history" button with a `confirm()` prompt.
 
-- [ ] **7.10 Copy result.**
+- [x] **7.10 Copy result.**
   - Do: button copies `SpeedType — 72 wpm · 96% acc · 30s mixed` via
     `navigator.clipboard.writeText`; show "Copied!" for 1.5s; on failure
     show "Couldn't copy" (no silent catch).
@@ -720,30 +724,35 @@ visible on `/stats`; gate passes with tests for every new util.
 
 Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
 
-- [ ] **8.1 Single config source.** In `redux/stat.ts` export
+- [x] **8.1 Single config source.** In `redux/stat.ts` export
   `export const isStatsApiEnabled = API_BASE !== "";` and use it in
   `GlobalStats.tsx` and `ResultCard.tsx` instead of reading
   `process.env` again.
-- [ ] **8.2 Validate API data.** Add `isStatsInstance(v: unknown)` type
+- [x] **8.2 Validate API data.** Add `isStatsInstance(v: unknown)` type
   guard in `types/types.ts`; `getStatCall` filters the response through it
   (throws if the body isn't an array). Test it.
-- [ ] **8.3 Post once, from the finish transition.** Remove the mount
+- [x] **8.3 Post once, from the finish transition.** Remove the mount
   effect from `ResultCard`. Dispatch `addStatCall` in `TypingTest` when the
   engine transitions to `"finished"` (guard with a `useRef` holding the
   test round id so Strict Mode / re-renders can't double-post). Skip posting
   if `wpm > 300` or the test was restarted early. Remove the hard-coded
   `"Anonymous"` override; use the payload's `user`.
-- [ ] **8.4 Player name.** Optional name field on the result card (max 20
+- [x] **8.4 Player name.** Optional name field on the result card (max 20
   chars, trimmed, default "Anonymous"), persisted in settings (add
   `playerName` to the 7.2 slice if it exists, otherwise to
   `speedtype:v1:settings` directly via 7.1). If posting already happened,
   editing the name doesn't re-post — show the name field *before* finish
   in the config bar instead if that's simpler; note the choice.
-- [ ] **8.5 Leaderboard UI states.** `GlobalStats`: error state ("Couldn't
+  - Done: chose the pre-finish option. `components/PlayerNameInput.tsx` is
+    shown in the idle header row of `TypingTest` (only when the stats API is
+    enabled); `utils/playerName.ts` sanitizes (trim, 20 chars, "Anonymous").
+    Persisted via 7.1 helper (`usePlayerName`). Move it to the config bar
+    in 7.3. Browser check not run.
+- [x] **8.5 Leaderboard UI states.** `GlobalStats`: error state ("Couldn't
   load leaderboard" + Retry button) on `"Stats API Failed"`; sort by
   `words_per_minute` desc; show top 20 with rank column; render as a
   `<table>` with proper `<th scope="col">`.
-- [ ] **8.6 Abort on unmount.** Pass `signal` from `createAsyncThunk`'s
+- [x] **8.6 Abort on unmount.** Pass `signal` from `createAsyncThunk`'s
   `thunkAPI` to `fetch`; `GlobalStats` keeps the returned promise and
   calls `.abort()` in its effect cleanup.
 
