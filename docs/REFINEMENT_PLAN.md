@@ -453,7 +453,8 @@ Use Arrange/Act/Assert and descriptive names.
 Depends on Phase 3. Each task must add/adjust tests in
 `utils/__tests__/typingEngine.test.ts` when it touches the engine.
 
-- [ ] **5.1 Timestamp-based timer.**
+- [x] **5.1 Timestamp-based timer.**
+  - Note: also exports `TIMER_TICK_MS`; `elapsedMs()` freezes at the limit once finished.
   - File: `utils/hooks/useTimer.ts`.
   - Do: on `start()`, store `startedAt = performance.now()`; tick every
     `TIMER_TICK_MS = 100`; `seconds = Math.max(0, Math.ceil(limit -

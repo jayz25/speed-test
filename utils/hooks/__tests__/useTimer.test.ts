@@ -65,4 +65,34 @@ describe("useTimer", () => {
     rerender({ t: 45 });
     expect(result.current.seconds).toBe(45);
   });
+
+  it("does not drift when ticks are late: derives seconds from the clock", () => {
+    const { result } = renderHook(() => useTimer(30));
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current.seconds).toBe(25);
+    expect(result.current.elapsedMs()).toBeCloseTo(5000, -2);
+  });
+
+  it("only re-renders when the displayed second changes", () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useTimer(30);
+    });
+    act(() => result.current.start());
+    const before = renders;
+    act(() => vi.advanceTimersByTime(1000));
+    expect(renders - before).toBeLessThanOrEqual(2);
+  });
+
+  it("elapsedMs reads the clock while running and freezes at the limit", () => {
+    const { result } = renderHook(() => useTimer(2));
+    expect(result.current.elapsedMs()).toBe(0);
+    act(() => result.current.start());
+    act(() => vi.advanceTimersByTime(1500));
+    expect(result.current.elapsedMs()).toBeGreaterThanOrEqual(1400);
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current.elapsedMs()).toBe(2000);
+  });
 });
