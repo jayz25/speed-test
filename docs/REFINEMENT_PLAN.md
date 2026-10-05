@@ -484,7 +484,7 @@ Depends on Phase 3. Each task must add/adjust tests in
     incorrect). Use `calculateStats` for live stats and the result card.
     Fixes the "ACC 0% after first key" bug.
 
-- [ ] **5.3 Render extra characters.**
+- [x] **5.3 Render extra characters.**
   - Do: engine caps `typed[active]` at `target.length + MAX_EXTRA_CHARS`
     (`= 10`, exported const). Extend `LetterState` with `"extra"`;
     `getLetterStates` returns one entry per char of `max(target, typed)`.

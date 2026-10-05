@@ -1,5 +1,8 @@
 export type TestStatus = "idle" | "running" | "finished";
-export type LetterState = "idle" | "correct" | "incorrect";
+export type LetterState = "idle" | "correct" | "incorrect" | "extra";
+
+/** Max characters that can be typed beyond the end of a word. */
+export const MAX_EXTRA_CHARS = 10;
 
 export interface EngineState {
   words: readonly string[];
@@ -43,6 +46,7 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
       if (state.status === "finished" || state.words.length === 0) return state;
       const active = state.typed[state.activeWordIndex] ?? "";
       const target = state.words[state.activeWordIndex] ?? "";
+      if (active.length >= target.length + MAX_EXTRA_CHARS) return state;
       const isCorrect = action.char === target[active.length];
       return {
         ...state,
@@ -77,9 +81,11 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
 }
 
 export function getLetterStates(target: string, typed: string): LetterState[] {
-  return Array.from(target, (ch, i) => {
+  const length = Math.max(target.length, typed.length);
+  return Array.from({ length }, (_, i) => {
+    if (i >= target.length) return "extra";
     if (i >= typed.length) return "idle";
-    return typed[i] === ch ? "correct" : "incorrect";
+    return typed[i] === target[i] ? "correct" : "incorrect";
   });
 }
 

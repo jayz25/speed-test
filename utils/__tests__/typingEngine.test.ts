@@ -4,6 +4,7 @@ import {
   getLetterStates,
   getWordCounts,
   isWordWrong,
+  MAX_EXTRA_CHARS,
   type EngineAction,
   type EngineState,
 } from "../typingEngine";
@@ -50,6 +51,11 @@ describe("typeChar", () => {
     const s = run(fresh(), ...type("thex"));
     expect(s.incorrectKeystrokes).toBe(1);
   });
+  it("caps typed chars at target length + MAX_EXTRA_CHARS", () => {
+    const s = run(fresh(), ...type("t".repeat(3 + MAX_EXTRA_CHARS + 5)));
+    expect(s.typed[0]).toHaveLength(3 + MAX_EXTRA_CHARS);
+    expect(s.incorrectKeystrokes).toBe(3 - 1 + MAX_EXTRA_CHARS);
+  });
   it("is a no-op when there are no words", () => {
     const empty = createEngineState([]);
     expect(engineReducer(empty, { type: "typeChar", char: "a" })).toBe(empty);
@@ -60,8 +66,10 @@ describe("getLetterStates", () => {
   it("marks untyped idle, matching correct and differing incorrect", () => {
     expect(getLetterStates("the", "tx")).toEqual(["correct", "incorrect", "idle"]);
   });
-  it("returns only target-length entries when over-typed", () => {
-    expect(getLetterStates("the", "thexx")).toHaveLength(3);
+  it("returns an extra entry per char typed beyond the word", () => {
+    expect(getLetterStates("the", "thexx")).toEqual([
+      "correct", "correct", "correct", "extra", "extra",
+    ]);
   });
 });
 
