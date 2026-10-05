@@ -10,7 +10,11 @@ Visit [demo](https://your-deployment-url.com) to try it out.
 - **Visual cursor tracking** — Gliding caret that follows your typing position
 - **Auto-scroll** — Words automatically scroll as you progress through the text
 - **Caps lock warning** — Visual alert when Caps Lock is accidentally enabled
-- **Result card with grade** — After the timer ends, see your final stats and a letter grade (S/A/B/C/D)
+- **Time and words modes** — 15/30/60/120 seconds or 10/25/50/100 words; difficulty (easy/medium/hard/mixed), optional punctuation and numbers
+- **Persistent settings** — Your test configuration (and player name) survive reloads
+- **Result card with grade** — Final stats, a WPM-aware letter grade (S/A/B/C/D), WPM-over-time chart, and personal-best badge
+- **Repeat and copy** — Retry the same words, or copy a one-line summary of your result
+- **Your results page** — `/stats` shows personal bests, averages and your last 20 runs (stored locally; clearable)
 - **Optional stats API** — Optionally save your results to a leaderboard (opt-in via `NEXT_PUBLIC_API_BASE_URL`)
 
 ## How to run
