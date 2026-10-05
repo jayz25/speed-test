@@ -4,13 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
 import { loadWords, refreshWords } from "../redux/paragraph";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { calculateCPM } from "../utils/calculateCPM";
-import { calculateWPM } from "../utils/calculateWPM";
-import { calculateAccuracy } from "../utils/calculateAccuracy";
+import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
 import { useCaretTracking } from "../utils/hooks/useCaretTracking";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
-import { getWordCounts } from "../utils/typingEngine";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveStat from "./LiveStat";
 import RestartButton from "./RestartButton";
@@ -38,19 +35,16 @@ const TypingTest = () => {
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
-  const [finalStats, setFinalStats] = useState({ wpm: 0, cpm: 0, accuracy: 0 });
+  const [finalStats, setFinalStats] = useState<Pick<TestStats, "wpm" | "cpm" | "accuracy">>({ wpm: 0, cpm: 0, accuracy: 100 });
   const cursorRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { seconds, start, reset } = useTimer(timeLimit);
+  const { seconds, start, reset, elapsedMs } = useTimer(timeLimit);
 
   // Computed stats
-  const { wordsMatched, wordsIncorrect, charsMatched } = getWordCounts(state);
-  const wpm = calculateWPM(charsMatched, seconds, timeLimit);
-  const cpm = calculateCPM(charsMatched, seconds, timeLimit);
-  const accuracy = calculateAccuracy(wordsIncorrect, wordsMatched);
+  const { wpm, cpm, accuracy } = calculateStats(state, elapsedMs());
 
   // Game over when timer reaches 0
   useEffect(() => {
@@ -170,7 +164,7 @@ const TypingTest = () => {
         <div className="flex gap-8">
           <LiveStat label="WPM" value={isStarted ? wpm : 0} />
           <LiveStat label="CPM" value={isStarted ? cpm : 0} />
-          <LiveStat label="ACC" value={isStarted ? accuracy : 100} unit="%" />
+          <LiveStat label="ACC" value={accuracy} unit="%" />
         </div>
         <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
           {seconds}

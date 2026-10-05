@@ -46,7 +46,7 @@ export default function ResultCard({ wpm, cpm, accuracy, onReset }: ResultCardPr
       <div className="grid grid-cols-3 gap-4 w-full">
         <StatBox label="WPM" value={wpm} color="text-[#FFD523]" subtitle="words/min" />
         <StatBox label="CPM" value={cpm} color="text-blue-400" subtitle="chars/min" />
-        <StatBox label="Accuracy" value={accuracy} unit="%" color="text-green-400" subtitle="correct words" />
+        <StatBox label="Accuracy" value={accuracy} unit="%" color="text-green-400" subtitle="correct keystrokes" />
       </div>
 
       {/* Grade */}

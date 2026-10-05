@@ -463,7 +463,8 @@ Depends on Phase 3. Each task must add/adjust tests in
     renders/s). Keep the `{ seconds, start, reset }` API, add `elapsedMs`.
   - Update 4.2 tests.
 
-- [ ] **5.2 Standard stat formulas.**
+- [x] **5.2 Standard stat formulas.**
+  - Note: `calculateAccuracy(state)` is also exported from `calculateStats.ts`; ResultCard keeps its `wpm/cpm/accuracy` props (only the accuracy subtitle changed to "correct keystrokes"). Net WPM spaces = correct words − 1 (submitted words only).
   - Files: new `utils/calculateStats.ts` (replaces the three
     `calculate*.ts` files — delete them and their tests, move tests over).
   - Do: implement and test
