@@ -195,14 +195,14 @@ const TypingTest = () => {
         aria-label="Typing input"
       />
 
-      <div className="flex items-center justify-between w-full h-8 px-1">
+      <div className="flex flex-wrap items-center justify-between w-full min-h-8 gap-2 px-1">
         <CapsLockAlert isVisible={isCapsLockOn} />
         {!isStarted && isStatsApiEnabled && <PlayerNameInput value={playerName} onChange={setPlayerName} />}
         {!isStarted && <div className="ml-auto flex items-center gap-4 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions value={timeLimit} options={TIME_OPTIONS} onChange={handleTimeChange} /></div>}
       </div>
 
-      <div className="flex w-full justify-between items-end px-1 mb-2">
-        <div className="flex gap-8">
+      <div className="flex flex-col gap-3 sm:flex-row w-full justify-between sm:items-end px-1 mb-2">
+        <div className="flex gap-6 sm:gap-8">
           <LiveStat label="WPM" value={isStarted ? wpm : 0} />
           <LiveStat label="CPM" value={isStarted ? cpm : 0} />
           <LiveStat label="ACC" value={isStarted ? accuracy : 100} unit="%" />

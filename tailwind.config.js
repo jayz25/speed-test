@@ -5,6 +5,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        mono: ['var(--font-mono)', 'monospace'],
+      },
       keyframes: {
         flash: {
           '25%, 40%': { opacity: '0' },
