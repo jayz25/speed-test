@@ -4,8 +4,7 @@
 
 A single-player typing-speed test built on Next.js 15 (Pages Router) +
 React 19, with Redux Toolkit for state and Tailwind CSS for styling. A
-visitor types a stream of randomized words for a fixed time limit (15/30/45/
-60s) and sees live WPM / CPM / accuracy, then a result card. Optionally, a
+visitor types a stream of randomized words for a fixed time limit (15/30/60/120s) or word count (10-100) and sees live WPM / CPM / accuracy, then a result card. Optionally, a
 result can be posted to an external stats API and a "/stats" page can show
 a global leaderboard of past results — both gated behind an env var, so the
 app works standalone with no backend.
