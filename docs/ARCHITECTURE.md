@@ -34,11 +34,12 @@ The flow is **engine -> hook -> components**:
    (ref-based caret positioning, plus 3-line translate scrolling of the
    words container; re-runs on resize and font load) are sibling hooks.
 3. **Components**: `components/TypingTest.tsx` is the thin orchestrator. It
-   loads words from Redux (`loadWords`/`refreshWords`), maps `onKeyDown`
-   on the visually hidden `<input>` to engine actions, starts the timer on
-   the first printable key, and on `seconds === 0` dispatches `finish` and
+   loads words from Redux (`loadWords`/`refreshWords`), maps the visually hidden `<input>`'s events to engine actions
+   (`onKeyDown` for Backspace/Space/Tab; printable characters and soft-keyboard
+   backspace via `onInput`, so mobile keyboards work), starts the timer on
+   the first printable character, and on `seconds === 0` dispatches `finish` and
    freezes `finalStats` from `calculateStats`. It renders `TimerOptions`, `LiveStat`,
-   `TypingArea` (which renders memoized `Word`s and `FocusOverlay`),
+   `TypingArea` (memoized `Word`s, `FocusOverlay`, `TypingAreaSkeleton` while loading, and the hidden input as children), a `LiveAnnouncer` live region, `useFocusMode` (fades chrome while running),
    `RestartButton`, and `ResultCard` once finished.
 
 ## State management (`redux/`)
@@ -75,6 +76,8 @@ and small stat helpers were deleted in Phase 1.
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
 | `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
+| `hooks/useFocusMode.ts` | While a test runs, sets `data-focus-mode` on `<html>` so `[data-focus-fade]` chrome fades (CSS in `globals.css`); mouse move reveals it. |
+| `motion.ts` | `prefersReducedMotion()` helper (caret transition, `RenderStat`). |
 | `hooks/useTimer.ts` | Countdown hook (100ms tick, derived from `performance.now()`): `start()`, `reset(newTimeout?)`, `seconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
@@ -85,10 +88,11 @@ and small stat helpers were deleted in Phase 1.
 | `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
 | `TimerOptions.tsx`, `LiveStat.tsx`, `RestartButton.tsx` | Duration picker, live stat tile, restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
-| `ResultCard.tsx` | Active — shown after a test ends; uses `RenderStat.tsx` to animate each stat value. |
+| `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
+| `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
 | `GlobalStats.tsx` | Active — leaderboard list for `/stats`, handles the "API not configured" state. |
-| `Layout.tsx` | Active — page shell (title, wrapper). |
+| `Layout.tsx` | Active — page shell: header with logo + Test/Stats nav, footer, default title, description and theme-color meta. |
 
 ## Types (`types/types.ts`)
 

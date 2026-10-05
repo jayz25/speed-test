@@ -548,7 +548,8 @@ note recorded in 5.6.
 Depends on Phase 3 (5.x not required). Visual direction: keep the current
 dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
 
-- [ ] **6.1 Layout shell.**
+- [x] **6.1 Layout shell.**
+  - Note: Footer text uses `text-slate-400` (not slate-600) for contrast. Added a `sr-only` h1 per page (heading hierarchy). Active nav link also sets `aria-current="page"`.
   - File: `components/Layout.tsx`.
   - Do: header: logo (`<Link href="/">`) left, nav right with `Test` (`/`)
     and `Stats` (`/stats`); active link `text-white`, others
@@ -558,19 +559,22 @@ dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
     and `"SpeedType — Stats"`. Add `<meta name="description">` and
     `<meta name="theme-color" content="#0f172a">`.
 
-- [ ] **6.2 Typing font + responsive sizing.**
+- [x] **6.2 Typing font + responsive sizing.**
+  - Note: 375px no-horizontal-scroll check NOT verified (no browser). Header/stat rows use `flex-col sm:flex-row` / `flex-wrap`.
   - Do: load `Roboto_Mono` via `next/font/google` in `_app.tsx` as
     `--font-mono`; add `fontFamily.mono: ["var(--font-mono)", "monospace"]`
     to `tailwind.config.js`; typing area uses `font-mono`. Sizes:
     `text-2xl sm:text-3xl`; header/stat row stack vertically below `sm`.
     Check at 375px width: no horizontal scroll.
 
-- [ ] **6.3 Focus mode.**
+- [x] **6.3 Focus mode.**
+  - Note: `utils/hooks/useFocusMode.ts` sets `data-focus-mode` on `<html>`; elements marked `data-focus-fade` (Layout header+nav, player-name input, timer options, hint) fade via `styles/globals.css`. Those elements are now always mounted (previously unmounted while running). Mouse move reveals until the next run; Esc restarts (status goes idle).
   - Do: while `status === "running"`, fade header, nav, `TimerOptions` and
     hint line to `opacity-0 pointer-events-none` (300ms transition). They
     return on finish, Esc, or mouse move.
 
-- [ ] **6.4 Contrast & semantics.**
+- [x] **6.4 Contrast & semantics.**
+  - Note: Removed per-word `aria-label` (tests now query `[data-word]`) and `role="button"`/`tabIndex`/`aria-label` on the typing area; removed redundant `aria-label="Restart test"` on RestartButton (visible text gives the same name). Small secondary text (hint, footer, result subtitle) raised to `text-slate-400`. Live region is `components/LiveAnnouncer.tsx` ("Test started", "10 seconds left", final result). axe check skipped (would need a new dev dependency); Lighthouse not run.
   - Do: idle letters → `text-slate-500` (no opacity); remove `aria-label`
     from each `Word`; remove `role="button"`/`tabIndex` from the container
     (keep click handler); give the visible words region
@@ -579,14 +583,16 @@ dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
     result. `TimerOptions` buttons get `aria-pressed`. All buttons get
     `focus-visible:ring-2 focus-visible:ring-[#FFD523]`.
 
-- [ ] **6.5 Reduced motion.**
+- [x] **6.5 Reduced motion.**
+  - Note: Caret inline transition is disabled via `utils/motion.ts#prefersReducedMotion()`; Tailwind `motion-safe:` used for scroll translate, blink and fade-in. `RenderStat` shows the final value immediately and cancels its rAF on unmount.
   - Do: prefix caret transition, fade-in, scroll translate and blink with
     `motion-safe:`; in `RenderStat`, if
     `matchMedia("(prefers-reduced-motion: reduce)").matches`, set the final
     value immediately. Also cancel the rAF on unmount (store the id; return
     a cleanup) — currently it leaks.
 
-- [ ] **6.6 Mobile input support.**
+- [x] **6.6 Mobile input support.**
+  - Note: Printable chars handled only in `onInput` (`insertText` per char; `deleteContentBackward` guarded against double handling after a Backspace keydown). keydown ignores `Unidentified` and composition. Used `onInput` only (not `onBeforeInput`; React's synthetic beforeinput is unreliable). Hidden input is `1px` and lives inside `TypingArea` (children). Tests: `TypingTest.input.test.tsx`. NOT verified in DevTools emulation or on a real device (note: Android soft-keyboard Backspace on an empty input may not fire an input event; composition text `insertCompositionText` is not handled).
   - Do: handle `onBeforeInput`/`onInput` on the hidden input:
     `inputType === "insertText"` → for each char of `data`: space →
     `submitWord`, else `typeChar`; `"deleteContentBackward"` → `backspace`.
@@ -598,12 +604,14 @@ dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
     the typing area. Test with Chrome DevTools device emulation; note in
     the task that a real-device check is still needed.
 
-- [ ] **6.7 Loading & empty states.**
+- [x] **6.7 Loading & empty states.**
+  - Note: `TypingAreaSkeleton.tsx` renders 3 pulse lines with the same line height/gap as the text (`motion-safe:animate-pulse`). Pixel parity not verified in a browser.
   - Do: before words load, render 3 skeleton lines (`animate-pulse
     bg-white/5 rounded h-[1em]`) of the same height as the text area so
     nothing shifts.
 
-- [ ] **6.8 Result card layout.**
+- [x] **6.8 Result card layout.**
+  - Note: `ResultCard` now takes `stats: TestStats` + `durationSeconds`; two columns on `md+`. Only the "Next test" button is rendered (Repeat 7.6 / Copy 7.7 not done); Enter/Esc unchanged; grade unchanged (7.8).
   - Do: two-column on `md+` (left: big WPM + accuracy; right: details
     grid), stacked on mobile. Details grid shows `rawWpm`, `cpm`,
     `correct/incorrect/extra/missed` chars (from 5.2 — if 5.2 isn't done,
@@ -613,6 +621,8 @@ dark gradient + yellow accent; minimal, "monkeytype-like" focus on the text.
 
 **Acceptance:** Smoke script passes at 1280px and 375px widths; Lighthouse
 accessibility score ≥ 95 on `/` (record score in the task note).
+
+> Phase 6 acceptance NOT verified: no browser/Lighthouse available when implemented. Run the smoke script at 1280px/375px and Lighthouse on `/` manually.
 
 ---
 
