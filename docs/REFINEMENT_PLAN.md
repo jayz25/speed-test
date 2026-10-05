@@ -673,7 +673,8 @@ Depends on Phase 5 and 6.1–6.4. Settings and history live in
   - Note: this changes the duration options from 15/30/45/60 to
     15/30/60/120 — intended.
 
-- [ ] **7.3 Config bar.**
+- [x] **7.3 Config bar.**
+  - Note: `ConfigBar` also hosts the player-name input (moved from `TypingTest`, shown only when the stats API is enabled) and carries `data-focus-fade`. Buttons use `data-config-btn` (was `data-timer-btn`) so the typing input's blur handler still ignores them. A settings change regenerates words (effect in `TypingTest`) and resets the timer. Punctuation/numbers toggles are stored now; they affect words in 7.5.
   - File: `components/ConfigBar.tsx` (replaces `TimerOptions.tsx`; delete
     it). One pill row: `[time | words]` · values for the chosen mode ·
     `[easy | medium | hard | mixed]` · toggles `@ punctuation`, `# numbers`.

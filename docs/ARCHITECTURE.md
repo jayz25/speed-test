@@ -38,13 +38,13 @@ The flow is **engine -> hook -> components**:
    (`onKeyDown` for Backspace/Space/Tab; printable characters and soft-keyboard
    backspace via `onInput`, so mobile keyboards work), starts the timer on
    the first printable character, and on `seconds === 0` dispatches `finish` and
-   freezes `finalStats` from `calculateStats`. It renders `TimerOptions`, `LiveStat`,
+   freezes `finalStats` from `calculateStats`. It renders `ConfigBar`, `LiveStat`,
    `TypingArea` (memoized `Word`s, `FocusOverlay`, `TypingAreaSkeleton` while loading, and the hidden input as children), a `LiveAnnouncer` live region, `useFocusMode` (fades chrome while running),
    `RestartButton`, and `ResultCard` once finished.
 
 ## State management (`redux/`)
 
-Two slices, combined in `redux/store.ts`:
+Three slices, combined in `redux/store.ts`:
 
 - **`paragraph`** (`redux/paragraph.ts`) — holds `wordsCollection: string[]`.
   `loadWords({ count, mode })` and `refreshWords()` both call
@@ -87,7 +87,8 @@ and small stat helpers were deleted in Phase 1.
 |---|---|
 | `TypingTest.tsx` | Orchestrator, see above. |
 | `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
-| `TimerOptions.tsx`, `LiveStat.tsx`, `RestartButton.tsx` | Duration picker, live stat tile, restart button. |
+| `ConfigBar.tsx` | Settings pills (mode, time/word count, difficulty, punctuation, numbers) + player name; reads/writes `state.settings`; faded in focus mode. |
+| `LiveStat.tsx`, `RestartButton.tsx` | Live stat tile, restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
 | `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
