@@ -47,7 +47,6 @@ NEXT_PUBLIC_API_BASE_URL=https://your-api.com/api/stats
 |-------|---------|
 | `/` | Main typing test — start typing, see live stats, get results |
 | `/stats` | Global leaderboard (only shows if API is configured) |
-| `/about` | About page — what this app is and how to use it |
 
 ## Scripts
 
@@ -55,3 +54,7 @@ NEXT_PUBLIC_API_BASE_URL=https://your-api.com/api/stats
 - `build` — Build optimized production app
 - `start` — Start production server (use after `build`)
 - `type-check` — Run TypeScript type checker (separate from dev)
+- `lint` — Run ESLint
+- `test` — Run unit tests (Vitest)
+
+Package manager: npm (`package-lock.json`).

@@ -36,11 +36,10 @@ track it in `REFINEMENT_PLAN.md` instead.
   machine, a scroll tracker) that could be reasoned about independently of
   rendering. `utils/hooks/useTimer.ts` is the existing example to match.
 - Direct DOM manipulation (`document.getElementById`, `style.xyz =`) is
-  intentional in exactly two places today: the cursor-position effect and
-  the DOM helpers in `utils/removeStyling.ts`/`noBackSpace.ts` from an
-  earlier implementation. Don't introduce a third pattern — either use the
-  existing `useLayoutEffect`-plus-ref approach, or drive it through React
-  state/props.
+  intentional in exactly one place today: the caret-position
+  `useLayoutEffect` in `TypingTest.tsx` (moving to `useCaret`, plan 5.4).
+  Don't add new direct DOM access; use the `useLayoutEffect`-plus-ref
+  approach, or drive it through React state/props.
 
 ## Redux (`redux/`)
 
@@ -60,8 +59,7 @@ track it in `REFINEMENT_PLAN.md` instead.
 - A function belongs in `utils/` only if it's pure (no DOM access, no
   React, no Redux) and independently testable. If it needs `document`/
   `window`, it's DOM logic, not a "util" — keep it in the component or a
-  clearly-named file (see `removeStyling.ts` for the existing, imperfect
-  precedent).
+  clearly-named hook under `utils/hooks/`).
 - One function (plus tightly related helpers) per file, named after the
   function (`calculateWPM.ts` exports `calculateWPM`).
 - Every new pure util needs a corresponding unit test once the test runner

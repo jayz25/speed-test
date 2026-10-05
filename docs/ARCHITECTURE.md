@@ -15,8 +15,7 @@ app works standalone with no backend.
 | Route | File | Purpose |
 |---|---|---|
 | `/` | `pages/index.tsx` | Renders `TypingTest` — the main app. |
-| `/stats` | `pages/stats/index.tsx` | Renders `GlobalStats` — leaderboard, only populated if `NEXT_PUBLIC_API_BASE_URL` is set. |
-| `/about` | `pages/about.tsx` | Leftover `create-next-app` boilerplate page, not linked from anywhere. Scheduled for removal — see `REFINEMENT_PLAN.md` Phase 1. |
+| `/stats` | `pages/stats/index.tsx` | Renders `GlobalStats` — leaderboard, only populated if `NEXT_PUBLIC_API_BASE_URL` is set. Not linked from any navigation yet (see `REFINEMENT_PLAN.md` 6.1). |
 | `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>` and loads the `Inter` font. |
 
 ## Core flow: the typing test
@@ -46,8 +45,8 @@ component:
   `finalStats` when the test ends.
 
 This concentration of concerns is the primary refactor target in
-`REFINEMENT_PLAN.md` Phase 3 — the state machine, cursor tracking, and
-rendering should be separable units.
+`REFINEMENT_PLAN.md` Phase 3, which moves the state machine into a pure
+reducer (`utils/typingEngine.ts`) and splits out the sub-components.
 
 ## State management (`redux/`)
 
@@ -63,23 +62,23 @@ Two slices, combined in `redux/store.ts`:
   `createAsyncThunk`s hitting `${NEXT_PUBLIC_API_BASE_URL}/getStats/` and
   `/addStat/`. **Neither thunk currently checks `response.ok`** — a non-2xx
   HTTP response is not treated as a rejection, only a network-level failure
-  or JSON-parse failure is. See `REFINEMENT_PLAN.md` Phase 3.
+  or JSON-parse failure is. See `REFINEMENT_PLAN.md` 3.6. `addStatCall` is
+  dispatched from a mount effect in `ResultCard.tsx` (see 8.3).
 - Neither slice is currently exercised by any test.
 
 ## Utilities (`utils/`)
 
 All pure, side-effect-free, and small — good unit-test candidates (none
-have tests yet; see `REFINEMENT_PLAN.md` Phase 4):
+have tests yet; see `REFINEMENT_PLAN.md` Phase 4). The older DOM helpers
+and small stat helpers were deleted in Phase 1.
 
 | File | Purpose |
 |---|---|
 | `calculateWPM.ts` | Words-per-minute from chars matched + elapsed time. |
 | `calculateCPM.ts` | Characters-per-minute. |
 | `calculateAccuracy.ts` | `% = correct / (correct + incorrect)` style calc from matched/incorrect word counts. |
-| `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`. Exports `fisherYatesShuffle` (currently unexported — module-private) and `WordMode`. |
+| `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`. Exports `getWords` and `WordMode`; `fisherYatesShuffle` is module-private. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
-| `getAccurateChars.ts`, `getAccurateWords.ts`, `getGrossWpm.ts`, `getTotalCharacters.ts`, `getWordsTyped.ts` | Smaller derived-stat helpers. Verify current call sites before changing — some may be superseded by logic now inlined in `TypingTest.tsx`. |
-| `noBackSpace.ts`, `removeStyling.ts`, `scrollHelpers.ts` | DOM-manipulation helpers from an earlier, non-React-state-driven version of the typing UI. Confirm live usage before touching — some may be dead now that letter styling moved to React state (`LETTER_CLASSES` in `TypingTest.tsx`). |
 | `hooks/useTimer.ts` | Countdown hook: `start()`, `reset(newTimeout?)`, `seconds`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
@@ -92,23 +91,27 @@ have tests yet; see `REFINEMENT_PLAN.md` Phase 4):
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
 | `GlobalStats.tsx` | Active — leaderboard list for `/stats`, handles the "API not configured" state. |
 | `Layout.tsx` | Active — page shell (title, wrapper). |
-| `List.tsx`, `ListDetail.tsx`, `ListItem.tsx` | **Dead code.** Leftover `create-next-app` example ("users list") components, not imported by any page or component. Candidates for deletion — see `REFINEMENT_PLAN.md` Phase 1. |
 
 ## Types (`types/types.ts`)
 
 Defines `RootState`/`AppDispatch` (standard RTK typed-hooks pattern),
-`paragraphState`, `statState`, `statsInstance`/`statsInstancePayload`. Also
-defines a `TypingStats` interface that **no code currently references** —
-`TypingTest.tsx` uses individual `useState` calls instead. Candidate for
-removal (Phase 1) unless it's intended as a target shape for a future
-state-consolidation refactor — confirm before deleting.
+`paragraphState`, `statState`, `statsInstance`/`statsInstancePayload`.
+Status fields are still bare `string | null`, and the interface names are
+camelCase; both are fixed in `REFINEMENT_PLAN.md` 3.6.
+`interfaces/index.ts` is leftover boilerplate with no importers (removed in
+2.2).
 
-## Build & tooling gaps (context for Phase 2)
+## Build & tooling
 
-- No ESLint config, no test runner, no CI workflow exist today.
-- `tsconfig.json` has `"strict": false`.
-- Both `yarn.lock` and `package-lock.json` are committed.
-- No `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
-
-These are addressed in `REFINEMENT_PLAN.md` Phase 2, before any behavioral
-refactor (Phase 3) so that regressions get caught automatically.
+- Package manager: npm (`package-lock.json`; `yarn.lock` was removed).
+- `tsconfig.json` has `"strict": true`.
+- `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
+- `.github/workflows/ci.yml` runs lint → type-check → test → build on
+  Node 20 and 22.
+- **Not working yet:** `npm test` calls `vitest`, which isn't installed;
+  ESLint 9 runs a legacy `.eslintrc.json` through the deprecated `next
+  lint`, with `eslint-config-next@16` against `next@15`. So CI is expected
+  to fail. `REFINEMENT_PLAN.md` Phase 2 fixes this.
+- `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
+  graft instead of whole-file reads/greps on indexed source. See the graft
+  protocol in `REFINEMENT_PLAN.md`.
