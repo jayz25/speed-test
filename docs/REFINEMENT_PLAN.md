@@ -738,7 +738,7 @@ Depends on Phase 3 (3.6). Independent of 5–7 except where noted.
     enabled); `utils/playerName.ts` sanitizes (trim, 20 chars, "Anonymous").
     Persisted via 7.1 helper (`usePlayerName`). Move it to the config bar
     in 7.3. Browser check not run.
-- [ ] **8.5 Leaderboard UI states.** `GlobalStats`: error state ("Couldn't
+- [x] **8.5 Leaderboard UI states.** `GlobalStats`: error state ("Couldn't
   load leaderboard" + Retry button) on `"Stats API Failed"`; sort by
   `words_per_minute` desc; show top 20 with rank column; render as a
   `<table>` with proper `<th scope="col">`.
