@@ -3,10 +3,17 @@
 Before making changes, read `docs/README.md` — it indexes
 `docs/ARCHITECTURE.md` (what this app is and how it's wired),
 `docs/CONVENTIONS.md` (coding rules to follow), and
-`docs/REFINEMENT_PLAN.md` (the current phased refinement backlog, with
-concrete file targets and acceptance criteria per phase). These are
-hand-authored and are the source of truth for project-specific context;
-the graft block below is auto-managed tooling for navigating code.
+`docs/REFINEMENT_PLAN.md` (the refinement backlog: Phases 1–8 done, optional
+items and parking lot remaining). These are hand-authored and are the source
+of truth for project-specific context; the graft block below is auto-managed
+tooling for navigating code — never hand-edit between the graft markers.
+
+Definition of done for any change (see `docs/CONVENTIONS.md`):
+`npm run lint && npm run type-check && npm run test:coverage && npm run build`,
+plus a real-browser check for user-visible changes. Graft usage on indexed
+source is enforced by a `PreToolUse` hook (`.claude/helpers/graft-gate.cjs`).
+Commit with `command git` if the shell's `git` wrapper function misbehaves;
+never push without being asked.
 
 <!-- graft:start -->
 ## Graft — repo context graph

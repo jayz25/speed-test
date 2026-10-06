@@ -4,6 +4,19 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done.
 
 Last full analysis: 2026-10-05 (against commit `d005c7d`).
 
+> **Status (2026-10-06): Phases 1–8 complete** on branch `refinement`
+> (59 commits over `main`), plus follow-ups 6.9 (CLS) and 6.10 (`html lang`).
+> Final verification on a production build: lint, type-check, 208 tests
+> (98.7% statements / 93.8% branches), build all green; a headless-Chrome
+> run of the Smoke script plus the Phase 5–7 behaviours passed 45/45 desktop
+> and 8/8 mobile/375px checks; Lighthouse on `/` and `/stats`: performance
+> 98, accessibility 100, best practices 100, SEO 100, CLS 0.
+> Not verified: a real phone, and a real stats API (covered by unit tests
+> with mocked `fetch` only).
+> Remaining work: "Optional / later" (9.x) and the "Parking lot".
+> The "Current-state findings" section below describes the app **before**
+> the refinement and is kept for history.
+
 This is the single backlog for improving **correctness, performance, UI/UX
 and features** of SpeedType. It is written so an agent with little context
 can pick up **one task**, do it, verify it, and tick it off.
@@ -132,7 +145,7 @@ task says it's independent.
 
 ---
 
-## Current-state findings (why the phases below exist)
+## Current-state findings (historical — before the refinement)
 
 Verified by reading the code on 2026-10-05:
 
@@ -194,7 +207,7 @@ Done in commit `95b46e7` (README rewrite, `.env.example`, removed
 
 ---
 
-## Phase 2 — Repair the baseline (docs, deps, lint, test, CI)
+## Phase 2 — Repair the baseline (docs, deps, lint, test, CI) ✅
 
 **Context:** mostly config/docs, which graft doesn't index, so read those directly. For code: `graft skeleton pages/_app.tsx`.
 
@@ -293,7 +306,7 @@ the docs describe the code that exists. **Everything else depends on this.**
 
 ---
 
-## Phase 3 — Extract a pure typing engine (behavior-preserving)
+## Phase 3 — Extract a pure typing engine (behavior-preserving) ✅
 
 **Context:** `graft skeleton components/TypingTest.tsx` · `graft ask "handleKeyDown keystroke state machine" --source` · `graft ask "useTimer" --source` · `graft grep "getStatCall"` · `graft callers buildWordStates`.
 
@@ -407,7 +420,7 @@ before and after). Depends on Phase 2.
 
 ---
 
-## Phase 4 — Test coverage
+## Phase 4 — Test coverage ✅
 
 **Context:** `graft skeleton utils/typingEngine.ts` · `graft skeleton utils/hooks/useTimer.ts` · `graft skeleton utils/getWords.ts`.
 
@@ -446,7 +459,7 @@ Use Arrange/Act/Assert and descriptive names.
 
 ---
 
-## Phase 5 — Correctness & performance
+## Phase 5 — Correctness & performance ✅
 
 **Context:** `graft skeleton utils/typingEngine.ts` · `graft ask "cursor position caret useLayoutEffect" --source` · `graft ask "auto-scroll active word line" --source` · `graft callers calculateWPM` (before deleting the calculate* files).
 
@@ -541,7 +554,7 @@ note recorded in 5.6.
 
 ---
 
-## Phase 6 — UI/UX polish & accessibility
+## Phase 6 — UI/UX polish & accessibility ✅
 
 **Context:** `graft skeleton components/Layout.tsx` · `graft skeleton components/Word.tsx` · `graft skeleton components/ResultCard.tsx` · `graft ask "focus overlay blur" --source`.
 
@@ -632,7 +645,7 @@ accessibility score ≥ 95 on `/` (record score in the task note).
 
 ---
 
-## Phase 7 — Features
+## Phase 7 — Features ✅
 
 **Context:** `graft skeleton redux/paragraph.ts` · `graft skeleton utils/getWords.ts` · `graft grep "loadWords"` · `graft ask "result card stats grade" --source`.
 
@@ -743,7 +756,7 @@ visible on `/stats`; gate passes with tests for every new util.
 
 ---
 
-## Phase 8 — Leaderboard / stats API hardening
+## Phase 8 — Leaderboard / stats API hardening ✅
 
 **Context:** `graft skeleton redux/stat.ts` · `graft grep "addStatCall"` · `graft grep "NEXT_PUBLIC_API_BASE_URL"` · `graft skeleton components/GlobalStats.tsx`.
 
@@ -789,7 +802,9 @@ var, nothing network-related happens (check the Network tab).
 
 ## Optional / later
 
-- [ ] **9.1 Playwright E2E smoke** covering the Smoke script (desktop +
+- [ ] **9.1 Playwright E2E smoke** _(Note: the final review drove the
+  Smoke script with `playwright-core` + the system Chrome; port that into
+  `e2e/` with `@playwright/test` and a CI job.)_ covering the Smoke script (desktop +
   mobile viewport) in CI.
 - [ ] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
   own PR after Phase 4 so tests catch regressions.

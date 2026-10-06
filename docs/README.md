@@ -8,10 +8,11 @@ time, read in this order:
    pieces fit together, and where state/data flows.
 2. **[CONVENTIONS.md](./CONVENTIONS.md)** — the coding, styling, and file
    organization rules to follow when adding or changing code.
-3. **[REFINEMENT_PLAN.md](./REFINEMENT_PLAN.md)** — the current backlog of
-   refinements, broken into independently shippable phases with concrete
-   file targets and acceptance criteria. Check here before starting new
-   work to avoid duplicating or conflicting with an in-progress phase.
+3. **[REFINEMENT_PLAN.md](./REFINEMENT_PLAN.md)** — the refinement
+   backlog. Phases 1–8 are complete (each task carries a note on what was
+   actually done); the "Optional / later" items and the "Parking lot" are
+   what's left. Read its "How to execute" and "Graft navigation protocol"
+   sections before picking up work.
 
 ## Keeping this up to date
 

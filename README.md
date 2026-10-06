@@ -2,8 +2,6 @@
 
 A minimal, focused typing speed test built on Next.js 15 + React 19 with Redux Toolkit for state and Tailwind CSS for styling.
 
-Visit [demo](https://your-deployment-url.com) to try it out.
-
 ## Features
 
 - **Real-time WPM / CPM / Accuracy** — Live stats update as you type
@@ -50,7 +48,7 @@ NEXT_PUBLIC_API_BASE_URL=https://your-api.com/api/stats
 | Route | Purpose |
 |-------|---------|
 | `/` | Main typing test — start typing, see live stats, get results |
-| `/stats` | Global leaderboard (only shows if API is configured) |
+| `/stats` | Your results (personal bests, averages, recent runs — stored locally) and, if the API is configured, the global leaderboard |
 
 ## Scripts
 
@@ -60,5 +58,13 @@ NEXT_PUBLIC_API_BASE_URL=https://your-api.com/api/stats
 - `type-check` — Run TypeScript type checker (separate from dev)
 - `lint` — Run ESLint
 - `test` — Run unit tests (Vitest)
+- `test:coverage` — Run tests with coverage (fails below 80% on `utils/` + `redux/`; this is what CI runs)
 
 Package manager: npm (`package-lock.json`).
+
+## Contributing
+
+See [`docs/README.md`](docs/README.md) for architecture, conventions and the
+refinement backlog. A change is done when
+`npm run lint && npm run type-check && npm run test:coverage && npm run build`
+passes.

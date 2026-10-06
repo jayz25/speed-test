@@ -15,7 +15,8 @@ app works standalone with no backend.
 |---|---|---|
 | `/` | `pages/index.tsx` | Renders `TypingTest` — the main app. |
 | `/stats` | `pages/stats/index.tsx` | "Your results" (`YourResults`: averages, personal bests, last 20 runs from localStorage history, Clear history) and, only if `NEXT_PUBLIC_API_BASE_URL` is set, "Global leaderboard" (`GlobalStats`). |
-| `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>` and loads the `Inter` font. |
+| `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>`, loads the `Inter` (UI) and `Roboto_Mono` (typing area) fonts, and hydrates/persists `state.settings` after mount. |
+| `pages/_document.tsx` | — | Sets `<Html lang="en">`. |
 
 ## Core flow: the typing test
 
@@ -64,9 +65,10 @@ Three slices, combined in `redux/store.ts`:
 
 ## Utilities (`utils/`)
 
-All pure, side-effect-free, and small — good unit-test candidates (none
-have tests yet; see `REFINEMENT_PLAN.md` Phase 4). The older DOM helpers
-and small stat helpers were deleted in Phase 1.
+Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
+`utils/hooks/` holds the React hooks (`utils/hooks/__tests__/`). `storage.ts`
+(`readJSON`/`writeJSON`, SSR- and quota-safe localStorage) and
+`playerName.ts` (sanitize, max 20 chars) are also here.
 
 | File | Purpose |
 |---|---|
@@ -101,26 +103,37 @@ and small stat helpers were deleted in Phase 1.
 ## Types (`types/types.ts`)
 
 Defines `RootState`/`AppDispatch` (standard RTK typed-hooks pattern),
-`ParagraphState`, `StatState`, `StatsInstance`/`StatsInstancePayload`.
-Status fields are still bare `string | null`, and the interface names are
-camelCase; both are fixed in `REFINEMENT_PLAN.md` 3.6.
-`interfaces/index.ts` is leftover boilerplate with no importers (removed in
-2.2).
+`ParagraphState`, `StatState`, `StatsInstance`/`StatsInstancePayload`, the
+literal-union status types `ParagraphStatus`/`StatStatus`, and the
+`isStatsInstance` type guard used to validate API responses. Engine types
+(`EngineState`, `LetterState`, …) live in `utils/typingEngine.ts`, settings
+types in `redux/settings.ts`.
 
 ## Build & tooling
 
 - Package manager: npm (`package-lock.json`; `yarn.lock` was removed).
 - `tsconfig.json` has `"strict": true`.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
-- `.github/workflows/ci.yml` runs lint → type-check → test → build on
-  Node 20 and 22.
+- `.github/workflows/ci.yml` runs lint → type-check → `test:coverage` →
+  build on Node 20 and 22 (npm cache enabled).
+- Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
+  thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
+  layout, verified in a real browser instead).
 - Lint: ESLint 9 flat config (`eslint.config.mjs`, `next/core-web-vitals` +
   `next/typescript` via `FlatCompat`, `eslint-config-next@15.5`); `npm run lint` = `eslint .`.
 - Tests: Vitest 5 (`vitest.config.ts`, jsdom, `vitest.setup.ts` loads
   jest-dom matchers, globals on); tests live next to code in `__tests__/`.
 - `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.
 - `next.config.mjs`: `reactStrictMode: true`, `poweredByHeader: false`.
-- Note: if `~/.npm` is root-owned, set `NPM_CONFIG_CACHE` to a writable dir.
 - `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
   graft instead of whole-file reads/greps on indexed source. See the graft
   protocol in `REFINEMENT_PLAN.md`.
+
+## Local storage keys
+
+| Key | Owner | Shape |
+|---|---|---|
+| `speedtype:v1:settings` | `redux/persistSettings.ts` | `SettingsState` incl. `playerName` (validated per field on load) |
+| `speedtype:v1:history` | `utils/history.ts` | newest 100 finished runs (`mode`, `limit`, `difficulty`, `wpm`, `rawWpm`, `accuracy`, `date`) |
+
+Bump the `v1` segment if a shape changes incompatibly.
