@@ -128,6 +128,20 @@ types in `redux/settings.ts`.
 - `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
   graft instead of whole-file reads/greps on indexed source. See the graft
   protocol in `REFINEMENT_PLAN.md`.
+- `.claude/helpers/graft-hooks.cjs` and `graft-statusline.cjs` are generated
+  by `graft init` and called by the hooks/status line in
+  `.claude/settings.json`, so keep them committed; deleting them makes every
+  session's hooks error. Each has a `BAKED` constant holding the committer's
+  graft install path (e.g. `/opt/homebrew/...` vs `/usr/local/...`). That is
+  only a fast path, since the script falls back to `node_modules` and
+  `npm root -g`, so a different local value works and should not be committed.
+  To keep your local edit out of `git status`:
+  ```bash
+  git update-index --skip-worktree .claude/helpers/graft-hooks.cjs .claude/helpers/graft-statusline.cjs
+  ```
+  Undo with `--no-skip-worktree` before committing an intentional change
+  (e.g. after `graft upgrade` / `graft init` rewrites them) or if a
+  `git pull` complains about these files.
 
 ## Local storage keys
 
