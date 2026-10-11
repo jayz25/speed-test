@@ -815,6 +815,27 @@ var, nothing network-related happens (check the Network tab).
 - [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
   (requires replacing hard-coded `slate-*`/`#FFD523` with tokens first).
 - [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+- [ ] **9.5 Harden the result-submit path** — **blocked: do not start until a
+  stats API actually exists and its owner is known.** Today
+  `utils/hooks/usePostResultOnFinish.ts:27` guards with a client-side
+  `wpm > MAX_PLAUSIBLE_WPM` check and `redux/stat.ts` POSTs straight from the
+  browser to `${NEXT_PUBLIC_API_BASE_URL}/addStat/`, so the leaderboard is
+  stuffable by anyone calling the endpoint directly — a client cannot enforce a
+  rule against itself. The client guard is politeness, not a control.
+  **Preconditions:** a live `/addStat/` endpoint, and an answer to who operates
+  it. **Then, depending on that answer:** (a) if we own the service, the work
+  lands there — plausibility validation, per-IP rate limiting, throttling on
+  `/addStat/` — and this repo changes only to note it; (b) if we don't, add
+  `pages/api/stats/*` here as the only writer, move the env var from
+  `NEXT_PUBLIC_API_BASE_URL` to a server-only `API_BASE_URL`, and put
+  validation + rate limiting in that route. Option (b) adds a server tier:
+  update `ARCHITECTURE.md`'s "works standalone with no backend" framing, the
+  `.env.example` and README env docs, and note that the app then needs a
+  Node/serverless deploy target. Re-brainstorm before starting either path —
+  the shape depends on the precondition answers.
+  _Context (2026-10-11): deferred by the user; the env var is unset in practice
+  and there is no live leaderboard, so hardening a path nothing submits to would
+  be work against a hypothetical._
 
 ---
 
