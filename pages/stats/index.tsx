@@ -6,7 +6,7 @@ import { isStatsApiEnabled } from '../../redux/stat'
 const IndexPage = () => (
   <Layout title="SpeedType — Stats">
     <h1 className="sr-only">Stats</h1>
-    <div className="flex flex-col gap-10 w-full max-w-3xl">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-10 sm:px-8">
       <section aria-labelledby="your-results-heading">
         <h2 id="your-results-heading" className="text-2xl font-bold mb-4">Your results</h2>
         <YourResults />
@@ -17,7 +17,7 @@ const IndexPage = () => (
           <GlobalStats />
         </section>
       )}
-    </div>
+    </main>
   </Layout>
 )
 

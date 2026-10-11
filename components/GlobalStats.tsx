@@ -21,24 +21,24 @@ export const GlobalStats = () => {
 
   if (!isStatsApiEnabled) {
     return (
-      <p className="text-slate-500 text-sm">
-        Stats API not configured. Set <code className="text-slate-300 bg-white/10 px-1 rounded">NEXT_PUBLIC_API_BASE_URL</code> to enable.
+      <p className="text-muted text-sm">
+        Stats API not configured. Set <code className="text-ink-2 bg-surface-muted px-1 rounded">NEXT_PUBLIC_API_BASE_URL</code> to enable.
       </p>
     );
   }
 
   if (status === "Loading Stats") {
-    return <p className="text-slate-500 text-sm animate-pulse">Loading stats…</p>;
+    return <p className="text-muted text-sm animate-pulse">Loading stats…</p>;
   }
 
   if (status === "Stats API Failed") {
     return (
       <div role="alert" className="flex items-center gap-4 text-sm">
-        <p className="text-red-400">Couldn&apos;t load leaderboard</p>
+        <p className="text-error">Couldn&apos;t load leaderboard</p>
         <button
           type="button"
           onClick={() => dispatch(getStatCall())}
-          className="px-3 py-1 rounded-lg bg-[#FFD523] text-black font-semibold hover:bg-yellow-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]"
+          className="px-3 py-1 rounded-lg bg-accent text-white font-semibold hover:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Retry
         </button>
@@ -47,7 +47,7 @@ export const GlobalStats = () => {
   }
 
   if (!stats || stats.length === 0) {
-    return <p className="text-slate-500 text-sm">No stats recorded yet.</p>;
+    return <p className="text-muted text-sm">No stats recorded yet.</p>;
   }
 
   const topStats = [...stats]
@@ -57,7 +57,7 @@ export const GlobalStats = () => {
   return (
     <table className="w-full text-sm text-left">
       <caption className="sr-only">Global leaderboard, top {LEADERBOARD_SIZE} by WPM</caption>
-      <thead className="text-slate-500">
+      <thead className="text-muted">
         <tr>
           <th scope="col" className="py-2 pr-4 font-medium">Rank</th>
           <th scope="col" className="py-2 pr-4 font-medium">Player</th>
@@ -68,12 +68,12 @@ export const GlobalStats = () => {
       </thead>
       <tbody>
         {topStats.map((stat, index) => (
-          <tr key={stat.id} className="border-t border-white/10">
-            <td className="py-2 pr-4 text-slate-500">{index + 1}</td>
-            <td className="py-2 pr-4 text-slate-400">{stat.user}</td>
-            <td className="py-2 pr-4 text-white font-semibold">{stat.words_per_minute}</td>
-            <td className="py-2 pr-4 text-blue-400">{stat.characters_per_minute}</td>
-            <td className="py-2 text-green-400">{stat.accuracy}%</td>
+          <tr key={stat.id} className="border-t border-divider">
+            <td className="py-2 pr-4 text-muted">{index + 1}</td>
+            <td className="py-2 pr-4 text-ink-2">{stat.user}</td>
+            <td className="py-2 pr-4 text-ink font-semibold">{stat.words_per_minute}</td>
+            <td className="py-2 pr-4 text-muted">{stat.characters_per_minute}</td>
+            <td className="py-2 text-ink">{stat.accuracy}%</td>
           </tr>
         ))}
       </tbody>

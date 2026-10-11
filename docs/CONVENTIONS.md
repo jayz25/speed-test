@@ -70,9 +70,11 @@ outside the scope of what you're already touching — note it in the
 - Tailwind utility classes inline in JSX; no CSS modules, no styled-
   components. `styles/globals.css` is for global resets/font variables
   only.
-- Match the existing dark-UI palette already in use (`slate-*` grays,
-  `#FFD523` accent, `red-400` for errors/danger) rather than introducing new
-  ad-hoc colors.
+- Use the design tokens in `tailwind.config.js` (see `docs/SPEEDTYPE_REDESIGN_SPEC.md` §1):
+  `bg`, `surface`, `surface-muted`, `surface-sunken`, `nav-track`, `ink`, `ink-2`,
+  `muted`, `pending`, `on-dark-muted`, `border`, `divider`, `kbd-bg`, `accent`,
+  `accent-soft`, `error`, `error-extra`. Never use ad-hoc hex colors or arbitrary
+  utility values for semantic colors.
 
 ## File organization
 

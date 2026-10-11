@@ -34,16 +34,16 @@ describe("TypingTest", () => {
     };
   });
 
-  it("renders the live WPM stat and the loaded words", () => {
+  it("renders the typing section and the loaded words", () => {
     renderTest();
-    expect(screen.getByText("WPM")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Typing test" })).toBeInTheDocument();
     expect(getWordEls().length).toBeGreaterThan(0);
   });
 
   it("does not mark a correctly typed first word as wrong", async () => {
     const user = userEvent.setup();
     renderTest();
-    await user.click(screen.getByLabelText("Typing input"));
+    await user.click(screen.getByLabelText("Type the words shown"));
     await user.keyboard("the ");
     const [firstWord] = getWordEls();
     expect(firstWord.className).not.toContain("underline");
@@ -52,7 +52,7 @@ describe("TypingTest", () => {
   it("marks a wrongly typed first word as wrong", async () => {
     const user = userEvent.setup();
     renderTest();
-    await user.click(screen.getByLabelText("Typing input"));
+    await user.click(screen.getByLabelText("Type the words shown"));
     await user.keyboard("thx ");
     const [firstWord] = getWordEls();
     expect(firstWord.className).toContain("underline");
@@ -60,35 +60,59 @@ describe("TypingTest", () => {
 
   it("focuses the input on mount so the focus overlay is not shown", () => {
     renderTest();
-    expect(screen.getByLabelText("Typing input")).toHaveFocus();
-    expect(screen.queryByText(/click to focus/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Type the words shown")).toHaveFocus();
+    expect(screen.queryByText(/click here to start typing/i)).not.toBeInTheDocument();
   });
 
   it("Escape restarts the test", async () => {
     const user = userEvent.setup();
     renderTest();
-    await user.click(screen.getByLabelText("Typing input"));
+    await user.click(screen.getByLabelText("Type the words shown"));
     await user.keyboard("thx ");
     expect(getWordEls()[0].className).toContain("underline");
     await user.keyboard("{Escape}");
     expect(getWordEls()[0].className).not.toContain("underline");
   });
 
-  it("Tab moves focus to the restart button, not the duration buttons", async () => {
+  it("Tab then Enter restarts with new words and keeps focus on the input", async () => {
     const user = userEvent.setup();
     renderTest();
-    await user.click(screen.getByLabelText("Typing input"));
+    await user.click(screen.getByLabelText("Type the words shown"));
     await user.keyboard("thx ");
     await user.keyboard("{Tab}");
-    expect(screen.getByRole("button", { name: /restart test/i })).toHaveFocus();
+    expect(screen.getByLabelText("Type the words shown")).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(getWordEls()[0].className).not.toContain("underline");
-    expect(screen.getByLabelText("Typing input")).toHaveFocus();
+    expect(screen.getByLabelText("Type the words shown")).toHaveFocus();
   });
 
-  it("shows the shortcut hint", () => {
+  it("shows the shortcut hint and a Restart button", async () => {
+    const user = userEvent.setup();
     renderTest();
-    expect(screen.getByText(/tab \+ enter — restart · esc — restart/)).toBeInTheDocument();
+    expect(screen.getByText("tab")).toBeInTheDocument();
+    expect(screen.getByText("enter")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("Type the words shown"));
+    await user.keyboard("thx ");
+    await user.click(screen.getByRole("button", { name: "Restart" }));
+    expect(getWordEls()[0].className).not.toContain("underline");
+  });
+
+  it("highlights the tab key while Tab+Enter is armed", async () => {
+    const user = userEvent.setup();
+    renderTest();
+    await user.click(screen.getByLabelText("Type the words shown"));
+    await user.keyboard("{Tab}");
+    expect(screen.getByText("tab").className).toContain("bg-accent-soft");
+    await user.keyboard("a");
+    expect(screen.getByText("tab").className).not.toContain("bg-accent-soft");
+  });
+
+  it("shows a click-to-start prompt only while unfocused and idle", async () => {
+    const user = userEvent.setup();
+    renderTest();
+    expect(screen.queryByText(/click here to start typing/i)).not.toBeInTheDocument();
+    await user.click(document.body);
+    expect(await screen.findByText(/click here to start typing/i)).toBeInTheDocument();
   });
 
   describe("accessibility", () => {
@@ -107,10 +131,20 @@ describe("TypingTest", () => {
     it("marks the selected duration with aria-pressed", async () => {
       const user = userEvent.setup();
       renderTest();
-      expect(screen.getByRole("button", { name: "30s" })).toHaveAttribute("aria-pressed", "true");
-      await user.click(screen.getByRole("button", { name: "60s" }));
-      expect(screen.getByRole("button", { name: "60s" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByRole("button", { name: "30s" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "30" })).toHaveAttribute("aria-pressed", "true");
+      await user.click(screen.getByRole("button", { name: "60" }));
+      expect(screen.getByRole("button", { name: "60" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "30" })).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("clicking a setting mid-test resets the test", async () => {
+      const user = userEvent.setup();
+      renderTest();
+      await user.click(screen.getByLabelText("Type the words shown"));
+      await user.keyboard("thx ");
+      expect(getWordEls()[0].className).toContain("underline");
+      await user.click(screen.getByRole("button", { name: "60" }));
+      expect(getWordEls()[0].className).not.toContain("underline");
     });
 
     it("announces the test start in a polite live region", async () => {
@@ -119,7 +153,7 @@ describe("TypingTest", () => {
       const region = screen.getByRole("status");
       expect(region).toHaveAttribute("aria-live", "polite");
       expect(region).toHaveTextContent("");
-      await user.click(screen.getByLabelText("Typing input"));
+      await user.click(screen.getByLabelText("Type the words shown"));
       await user.keyboard("t");
       expect(region).toHaveTextContent("Test started");
     });

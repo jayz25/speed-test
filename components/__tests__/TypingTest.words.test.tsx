@@ -40,9 +40,9 @@ describe("TypingTest words mode", () => {
     const user = setup();
     await screen.findByText("0/10");
     await user.keyboard(KNOWN_WORDS.slice(0, 9).map((w) => `${w} `).join(""));
-    expect(screen.queryByText("Test Complete")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /next test/i })).not.toBeInTheDocument();
     await user.keyboard("vat");
-    expect(await screen.findByText("Test Complete")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /next test/i })).toBeInTheDocument();
   });
 
   it("finishes on submitting a wrong last word", async () => {
@@ -50,6 +50,6 @@ describe("TypingTest words mode", () => {
     await screen.findByText("0/10");
     await user.keyboard(KNOWN_WORDS.slice(0, 9).map((w) => `${w} `).join(""));
     await user.keyboard("zz ");
-    expect(await screen.findByText("Test Complete")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /next test/i })).toBeInTheDocument();
   });
 });

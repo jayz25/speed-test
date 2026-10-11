@@ -10,7 +10,7 @@ interface StatProps {
   color?: string;
 }
 
-const RenderStat: React.FC<StatProps> = ({ targetValue, unit = "", duration = 800, color = "text-white" }) => {
+const RenderStat: React.FC<StatProps> = ({ targetValue, unit = "", duration = 800, color = "text-ink" }) => {
   const [currentValue, setCurrentValue] = useState<number>(0);
 
   useEffect(() => {

@@ -1,15 +1,28 @@
-import { getLineScrollOffset } from "../useCaret";
+import { renderHook } from "@testing-library/react";
+import { getScrollTop, useCaret } from "../useCaret";
 
-describe("getLineScrollOffset", () => {
-  it("does not scroll on the first two lines", () => {
-    expect(getLineScrollOffset(0, 50)).toBe(0);
-    expect(getLineScrollOffset(1, 50)).toBe(0);
+describe("getScrollTop", () => {
+  it("does not scroll while the caret is on the first two lines", () => {
+    expect(getScrollTop(0)).toBe(0);
+    expect(getScrollTop(54)).toBe(0);
   });
-  it("keeps the active line in the middle from line 3 onwards", () => {
-    expect(getLineScrollOffset(2, 50)).toBe(-50);
-    expect(getLineScrollOffset(5, 50)).toBe(-200);
+  it("keeps the caret line 54px below the top once it moves further down", () => {
+    expect(getScrollTop(98)).toBe(44);
+    expect(getScrollTop(186)).toBe(132);
   });
-  it("does nothing when the line pitch is unmeasurable", () => {
-    expect(getLineScrollOffset(4, 0)).toBe(0);
+});
+
+describe("useCaret", () => {
+  it("scrolls the box to the caret letter", () => {
+    const box = document.createElement("div");
+    const target = document.createElement("span");
+    Object.defineProperty(target, "offsetTop", { value: 142 });
+    renderHook(() => useCaret({ boxRef: { current: box }, targetRef: { current: target }, deps: [] }));
+    expect(box.scrollTop).toBe(88);
+  });
+  it("does nothing without a caret target", () => {
+    const box = document.createElement("div");
+    renderHook(() => useCaret({ boxRef: { current: box }, targetRef: { current: null }, deps: [] }));
+    expect(box.scrollTop).toBe(0);
   });
 });

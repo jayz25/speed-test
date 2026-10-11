@@ -3,6 +3,7 @@ import ResultCard from "../ResultCard";
 import type { TestStats } from "../../utils/calculateStats";
 
 const CONFIG = { mode: "time", limit: 30, difficulty: "mixed" } as const;
+const OPTIONS = { punctuation: false, numbers: false };
 const STATS: TestStats = {
   wpm: 72, rawWpm: 80, cpm: 360, accuracy: 96,
   correctChars: 300, incorrectChars: 12, extraChars: 3, missedChars: 5,
@@ -18,31 +19,40 @@ describe("ResultCard", () => {
   });
 
   it("shows headline and detail stats", () => {
-    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} onReset={vi.fn()} onRepeat={vi.fn()} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={vi.fn()} onRepeat={vi.fn()} />);
     expect(screen.getByText("72")).toBeInTheDocument();
     expect(screen.getByText("96")).toBeInTheDocument();
-    const details = screen.getByText("Raw WPM").closest("div")!.parentElement!;
-    expect(details).toHaveTextContent("80");
-    expect(details).toHaveTextContent("Correct300");
-    expect(details).toHaveTextContent("Incorrect12");
-    expect(details).toHaveTextContent("Extra3");
-    expect(details).toHaveTextContent("Missed5");
-    expect(details).toHaveTextContent("Duration30s");
+    const tiles = screen.getByText("CPM").closest("dl")!;
+    expect(tiles).toHaveTextContent("CPM360");
+    expect(tiles).toHaveTextContent("Correct300");
+    expect(tiles).toHaveTextContent("Wrong12");
+    expect(tiles).toHaveTextContent("Extra3");
+    expect(tiles).toHaveTextContent("Missed5");
+    expect(screen.getByText(/Raw 80 WPM/)).toBeInTheDocument();
+  });
+
+  it("summarises the test config with only the enabled options", () => {
+    const { rerender } = render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={vi.fn()} onRepeat={vi.fn()} />);
+    expect(screen.getByText("30 seconds \u00b7 mixed")).toBeInTheDocument();
+    rerender(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={{ punctuation: true, numbers: true }} onReset={vi.fn()} onRepeat={vi.fn()} />);
+    expect(screen.getByText("30 seconds \u00b7 mixed \u00b7 punctuation \u00b7 numbers")).toBeInTheDocument();
+    rerender(<ResultCard stats={STATS} durationSeconds={30} config={{ mode: "words", limit: 25, difficulty: "hard" }} options={{ punctuation: false, numbers: true }} onReset={vi.fn()} onRepeat={vi.fn()} />);
+    expect(screen.getByText("25 words \u00b7 hard \u00b7 numbers")).toBeInTheDocument();
   });
 
   it("renders Next test and Repeat; Repeat calls onRepeat only", () => {
     const onReset = vi.fn();
     const onRepeat = vi.fn();
-    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} onReset={onReset} onRepeat={onRepeat} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={onReset} onRepeat={onRepeat} />);
     expect(screen.getByRole("button", { name: /next test/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Repeat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Repeat same words" }));
     expect(onRepeat).toHaveBeenCalledTimes(1);
     expect(onReset).not.toHaveBeenCalled();
   });
 
   it("resets on the button, Enter and Escape", () => {
     const onReset = vi.fn();
-    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} onReset={onReset} onRepeat={vi.fn()} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={onReset} onRepeat={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /next test/i }));
     fireEvent.keyDown(window, { key: "Enter" });
     fireEvent.keyDown(window, { key: "Escape" });
@@ -59,7 +69,7 @@ describe("ResultCard personal best and grade", () => {
     delete window.matchMedia;
   });
   const renderCard = (personalBest?: { previousBest: number | null }, stats = STATS) =>
-    render(<ResultCard stats={stats} durationSeconds={30} config={CONFIG} onReset={vi.fn()} onRepeat={vi.fn()} personalBest={personalBest} />);
+    render(<ResultCard stats={stats} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={vi.fn()} onRepeat={vi.fn()} personalBest={personalBest} />);
 
   it("shows the new personal best badge on a first run or a beaten record", () => {
     renderCard({ previousBest: null });
@@ -102,7 +112,7 @@ describe("ResultCard copy", () => {
   const stubClipboard = (writeText: () => Promise<void>) =>
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
   const renderCard = () =>
-    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} onReset={vi.fn()} onRepeat={vi.fn()} />);
+    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={vi.fn()} onRepeat={vi.fn()} />);
 
   it("copies the summary and shows Copied! for 1.5s", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);

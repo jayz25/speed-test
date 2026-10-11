@@ -15,7 +15,7 @@ app works standalone with no backend.
 |---|---|---|
 | `/` | `pages/index.tsx` | Renders `TypingTest` — the main app. |
 | `/stats` | `pages/stats/index.tsx` | "Your results" (`YourResults`: averages, personal bests, last 20 runs from localStorage history, Clear history) and, only if `NEXT_PUBLIC_API_BASE_URL` is set, "Global leaderboard" (`GlobalStats`). |
-| `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>`, loads the `Inter` (UI) and `Roboto_Mono` (typing area) fonts, and hydrates/persists `state.settings` after mount. |
+| `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>`, loads `Schibsted Grotesk` (UI) and `IBM Plex Mono` (typing area) fonts, and hydrates/persists `state.settings` after mount. |
 | `pages/_document.tsx` | — | Sets `<Html lang="en">`. |
 
 ## Core flow: the typing test
@@ -89,8 +89,12 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 |---|---|
 | `TypingTest.tsx` | Orchestrator, see above. |
 | `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
-| `ConfigBar.tsx` | Settings pills (mode, time/word count, difficulty, punctuation, numbers) + player name; reads/writes `state.settings`; faded in focus mode. |
-| `LiveStat.tsx`, `RestartButton.tsx` | Live stat tile, restart button. |
+| `SettingsPanel.tsx` | Settings UI (mode, time/word count, difficulty, punctuation, numbers) + player name; reads/writes `state.settings`; dimmed while running. |
+| `LiveStatsPanel.tsx` | Live stats display: dark WPM tile with sparkline, plus grid of small tiles for accuracy/CPM/errors/words. |
+| `Sparkline.tsx` | Inline-SVG mini chart of WPM over time (one point per second). |
+| `TimerRow.tsx` | Timer label, progress bar, and goal text. |
+| `icons.tsx` | Inline SVG icon components (RotateCcwIcon, ArrowRightIcon, MousePointerIcon). |
+| `RestartButton.tsx` | Restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
 | `YourResults.tsx` | `/stats` personal results from history. |

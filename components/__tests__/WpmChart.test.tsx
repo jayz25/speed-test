@@ -14,14 +14,25 @@ describe("WpmChart", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders two polylines, a red dot per mistake second, 3 gridlabels and a text summary", () => {
+  it("renders one WPM polyline with an area, y/x labels and a text summary", () => {
     const { container } = render(<WpmChart samples={SAMPLES} />);
-    expect(container.querySelectorAll("polyline")).toHaveLength(2);
-    expect(container.querySelectorAll("circle")).toHaveLength(1);
+    expect(container.querySelectorAll("polyline")).toHaveLength(1);
+    expect(container.querySelectorAll("polygon")).toHaveLength(1);
     expect(screen.getByRole("img")).toHaveAttribute("aria-label", expect.stringContaining("ended at 45 WPM"));
-    expect(container.querySelector("title")).toHaveTextContent(/WPM over 3 seconds/);
-    // axis max 60 -> labels 20, 40, 60
-    expect(screen.getByText("60")).toBeInTheDocument();
-    expect(screen.getByText("20")).toBeInTheDocument();
+    expect(screen.getByText("Speed over the test")).toBeInTheDocument();
+    // y max = peak WPM (45), floor 40
+    expect(screen.getByText("45")).toBeInTheDocument();
+    expect(screen.getByText("0s")).toBeInTheDocument();
+    expect(screen.getByText("3s")).toBeInTheDocument();
+  });
+
+  it("scales the y-axis to the peak WPM when above 40", () => {
+    render(<WpmChart samples={[{ ...SAMPLES[0], wpm: 90 }, SAMPLES[1]]} />);
+    expect(screen.getByText("90")).toBeInTheDocument();
+  });
+
+  it("keeps the y-axis at 40 for slow tests", () => {
+    render(<WpmChart samples={SAMPLES.map((s) => ({ ...s, wpm: 10 }))} />);
+    expect(screen.getByText("40")).toBeInTheDocument();
   });
 });

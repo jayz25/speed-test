@@ -13,23 +13,24 @@ import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
+import { getWordCounts } from "../utils/typingEngine";
 import { makeSample, WpmSample } from "../utils/wpmSamples";
-import ConfigBar from "./ConfigBar";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveAnnouncer from "./LiveAnnouncer";
-import LiveStat from "./LiveStat";
-import RestartButton from "./RestartButton";
+import LiveStatsPanel from "./LiveStatsPanel";
 import ResultCard from "./ResultCard";
+import SettingsPanel from "./SettingsPanel";
+import TimerRow from "./TimerRow";
+import { RotateCcwIcon } from "./icons";
 import TypingArea from "./TypingArea";
-
-// Chrome that fades out in focus mode (see useFocusMode + globals.css)
-const FADE_CLASSES = "transition-opacity duration-300";
 
 const INITIAL_STATS: TestStats = {
   wpm: 0, rawWpm: 0, cpm: 0, accuracy: 100,
   correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
 };
 const WARNING_SECONDS = 10;
+const SECONDS_PER_MINUTE = 60;
+const REFOCUS_DELAY_MS = 30;
 const MS_PER_SECOND = 1000;
 /** Words generated for time mode; more than anyone can type in the longest limit. */
 const TIME_MODE_WORDS = 300;
@@ -56,10 +57,9 @@ const TypingTest = () => {
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const caretRef = useRef<HTMLDivElement>(null);
+  const [isTabArmed, setIsTabArmed] = useState(false);
   const targetRef = useRef<HTMLSpanElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
   const didKeyDownBackspace = useRef(false);
@@ -73,7 +73,6 @@ const TypingTest = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [seconds, state.words],
   );
-  const { wpm, cpm, accuracy } = liveStats;
 
   // Time mode: game over when the countdown reaches 0 (words mode ends in the engine)
   useEffect(() => {
@@ -84,6 +83,8 @@ const TypingTest = () => {
   const samplesRef = useRef<WpmSample[]>([]);
   const incorrectAtLastSample = useRef(0);
   const [finalSamples, setFinalSamples] = useState<readonly WpmSample[]>([]);
+  // Mirror of samplesRef so the live sparkline re-renders when a sample is pushed
+  const [liveSamples, setLiveSamples] = useState<readonly WpmSample[]>([]);
   const pushSample = useCallback((second: number) => {
     const last = samplesRef.current[samplesRef.current.length - 1];
     if (last && last.second >= second) return;
@@ -95,8 +96,10 @@ const TypingTest = () => {
     if (state.status === "idle") {
       samplesRef.current = [];
       incorrectAtLastSample.current = 0;
+      setLiveSamples((prev) => (prev.length === 0 ? prev : []));
     } else if (isStarted && elapsedSeconds >= 1) {
       pushSample(elapsedSeconds);
+      setLiveSamples((prev) => (prev === samplesRef.current ? prev : samplesRef.current));
     }
   }, [state.status, isStarted, elapsedSeconds, pushSample]);
 
@@ -130,7 +133,7 @@ const TypingTest = () => {
   });
 
   useCaret({
-    caretRef, targetRef, containerRef, viewportRef,
+    boxRef, targetRef,
     deps: [activeWordIndex, activeLetterIndex, words, round, isFocused, isFinished],
   });
 
@@ -154,7 +157,10 @@ const TypingTest = () => {
   const resetTest = useCallback(() => {
     reset(timeLimit);
     dispatch(refreshWords());
+    setIsTabArmed(false);
     textInput.current?.focus();
+    // The click that triggered the reset may steal focus back; refocus once it settles
+    setTimeout(() => textInput.current?.focus(), REFOCUS_DELAY_MS);
   }, [reset, dispatch, timeLimit]);
 
   // Same words, fresh test (the engine restarts when the paragraph round changes)
@@ -177,11 +183,17 @@ const TypingTest = () => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
 
     if (e.key === "Tab") {
-      // Tab + Enter restarts instead of focusing the first duration button
+      // Tab + Enter restarts instead of moving focus to the settings
       e.preventDefault();
-      document.getElementById("reset-btn")?.focus();
+      setIsTabArmed(true);
       return;
     }
+    if (e.key === "Enter" && isTabArmed) {
+      e.preventDefault();
+      resetTest();
+      return;
+    }
+    if (e.key !== "Shift") setIsTabArmed(false);
     if (e.ctrlKey || e.altKey || e.metaKey || e.key === "CapsLock") return;
     if (words.length === 0 || isFinished) return;
 
@@ -198,7 +210,7 @@ const TypingTest = () => {
       e.preventDefault();
       submitWord();
     }
-  }, [words, isFinished, backspace, submitWord]);
+  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord]);
 
   const handleKeyUp = useCallback(() => {
     didKeyDownBackspace.current = false;
@@ -232,9 +244,9 @@ const TypingTest = () => {
     el.setSelectionRange(el.value.length, el.value.length);
   }, []);
 
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const relTarget = e.relatedTarget as HTMLElement | null;
-    if (relTarget?.id === "reset-btn" || relTarget?.dataset.configBtn) return; // don't blur when clicking reset
+  // A setting change refocuses the input via the words effect; onFocus then restores isFocused
+  const handleBlur = useCallback(() => {
+    setIsTabArmed(false);
     setIsFocused(false);
   }, []);
 
@@ -255,77 +267,99 @@ const TypingTest = () => {
     announcement = !isWordsMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
+  const remainingSeconds = Math.ceil(Math.max(0, seconds));
+  const timeLabel = `${Math.floor(remainingSeconds / SECONDS_PER_MINUTE)}:${String(remainingSeconds % SECONDS_PER_MINUTE).padStart(2, "0")}`;
+  const wordIndex = Math.min(activeWordIndex, words.length);
+  const timerRow = isWordsMode
+    ? { label: `${wordIndex}/${words.length}`, goal: `${elapsedSeconds}s`, progress: words.length > 0 ? wordIndex / words.length : 0 }
+    : { label: timeLabel, goal: `${timeLimit}s`, progress: timeLimit > 0 ? elapsedSeconds / timeLimit : 0 };
+
+  const shownStats = isFinished ? finalStats : liveStats;
+  const liveStatsProps = state.status === "idle" ? null : {
+    wpm: shownStats.wpm,
+    cpm: shownStats.cpm,
+    accuracy: shownStats.accuracy,
+    errors: state.incorrectKeystrokes,
+    words: getWordCounts(state).wordsMatched,
+  };
+  const series = (isFinished ? finalSamples : liveSamples).map((sample) => sample.wpm);
+
   return (
     <>
       <LiveAnnouncer message={announcement} />
-      {isFinished ? (
-        <ResultCard
-          stats={finalStats}
-          samples={finalSamples}
-          personalBest={personalBest}
-          config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
-          durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
-          onReset={resetTest}
-          onRepeat={repeatTest}
-        />
-      ) : (
-    <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">
-
-      <ConfigBar />
-      <div className="flex items-center min-h-8 px-1 self-start">
-        <CapsLockAlert isVisible={isCapsLockOn} />
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row w-full justify-between sm:items-end px-1 mb-2">
-        <div className="flex gap-6 sm:gap-8">
-          <LiveStat label="WPM" value={isStarted ? wpm : 0} />
-          <LiveStat label="CPM" value={isStarted ? cpm : 0} />
-          <LiveStat label="ACC" value={isStarted ? accuracy : 100} unit="%" />
-        </div>
-        <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${!isWordsMode && seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
-          {isWordsMode ? `${Math.min(activeWordIndex, words.length)}/${words.length}` : seconds}
-        </div>
-      </div>
-
-      <TypingArea
-        state={state}
-        activeLetterIndex={activeLetterIndex}
-        isFocused={isFocused}
-        isIdle={state.status === "idle"}
-        caretRef={caretRef}
-        targetRef={targetRef}
-        containerRef={containerRef}
-        viewportRef={viewportRef}
-        onClick={handleContainerClick}
-        onMouseDown={handleContainerMouseDown}
-      >
-        <input
-          ref={textInput}
-          autoFocus
-          className="absolute left-0 top-0 w-px h-px opacity-0 pointer-events-none"
-          id="typing-input"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          value=""
-          onKeyDown={handleKeyDown}
-          onKeyUp={handleKeyUp}
-          onInput={handleInput}
-          onChange={() => {}}
-          onFocus={() => setIsFocused(true)}
-          onBlur={handleBlur}
-          onSelect={handleSelect}
-          type="text"
-          aria-label="Typing input"
-        />
-      </TypingArea>
-
-      <p data-focus-fade className={`text-xs text-slate-400 select-none ${FADE_CLASSES}`}>tab + enter — restart · esc — restart</p>
-
-      <RestartButton onClick={resetTest} />
-    </div>
-      )}
+      <main className="mx-auto flex w-full max-w-[1360px] flex-wrap items-start gap-5 px-4 pt-6 pb-12 sm:px-8 sm:pt-10">
+        <SettingsPanel isDimmed={isStarted} />
+        <section
+          aria-label="Typing test"
+          className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
+        >
+          {isFinished ? (
+            <ResultCard
+              stats={finalStats}
+              samples={finalSamples}
+              personalBest={personalBest}
+              config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
+              options={{ punctuation, numbers }}
+              durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
+              onReset={resetTest}
+              onRepeat={repeatTest}
+            />
+          ) : (
+            <>
+              <TimerRow {...timerRow} />
+              <CapsLockAlert isVisible={isCapsLockOn} />
+              <TypingArea
+                state={state}
+                activeLetterIndex={activeLetterIndex}
+                isFocused={isFocused}
+                isIdle={state.status === "idle"}
+                boxRef={boxRef}
+                targetRef={targetRef}
+                onClick={handleContainerClick}
+                onMouseDown={handleContainerMouseDown}
+              >
+                <input
+                  ref={textInput}
+                  autoFocus
+                  className="absolute inset-0 h-full w-full cursor-text border-0 p-0 opacity-0 caret-transparent"
+                  id="typing-input"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  value=""
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  onInput={handleInput}
+                  onChange={() => {}}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={handleBlur}
+                  onSelect={handleSelect}
+                  type="text"
+                  aria-label="Type the words shown"
+                />
+              </TypingArea>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-5">
+                <button
+                  type="button"
+                  onClick={resetTest}
+                  className="flex min-h-[44px] items-center gap-2.5 rounded-xl border border-border bg-surface px-[18px] text-[15px] font-semibold text-ink"
+                >
+                  <RotateCcwIcon />
+                  Restart
+                </button>
+                <p className="flex items-center gap-2 text-[13px] text-muted">
+                  <kbd className={`rounded-md border border-border px-2 py-[3px] font-mono text-xs text-ink ${isTabArmed ? "bg-accent-soft" : "bg-kbd-bg"}`}>tab</kbd>
+                  +
+                  <kbd className="rounded-md border border-border bg-kbd-bg px-2 py-[3px] font-mono text-xs text-ink">enter</kbd>
+                  to restart
+                </p>
+              </div>
+            </>
+          )}
+        </section>
+        <LiveStatsPanel stats={liveStatsProps} series={series} />
+      </main>
     </>
   );
 };

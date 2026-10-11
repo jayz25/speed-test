@@ -6,14 +6,24 @@ import { getGrade } from "../utils/getGrade";
 import { describePb, type TestConfigKey } from "../utils/history";
 import { formatResultText } from "../utils/shareText";
 import type { WpmSample } from "../utils/wpmSamples";
-import RenderStat from "./RenderStat";
+import { ArrowRightIcon, RotateCcwIcon } from "./icons";
 import WpmChart from "./WpmChart";
 
 const BUTTON_BASE =
-  "flex items-center gap-2 px-6 py-3 font-semibold rounded-xl transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]";
+  "flex min-h-[48px] items-center gap-2.5 rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+const LABEL = "text-xs font-semibold uppercase tracking-[0.08em] text-muted";
+const TILE = "flex flex-col gap-1 rounded-[14px] bg-surface-muted px-[18px] py-4";
 
 const COPY_FEEDBACK_MS = 1500;
 type CopyStatus = "idle" | "copied" | "failed";
+
+/** "30 seconds · mixed · punctuation · numbers" / "25 words · hard". */
+export function formatSummary(config: TestConfigKey, options: { punctuation: boolean; numbers: boolean }): string {
+  const length = config.mode === "time" ? `${config.limit} seconds` : `${config.limit} words`;
+  return [length, config.difficulty, options.punctuation && "punctuation", options.numbers && "numbers"]
+    .filter(Boolean)
+    .join(" \u00b7 ");
+}
 
 interface ResultCardProps {
   stats: TestStats;
@@ -25,12 +35,14 @@ interface ResultCardProps {
   durationSeconds: number;
   /** Mode / limit / difficulty of this test (used in the copied text). */
   config: TestConfigKey;
+  /** Punctuation / numbers toggles that were on for this test (shown in the summary). */
+  options: { punctuation: boolean; numbers: boolean };
   onReset: () => void;
   /** Restart with the same words. */
   onRepeat: () => void;
 }
 
-export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, options, onReset, onRepeat }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,71 +71,56 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
 
   const grade = getGrade(wpm, accuracy);
   const pb = personalBest ? describePb(wpm, personalBest.previousBest) : null;
-  const gradeColor = grade === "S" ? "text-[#FFD523]" : grade === "A" ? "text-green-400" : grade === "B" ? "text-blue-400" : "text-slate-400";
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl motion-safe:animate-fade-in">
-      <div className="text-center">
-        <h2 className="text-4xl font-bold mb-1">Test Complete</h2>
-        <p className="text-slate-500 text-sm">Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs">Enter</kbd> to restart</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-        {/* Headline stats */}
-        <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-          <StatBox label="WPM" value={wpm} color="text-[#FFD523]" subtitle="words/min" />
-          <StatBox label="Accuracy" value={accuracy} unit="%" color="text-green-400" subtitle="correct keystrokes" />
+    <div className="flex flex-col gap-7 motion-safe:animate-fade-in">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-wrap items-end gap-10">
+          <div className="flex flex-col gap-1">
+            <span className={LABEL}>Words / min</span>
+            <span className="text-[112px] font-extrabold leading-[0.9] tracking-[-0.05em] text-ink">{wpm}</span>
+          </div>
+          <div className="flex flex-col gap-1 pb-1.5">
+            <span className={LABEL}>Accuracy</span>
+            <span className="text-[48px] font-bold leading-none tracking-[-0.03em] text-ink">
+              {accuracy}
+              <span className="text-[24px]">%</span>
+            </span>
+          </div>
         </div>
-
-        {/* Details */}
-        <dl className="grid grid-cols-2 gap-3 rounded-2xl bg-white/5 border border-white/10 p-6 content-center">
-          <Detail label="Raw WPM" value={rawWpm} />
-          <Detail label="CPM" value={cpm} />
-          <Detail label="Correct" value={correctChars} />
-          <Detail label="Incorrect" value={incorrectChars} />
-          <Detail label="Extra" value={extraChars} />
-          <Detail label="Missed" value={missedChars} />
-          <Detail label="Duration" value={`${durationSeconds}s`} />
-        </dl>
+        <div className="flex flex-col items-start gap-1.5 pb-2 sm:items-end">
+          {pb && (
+            <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-white" : "bg-surface-muted text-ink-2"}`}>
+              {pb.label}
+            </p>
+          )}
+          <span className="text-sm text-muted">{formatSummary(config, options)}</span>
+          <span className="text-sm text-muted">
+            Raw {rawWpm} WPM · {durationSeconds}s · Grade <span className="font-semibold text-ink">{grade}</span>
+          </span>
+        </div>
       </div>
-
-      {pb && (
-        <p className={`text-sm font-semibold px-3 py-1 rounded-full ${pb.isNew ? "bg-[#FFD523] text-black" : "bg-white/10 text-slate-300"}`}>
-          {pb.label}
-        </p>
-      )}
 
       <WpmChart samples={samples} />
 
-      {/* Grade */}
-      <div className="flex flex-col items-center gap-3 my-2">
-        <span className="text-sm font-semibold uppercase tracking-widest text-[#FFD523]/70 bg-[#FFD523]/10 px-3 py-1 rounded-full">Typing Grade</span>
-        <div className={`text-[96px] md:text-[120px] font-black ${gradeColor} leading-none drop-shadow-2xl`}>{grade}</div>
-      </div>
+      <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] gap-3">
+        <Tile label="CPM" value={cpm} />
+        <Tile label="Correct" value={correctChars} />
+        <Tile label="Wrong" value={incorrectChars} valueClass="text-error" />
+        <Tile label="Extra" value={extraChars} />
+        <Tile label="Missed" value={missedChars} />
+      </dl>
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={onReset}
-          className={`${BUTTON_BASE} bg-[#FFD523] text-black hover:bg-yellow-300`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+      <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-5">
+        <button type="button" onClick={onReset} className={`${BUTTON_BASE} bg-ink text-white hover:bg-ink-2`}>
           Next test
+          <ArrowRightIcon />
         </button>
-        <button
-          type="button"
-          onClick={onRepeat}
-          className={`${BUTTON_BASE} bg-white/10 text-slate-100 hover:bg-white/20`}
-        >
-          Repeat
+        <button type="button" onClick={onRepeat} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
+          <RotateCcwIcon />
+          Repeat same words
         </button>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className={`${BUTTON_BASE} bg-white/10 text-slate-100 hover:bg-white/20`}
-        >
+        <button type="button" onClick={handleCopy} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
           {copyStatus === "copied" ? "Copied!" : copyStatus === "failed" ? "Couldn't copy" : "Copy result"}
         </button>
         <span role="status" className="sr-only">
@@ -134,21 +131,11 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
   );
 }
 
-function StatBox({ label, value, unit = "", color, subtitle }: { label: string; value: number; unit?: string; color: string; subtitle: string }) {
+function Tile({ label, value, valueClass = "text-ink" }: { label: string; value: number; valueClass?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/5 border border-white/10 p-6">
-      <span className="text-xs uppercase tracking-widest text-slate-500 mb-1">{label}</span>
-      <RenderStat targetValue={value} unit={unit} color={color} />
-      <span className="text-xs text-slate-400 mt-1">{subtitle}</span>
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="flex flex-col">
-      <dt className="text-xs uppercase tracking-widest text-slate-400">{label}</dt>
-      <dd className="text-xl font-semibold tabular-nums text-slate-100">{value}</dd>
+    <div className={TILE}>
+      <dt className={LABEL}>{label}</dt>
+      <dd className={`text-[26px] font-bold tabular-nums ${valueClass}`}>{value}</dd>
     </div>
   );
 }

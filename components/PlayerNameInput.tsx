@@ -7,7 +7,7 @@ interface PlayerNameInputProps {
 
 export default function PlayerNameInput({ value, onChange }: PlayerNameInputProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-500">
+    <label className="flex flex-col gap-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
       Name
       <input
         type="text"
@@ -15,7 +15,7 @@ export default function PlayerNameInput({ value, onChange }: PlayerNameInputProp
         maxLength={MAX_PLAYER_NAME_LENGTH}
         placeholder={DEFAULT_PLAYER_NAME}
         onChange={(e) => onChange(e.target.value)}
-        className="w-36 rounded-md bg-white/5 border border-white/10 px-2 py-1 text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-[#FFD523]"
+        className="min-h-[44px] w-full rounded-[10px] border border-border bg-surface px-3 text-[15px] font-normal normal-case tracking-normal text-ink placeholder:text-pending focus:border-accent focus:outline-none"
       />
     </label>
   );

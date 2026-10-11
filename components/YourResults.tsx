@@ -27,13 +27,13 @@ export default function YourResults() {
     setHistory([]);
   };
 
-  if (history === null) return <p className="text-slate-400 text-sm">Loading your results…</p>;
+  if (history === null) return <p className="text-muted text-sm">Loading your results…</p>;
 
   if (history.length === 0) {
     return (
-      <p className="text-slate-400 text-sm">
+      <p className="text-muted text-sm">
         No tests yet —{" "}
-        <Link href="/" className="text-[#FFD523] underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523] rounded">take one</Link>
+        <Link href="/" className="text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">take one</Link>
       </p>
     );
   }
@@ -44,16 +44,16 @@ export default function YourResults() {
     <div className="flex flex-col gap-8">
       <dl className="flex gap-8">
         <div>
-          <dt className="text-xs uppercase tracking-widest text-slate-400">Average WPM</dt>
-          <dd className="text-3xl font-semibold tabular-nums text-[#FFD523]">{averages.wpm}</dd>
+          <dt className="text-xs uppercase tracking-widest text-muted">Average WPM</dt>
+          <dd className="text-3xl font-semibold tabular-nums text-accent">{averages.wpm}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-widest text-slate-400">Average accuracy</dt>
-          <dd className="text-3xl font-semibold tabular-nums text-green-400">{averages.accuracy}%</dd>
+          <dt className="text-xs uppercase tracking-widest text-muted">Average accuracy</dt>
+          <dd className="text-3xl font-semibold tabular-nums text-ink">{averages.accuracy}%</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-widest text-slate-400">Tests</dt>
-          <dd className="text-3xl font-semibold tabular-nums text-slate-100">{history.length}</dd>
+          <dt className="text-xs uppercase tracking-widest text-muted">Tests</dt>
+          <dd className="text-3xl font-semibold tabular-nums text-ink">{history.length}</dd>
         </div>
       </dl>
 
@@ -61,7 +61,7 @@ export default function YourResults() {
         <h3 id="pb-heading" className="text-lg font-semibold mb-2">Personal bests</h3>
         <table className="w-full text-sm text-left">
           <caption className="sr-only">Best WPM for each test setting</caption>
-          <thead className="text-slate-400">
+          <thead className="text-muted">
             <tr>
               <th scope="col" className={TH}>Test</th>
               <th scope="col" className={TH}>Best WPM</th>
@@ -71,11 +71,11 @@ export default function YourResults() {
           </thead>
           <tbody>
             {getPersonalBests(history).map((row) => (
-              <tr key={`${row.mode}-${row.limit}-${row.difficulty}`} className="border-t border-white/10">
-                <th scope="row" className={`${TD} font-normal text-slate-300`}>{formatConfig(row)}</th>
-                <td className={`${TD} text-white font-semibold tabular-nums`}>{row.wpm}</td>
-                <td className={`${TD} text-green-400 tabular-nums`}>{row.accuracy}%</td>
-                <td className={`${TD} text-slate-400 tabular-nums`}>{row.runs}</td>
+              <tr key={`${row.mode}-${row.limit}-${row.difficulty}`} className="border-t border-divider">
+                <th scope="row" className={`${TD} font-normal text-ink-2`}>{formatConfig(row)}</th>
+                <td className={`${TD} text-ink font-semibold tabular-nums`}>{row.wpm}</td>
+                <td className={`${TD} text-ink tabular-nums`}>{row.accuracy}%</td>
+                <td className={`${TD} text-muted tabular-nums`}>{row.runs}</td>
               </tr>
             ))}
           </tbody>
@@ -86,7 +86,7 @@ export default function YourResults() {
         <h3 id="recent-heading" className="text-lg font-semibold mb-2">Last {RECENT_RUNS} runs</h3>
         <table className="w-full text-sm text-left">
           <caption className="sr-only">Most recent tests, newest first</caption>
-          <thead className="text-slate-400">
+          <thead className="text-muted">
             <tr>
               <th scope="col" className={TH}>Date</th>
               <th scope="col" className={TH}>Test</th>
@@ -97,12 +97,12 @@ export default function YourResults() {
           </thead>
           <tbody>
             {getRecent(history, RECENT_RUNS).map((run) => (
-              <tr key={run.id} className="border-t border-white/10">
-                <th scope="row" className={`${TD} font-normal text-slate-400`}>{formatDate(run.date)}</th>
-                <td className={`${TD} text-slate-300`}>{formatConfig(run)}</td>
-                <td className={`${TD} text-white font-semibold tabular-nums`}>{run.wpm}</td>
-                <td className={`${TD} text-blue-400 tabular-nums`}>{run.rawWpm}</td>
-                <td className={`${TD} text-green-400 tabular-nums`}>{run.accuracy}%</td>
+              <tr key={run.id} className="border-t border-divider">
+                <th scope="row" className={`${TD} font-normal text-muted`}>{formatDate(run.date)}</th>
+                <td className={`${TD} text-ink-2`}>{formatConfig(run)}</td>
+                <td className={`${TD} text-ink font-semibold tabular-nums`}>{run.wpm}</td>
+                <td className={`${TD} text-muted tabular-nums`}>{run.rawWpm}</td>
+                <td className={`${TD} text-ink tabular-nums`}>{run.accuracy}%</td>
               </tr>
             ))}
           </tbody>
@@ -112,7 +112,7 @@ export default function YourResults() {
       <button
         type="button"
         onClick={handleClear}
-        className="self-start px-4 py-2 rounded-lg text-sm text-red-400 border border-red-400/40 hover:bg-red-400/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD523]"
+        className="self-start px-4 py-2 rounded-lg text-sm text-error border border-error/40 hover:bg-error/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         Clear history
       </button>
