@@ -119,7 +119,7 @@ types in `redux/settings.ts`.
 - `tsconfig.json` has `"strict": true`.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
 - `.github/workflows/ci.yml` runs lint → type-check → `test:coverage` →
-  build on Node 20 and 22 (npm cache enabled).
+  build on Node 22 and 24 (npm cache enabled).
 - Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
   thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
   layout, verified in a real browser instead).

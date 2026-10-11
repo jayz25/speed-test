@@ -300,7 +300,7 @@ the docs describe the code that exists. **Everything else depends on this.**
   - Files: `.github/workflows/ci.yml`.
   - Do: add `cache: npm` to `setup-node`. Leave the rest. Push a branch and
     confirm the run is green (`gh run watch`), or state that you couldn't.
-  - Done when: CI passes on both Node 20 and 22.
+  - Done when: CI passes on both Node 22 and 24 (Node 20 dropped: jsdom 30 / vitest 5 require Node >=22.22).
 
 **Acceptance:** verification gate passes locally on a fresh `npm ci`.
 
