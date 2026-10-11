@@ -1,12 +1,9 @@
 # SpeedType — Test screen redesign ("Instrument Panel")
 
-Implementation spec for the redesigned typing-test screen. A working prototype exists:
-`speedtype-prototype-reference.html` (attached alongside this file). Treat it as the source
-of truth for exact values and logic. It is written in a custom design-canvas format (a
-`<x-dc>` template with `{{holes}}`, `<sc-for>` loops, `<sc-if>` branches and a
-`class Component extends DCLogic` script), so it will NOT run as-is — **port it to React
-components** in this Next.js app. The script at the bottom of that file is plain JS and can be
-lifted almost verbatim into hooks/utilities.
+Spec for the redesigned typing-test screen. The redesign is implemented; this file is kept
+as the reference for the design tokens (§1) and acceptance checks (§6). It was originally
+ported from an HTML prototype (`speedtype-prototype-reference.html`, since removed; see git
+history before the "remove completed redesign plan and prototype" commit).
 
 ## Instructions for the implementer
 
