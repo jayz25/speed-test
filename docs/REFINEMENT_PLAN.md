@@ -802,10 +802,14 @@ var, nothing network-related happens (check the Network tab).
 
 ## Optional / later
 
-- [ ] **9.1 Playwright E2E smoke** _(Note: the final review drove the
+- [x] **9.1 Playwright E2E smoke** _(Note: the final review drove the
   Smoke script with `playwright-core` + the system Chrome; port that into
   `e2e/` with `@playwright/test` and a CI job.)_ covering the Smoke script (desktop +
   mobile viewport) in CI.
+  _Done: `@playwright/test` (dev only), `playwright.config.ts` (prod build via
+  `npm run build && npm start`; desktop + 375px projects), `e2e/{typing,config,focus}.spec.ts`
+  covering Smoke steps 1-7 (reads words from the DOM, real 15s run, no clock mock),
+  `npm run test:e2e`, Vitest excludes `e2e/**`, separate `e2e` CI job. No component changes/test ids needed._
 - [ ] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
   own PR after Phase 4 so tests catch regressions.
 - [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`

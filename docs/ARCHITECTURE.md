@@ -120,6 +120,7 @@ types in `redux/settings.ts`.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
 - `.github/workflows/ci.yml` runs lint → type-check → `test:coverage` →
   build on Node 22 and 24 (npm cache enabled).
+- E2E: Playwright (`@playwright/test`, dev dependency). `playwright.config.ts` builds and serves the production app (`npm run build && npm start`; reuses a running server locally, not in CI) and defines two projects: desktop Chromium and a 375px-wide viewport. Specs in `e2e/` (`typing`, `config`, `focus`, shared `helpers.ts`) automate the Smoke script, reading randomized words from the DOM. Run with `npm run test:e2e`; deliberately not part of `npm test`, and Vitest excludes `e2e/**`. CI runs it in a separate `e2e` job (Node 22, `playwright install --with-deps chromium`, uploads `test-results/` and `playwright-report/` on failure).
 - Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
   thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
   layout, verified in a real browser instead).
