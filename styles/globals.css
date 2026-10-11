@@ -4,11 +4,17 @@
 
 @layer base {
   html {
-    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
 }
 
 @layer utilities {
+  /* Focus mode: chrome fades while a test is running (see useFocusMode) */
+  [data-focus-mode] [data-focus-fade] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .animate-fade-in {
     animation: fade-in 0.4s ease-out both;
   }

@@ -1,13 +1,30 @@
 import store from "../redux/store";
+import type { WordMode, WordOptions } from "../utils/getWords";
 
 export type WordsCollection = Array<string>;
 
-export interface paragraphState {
+export type ParagraphStatus = "idle" | "ready";
+
+export type StatStatus =
+    | null
+    | "Loading Stats"
+    | "Stats Received"
+    | "Stats API Failed"
+    | "Saving Stat"
+    | "Stat Saved"
+    | "Save Failed";
+
+export interface ParagraphState {
     wordsCollection: WordsCollection,
-    status: string | null,
+    status: ParagraphStatus,
+    mode: WordMode,
+    /** punctuation/numbers flags of the last `loadWords`, reused by `refreshWords` */
+    options: WordOptions,
+    /** bumped by loadWords / refreshWords / repeatWords; identifies the current test round */
+    round: number,
 }
 
-export interface statsInstance {
+export interface StatsInstance {
     id: number,
     user: string,
     words_per_minute: number,
@@ -15,12 +32,24 @@ export interface statsInstance {
     accuracy: number
 }
 
-export interface statState {
-    stats: Array<statsInstance>,
-    status: string | null
+export const isStatsInstance = (v: unknown): v is StatsInstance => {
+    if (typeof v !== "object" || v === null) return false;
+    const o = v as Record<string, unknown>;
+    return (
+        typeof o.id === "number" &&
+        typeof o.user === "string" &&
+        typeof o.words_per_minute === "number" &&
+        typeof o.characters_per_minute === "number" &&
+        typeof o.accuracy === "number"
+    );
+};
+
+export interface StatState {
+    stats: Array<StatsInstance>,
+    status: StatStatus
 }
 
-export interface statsInstancePayload {
+export interface StatsInstancePayload {
     user: string,
     words: number,
     chars: number,

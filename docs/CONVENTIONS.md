@@ -1,26 +1,23 @@
 # Conventions
 
 These are the rules to follow when adding or changing code in this repo.
-Where the existing code doesn't yet follow one of these (noted inline),
-don't do a drive-by fix outside the scope of what you're already touching —
-track it in `REFINEMENT_PLAN.md` instead.
+If you spot code that doesn't follow one of these, don't do a drive-by fix
+outside the scope of what you're already touching — note it in the
+"Parking lot" at the bottom of `REFINEMENT_PLAN.md` instead.
 
 ## Language & types
 
-- TypeScript everywhere for new code (`.ts`/`.tsx`). `pages/_app.tsx` is
-  currently untyped JS-in-.tsx (`{ Component, pageProps }` has no type
-  annotation) — leave as-is unless a task specifically touches that file.
-- `tsconfig.json` is moving to `"strict": true` (Phase 2 of the refinement
-  plan). Once that lands, new code must satisfy strict mode — no `any`
-  without a comment explaining why, no implicit nulls.
+- TypeScript everywhere (`.ts`/`.tsx`).
+- `tsconfig.json` is `"strict": true`: no `any` without a comment
+  explaining why, no implicit nulls. Validate untrusted data (API
+  responses, localStorage) with a type guard before use — see
+  `isStatsInstance` and `redux/persistSettings.ts`.
 - Prefer `interface` for object shapes that represent data (matches
   `types/types.ts`), `type` for unions/aliases (matches `LetterState` in
-  `TypingTest.tsx`).
-- Status/phase fields (e.g. `paragraphState.status`, `statState.status`)
-  should be typed as string-literal unions, not bare `string | null` — the
-  current bare-string typing lets a typo like `"Stats Recieved"` pass
-  type-checking silently. Tighten this whenever you touch a slice, even if
-  it's not the file's main purpose.
+  `utils/typingEngine.ts`).
+- Status/phase fields are string-literal unions (`ParagraphStatus`,
+  `StatStatus`, `TestStatus`), never bare `string` — keep it that way for
+  new ones.
 
 ## React / components
 
@@ -28,29 +25,29 @@ track it in `REFINEMENT_PLAN.md` instead.
 - One component per file, default-exported, filename matches the component
   name (`ResultCard.tsx` → `ResultCard`).
 - Don't define a component inside another component's function body (it's
-  recreated every render). `TypingTest.tsx` currently does this for
-  `TimerOptions` and `Stat` — Phase 3 of the refinement plan extracts them
-  to their own files; follow that pattern for any new sub-component.
+  recreated every render). Give it its own file under `components/`.
 - Extract a `use*` hook when a component's `useState`/`useEffect` cluster
   implements one coherent piece of logic (a timer, a keystroke state
   machine, a scroll tracker) that could be reasoned about independently of
   rendering. `utils/hooks/useTimer.ts` is the existing example to match.
-- Direct DOM manipulation (`document.getElementById`, `style.xyz =`) is
-  intentional in exactly two places today: the cursor-position effect and
-  the DOM helpers in `utils/removeStyling.ts`/`noBackSpace.ts` from an
-  earlier implementation. Don't introduce a third pattern — either use the
-  existing `useLayoutEffect`-plus-ref approach, or drive it through React
-  state/props.
+- Direct DOM access is intentional in exactly two hooks:
+  `utils/hooks/useCaret.ts` (caret position + line scrolling, via refs in a
+  `useLayoutEffect` — React re-renders are too slow for caret feel) and
+  `utils/hooks/useFocusMode.ts` (a `data-focus-mode` attribute on
+  `<html>`). Never use `document.getElementById`; use refs, and keep any
+  new DOM work inside a dedicated hook.
 
 ## Redux (`redux/`)
 
 - One slice per file under `redux/`, combined in `redux/store.ts`.
 - Thunks (`createAsyncThunk`) must check `response.ok` before treating a
   `fetch` as successful — a non-2xx response is not a thrown error, so
-  `try/catch` alone doesn't catch it. (This is currently missing in
-  `redux/stat.ts`'s `getStatCall`/`addStatCall`; fix is tracked in
-  `REFINEMENT_PLAN.md` Phase 3 — match that fix's pattern for any new
-  thunk.)
+  `try/catch` alone doesn't catch it. Pass `thunkAPI.signal` to `fetch` so
+  callers can abort. Match `getStatCall`/`addStatCall` in `redux/stat.ts`.
+- Side effects that must happen once per test (posting a result,
+  recording history) key off the engine's `round` id in a hook
+  (`usePostResultOnFinish`, `useRecordResult`), not off component mounts —
+  React Strict Mode double-runs mount effects.
 - Read env vars (like `NEXT_PUBLIC_API_BASE_URL`) at the top of the slice
   file as a `const`, not inline in each thunk — matches the existing
   `API_BASE` pattern in `redux/stat.ts`.
@@ -60,22 +57,24 @@ track it in `REFINEMENT_PLAN.md` instead.
 - A function belongs in `utils/` only if it's pure (no DOM access, no
   React, no Redux) and independently testable. If it needs `document`/
   `window`, it's DOM logic, not a "util" — keep it in the component or a
-  clearly-named file (see `removeStyling.ts` for the existing, imperfect
-  precedent).
+  clearly-named hook under `utils/hooks/`).
 - One function (plus tightly related helpers) per file, named after the
-  function (`calculateWPM.ts` exports `calculateWPM`).
-- Every new pure util needs a corresponding unit test once the test runner
-  lands (Phase 2/4 of the refinement plan) — don't add an eleventh
-  untested `utils/*.ts` file.
+  function (`calculateStats.ts` exports `calculateStats`).
+- Every new util or hook needs unit tests in the sibling `__tests__/`
+  folder; `npm run test:coverage` fails below 80% on `utils/` + `redux/`.
+- Inject randomness/time (`rng` param, `performance.now()` behind a hook)
+  so tests stay deterministic — see `getWords`/`applyWordOptions`.
 
 ## Styling
 
 - Tailwind utility classes inline in JSX; no CSS modules, no styled-
   components. `styles/globals.css` is for global resets/font variables
   only.
-- Match the existing dark-UI palette already in use (`slate-*` grays,
-  `#FFD523` accent, `red-400` for errors/danger) rather than introducing new
-  ad-hoc colors.
+- Use the design tokens in `tailwind.config.js` (see `docs/SPEEDTYPE_REDESIGN_SPEC.md` §1):
+  `bg`, `surface`, `surface-muted`, `surface-sunken`, `nav-track`, `ink`, `ink-2`,
+  `muted`, `pending`, `on-dark-muted`, `border`, `divider`, `kbd-bg`, `accent`,
+  `accent-soft`, `error`, `error-extra`. Never use ad-hoc hex colors or arbitrary
+  utility values for semantic colors.
 
 ## File organization
 
@@ -91,13 +90,24 @@ track it in `REFINEMENT_PLAN.md` instead.
 
 - `.prettierrc` governs formatting — run Prettier (or your editor's
   format-on-save) before committing; no manual style debates.
-- Once ESLint lands (Phase 2), `npm run lint` must pass before a change is
-  considered done.
+
+## Definition of done
+
+A change is done when all of these pass:
+
+```bash
+npm run lint && npm run type-check && npm run test:coverage && npm run build
+```
+
+For changes that affect what users see or type, also check the real app:
+`npm run build && npx next start`, then walk the Smoke script in
+`REFINEMENT_PLAN.md` (a headless-Chrome Playwright run is fine), and keep
+Lighthouse on `/` and `/stats` at CLS 0 and accessibility 100. Say
+explicitly in your summary if a browser check wasn't done.
 
 ## Commits & scope
 
-- Match the existing commit style seen in `git log` (short, imperative
-  summary, PR number in parens when applicable).
+- Conventional commits: `<type>(<area>): <summary>` (feat, fix, refactor,
+  perf, test, docs, chore, ci), one logical change per commit.
 - Keep refactors behavior-preserving unless the task explicitly asks for a
-  behavior change — if you're in `REFINEMENT_PLAN.md` Phase 3, don't also
-  redesign the UI or add features in the same change.
+  behavior change; don't mix a refactor with UI redesign or new features.

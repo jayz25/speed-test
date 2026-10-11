@@ -2,230 +2,251 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../types/types";
-import { loadWords, refreshWords } from "../redux/paragraph";
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { calculateCPM } from "../utils/calculateCPM";
-import { calculateWPM } from "../utils/calculateWPM";
-import { calculateAccuracy } from "../utils/calculateAccuracy";
+import { loadWords, refreshWords, repeatWords } from "../redux/paragraph";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
+import { useFocusMode } from "../utils/hooks/useFocusMode";
+import { useCaret } from "../utils/hooks/useCaret";
+import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
+import { useRecordResult } from "../utils/hooks/useRecordResult";
+import { usePlayerName } from "../utils/hooks/usePlayerName";
+import { sanitizePlayerName } from "../utils/playerName";
+import { useTypingEngine } from "../utils/hooks/useTypingEngine";
+import { getWordCounts } from "../utils/typingEngine";
+import { makeSample, WpmSample } from "../utils/wpmSamples";
 import CapsLockAlert from "./CapsLockAlert";
+import LiveAnnouncer from "./LiveAnnouncer";
+import LiveStatsPanel from "./LiveStatsPanel";
 import ResultCard from "./ResultCard";
+import SettingsPanel from "./SettingsPanel";
+import TimerRow from "./TimerRow";
+import { RotateCcwIcon } from "./icons";
+import TypingArea from "./TypingArea";
 
-// Per-letter state for React-driven styling (replaces DOM manipulation)
-type LetterState = "idle" | "correct" | "incorrect" | "active";
-
-interface WordState {
-  letters: LetterState[];
-  isWrong: boolean; // word submitted with error
-}
-
-function buildWordStates(words: string[]): WordState[] {
-  return words.map((w) => ({
-    letters: Array(w.length).fill("idle") as LetterState[],
-    isWrong: false,
-  }));
-}
-
-const LETTER_CLASSES: Record<LetterState, string> = {
-  idle: "text-slate-600 opacity-70",
-  correct: "text-slate-100",
-  incorrect: "text-red-400",
-  active: "text-slate-100",
+const INITIAL_STATS: TestStats = {
+  wpm: 0, rawWpm: 0, cpm: 0, accuracy: 100,
+  correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
 };
+const WARNING_SECONDS = 10;
+const SECONDS_PER_MINUTE = 60;
+const REFOCUS_DELAY_MS = 30;
+const MS_PER_SECOND = 1000;
+/** Words generated for time mode; more than anyone can type in the longest limit. */
+const TIME_MODE_WORDS = 300;
 
 const TypingTest = () => {
   const words = useSelector((state: RootState) => state.paragraph.wordsCollection);
+  const round = useSelector((state: RootState) => state.paragraph.round);
   const dispatch = useDispatch<AppDispatch>();
 
-  const [timeLimit, setTimeLimit] = useState(60);
+  const { mode, timeLimit, wordCount, difficulty, punctuation, numbers } = useSelector((state: RootState) => state.settings);
 
-  // Load words on first mount
+  // (Re)generate words whenever a setting changes (and on mount)
   useEffect(() => {
-    dispatch(loadWords({ count: 300 }));
-  }, [dispatch]);
+    dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty, punctuation, numbers }));
+  }, [dispatch, mode, wordCount, difficulty, punctuation, numbers, timeLimit]);
 
-  const [activeWordIndex, setActiveWordIndex] = useState(0);
-  const [activeLetterIndex, setActiveLetterIndex] = useState(0);
-  const [wordStates, setWordStates] = useState<WordState[]>([]);
-  const [wordsMatched, setWordsMatched] = useState(0);
-  const [wordsIncorrect, setWordsIncorrect] = useState(0);
-  const [charsMatched, setCharsMatched] = useState(0);
-  const [isStarted, setIsStarted] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const isWordsMode = mode === "words";
+  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode, round });
+  const { activeWordIndex } = state;
+  const isStarted = state.status === "running";
+  const isFinished = state.status === "finished";
+
+  useFocusMode(isStarted);
+
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
-  const [isFocused, setIsFocused] = useState(true);
-  const [finalStats, setFinalStats] = useState({ wpm: 0, cpm: 0, accuracy: 0 });
-  const cursorRef = useRef<HTMLDivElement>(null);
-  const prevTopRef = useRef<number | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [isTabArmed, setIsTabArmed] = useState(false);
+  const targetRef = useRef<HTMLSpanElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
-  const wordRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const activeLineOffsetRef = useRef<number>(0);
+  const didKeyDownBackspace = useRef(false);
 
-  const { seconds, start, reset } = useTimer(timeLimit);
-
-  // Rebuild word states whenever the word list changes
-  useEffect(() => {
-    if (words.length > 0) {
-      setWordStates(buildWordStates(words));
-      wordRefs.current = new Array(words.length).fill(null);
-      setActiveWordIndex(0);
-      setActiveLetterIndex(0);
-      setWordsMatched(0);
-      setWordsIncorrect(0);
-      setCharsMatched(0);
-      setIsStarted(false);
-      setIsFinished(false);
-      activeLineOffsetRef.current = 0;
-      textInput.current?.focus();
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }
-  }, [words]);
+  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
 
   // Computed stats
-  const wpm = calculateWPM(charsMatched, seconds, timeLimit);
-  const cpm = calculateCPM(charsMatched, seconds, timeLimit);
-  const accuracy = calculateAccuracy(wordsIncorrect, wordsMatched);
+  // Live stats are recomputed once per timer tick (or new test), not per keystroke
+  const liveStats = useMemo(
+    () => calculateStats(state, elapsedMs()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [seconds, state.words],
+  );
 
-  // Game over when timer reaches 0
+  // Time mode: game over when the countdown reaches 0 (words mode ends in the engine)
   useEffect(() => {
-    if (seconds === 0 && isStarted) {
-      setIsFinished(true);
-      setIsStarted(false);
-      setFinalStats({ wpm, cpm, accuracy });
-    }
-  }, [seconds, isStarted, timeLimit, wpm, cpm, accuracy]);
+    if (!isWordsMode && seconds === 0 && isStarted) finish();
+  }, [isWordsMode, seconds, isStarted, finish]);
 
-  // Smooth Cursor tracking via direct DOM for zero-frame delay
-  useLayoutEffect(() => {
-    const el = document.getElementById("active-character");
-    const cursor = cursorRef.current;
-    if (el && cursor) {
-      const top = el.offsetTop + 4;
-      const left = el.offsetLeft;
+  // Sample WPM / raw WPM / mistakes once per elapsed second while running (for the result chart)
+  const samplesRef = useRef<WpmSample[]>([]);
+  const incorrectAtLastSample = useRef(0);
+  const [finalSamples, setFinalSamples] = useState<readonly WpmSample[]>([]);
+  // Mirror of samplesRef so the live sparkline re-renders when a sample is pushed
+  const [liveSamples, setLiveSamples] = useState<readonly WpmSample[]>([]);
+  const pushSample = useCallback((second: number) => {
+    const last = samplesRef.current[samplesRef.current.length - 1];
+    if (last && last.second >= second) return;
+    samplesRef.current = [...samplesRef.current, makeSample(state, second, incorrectAtLastSample.current)];
+    incorrectAtLastSample.current = state.incorrectKeystrokes;
+  }, [state]);
 
-      // Disable transition purely on line wraps to prevent diagonal flying
-      if (prevTopRef.current !== null && Math.abs(prevTopRef.current - top) > 10) {
-        cursor.style.transition = "none";
-      } else {
-        cursor.style.transition = "left 0.08s ease-out, top 0.08s ease-out";
-      }
-
-      cursor.style.top = `${top}px`;
-      cursor.style.left = `${left}px`;
-      
-      prevTopRef.current = top;
-    }
-  }, [activeWordIndex, activeLetterIndex, words, isFocused, isFinished]);
-
-  // Auto-scroll: when active word crosses to a new line, scroll down
   useEffect(() => {
-    const activeEl = wordRefs.current[activeWordIndex];
-    if (!activeEl) return;
-    const top = activeEl.offsetTop; 
-    if (activeLineOffsetRef.current === 0) {
-      activeLineOffsetRef.current = top;
-    } else if (top > activeLineOffsetRef.current) {
-      scrollRef.current?.scrollBy({ top: 40, behavior: "smooth" });
-      activeLineOffsetRef.current = top;
+    if (state.status === "idle") {
+      samplesRef.current = [];
+      incorrectAtLastSample.current = 0;
+      setLiveSamples((prev) => (prev.length === 0 ? prev : []));
+    } else if (isStarted && elapsedSeconds >= 1) {
+      pushSample(elapsedSeconds);
+      setLiveSamples((prev) => (prev === samplesRef.current ? prev : samplesRef.current));
     }
-  }, [activeWordIndex]);
+  }, [state.status, isStarted, elapsedSeconds, pushSample]);
+
+  // The result is derived (not stored) so it is already correct in the first finished render,
+  // which the post/record hooks rely on. Engine state is stable once finished.
+  const finalElapsedMs = useMemo(() => (isFinished ? elapsedMs() : 0), [isFinished, elapsedMs]);
+  const finalStats = useMemo(
+    () => (isFinished ? calculateStats(state, finalElapsedMs) : INITIAL_STATS),
+    [isFinished, state, finalElapsedMs],
+  );
+
+  // Freeze the clock and finish the chart samples once the engine reports finished
+  useEffect(() => {
+    if (!isFinished) return;
+    stopTimer();
+    pushSample(Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)));
+    setFinalSamples(samplesRef.current);
+  }, [isFinished, finalElapsedMs, stopTimer, pushSample]);
+
+  const [playerName] = usePlayerName();
+
+  usePostResultOnFinish({
+    isFinished, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
+  });
+
+  const personalBest = useRecordResult({
+    isFinished,
+    roundId: state.round,
+    stats: finalStats,
+    config: { mode, limit: isWordsMode ? wordCount : timeLimit, difficulty },
+  });
+
+  useCaret({
+    boxRef, targetRef,
+    deps: [activeWordIndex, activeLetterIndex, words, round, isFocused, isFinished],
+  });
+
+  // Reset view state whenever the word list changes (engine resets itself)
+  useEffect(() => {
+    if (words.length > 0) {
+      textInput.current?.focus();
+    }
+  }, [words, round]);
+
+  // The input is autoFocus'd; reflect whether it really has focus after mount
+  useEffect(() => {
+    setIsFocused(document.activeElement === textInput.current);
+  }, []);
+
+  // A settings change restarts the test (new words arrive via the effect above)
+  useEffect(() => {
+    reset(timeLimit);
+  }, [reset, timeLimit, mode, wordCount, difficulty, punctuation, numbers]);
 
   const resetTest = useCallback(() => {
     reset(timeLimit);
     dispatch(refreshWords());
+    setIsTabArmed(false);
+    textInput.current?.focus();
+    // The click that triggered the reset may steal focus back; refocus once it settles
+    setTimeout(() => textInput.current?.focus(), REFOCUS_DELAY_MS);
   }, [reset, dispatch, timeLimit]);
 
-  // Re-run timer reset if timeLimit UI button clicked
-  const handleTimeChange = (newTime: number) => {
-    setTimeLimit(newTime);
-    reset(newTime);
-    dispatch(refreshWords());
-    textInput.current?.focus();
-  };
+  // Same words, fresh test (the engine restarts when the paragraph round changes)
+  const repeatTest = useCallback(() => {
+    reset(timeLimit);
+    dispatch(repeatWords());
+  }, [reset, dispatch, timeLimit]);
+
+  // Esc anywhere restarts the test
+  useEffect(() => {
+    if (isFinished) return; // ResultCard handles Esc itself
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") resetTest();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFinished, resetTest]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
 
-    if (e.ctrlKey || e.altKey || e.metaKey || ["Tab", "CapsLock"].includes(e.key)) return;
-
+    if (e.key === "Tab") {
+      // Tab + Enter restarts instead of moving focus to the settings
+      e.preventDefault();
+      setIsTabArmed(true);
+      return;
+    }
+    if (e.key === "Enter" && isTabArmed) {
+      e.preventDefault();
+      resetTest();
+      return;
+    }
+    if (e.key !== "Shift") setIsTabArmed(false);
+    if (e.ctrlKey || e.altKey || e.metaKey || e.key === "CapsLock") return;
     if (words.length === 0 || isFinished) return;
 
-    if (!isStarted) {
-      setIsStarted(true);
-      start();
-    }
+    if (e.key === "Unidentified" || e.nativeEvent.isComposing) return; // handled via the input event
 
     if (e.key === "Backspace") {
-      if (activeLetterIndex === 0) return;
-      const newIdx = activeLetterIndex - 1;
-      setWordStates((prev) => {
-        const next = prev.map((w) => ({ ...w, letters: [...w.letters] }));
-        next[activeWordIndex].letters[newIdx] = "idle";
-        return next;
-      });
-      setActiveLetterIndex(newIdx);
+      didKeyDownBackspace.current = true;
+      backspace();
       return;
     }
 
+    // Space must not reach the input; printable characters are handled in handleInput
     if (e.key === " " || e.code === "Space") {
       e.preventDefault();
-      if (activeLetterIndex === 0) return; // prevent skipping words
+      submitWord();
+    }
+  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord]);
 
-      const typedWord = textInput.current?.value.trim() ?? "";
-      const targetWord = words[activeWordIndex] ?? "";
-      const isCorrect = typedWord === targetWord;
+  const handleKeyUp = useCallback(() => {
+    didKeyDownBackspace.current = false;
+  }, []);
 
-      if (isCorrect) {
-        setWordsMatched((n) => n + 1);
-        setCharsMatched((n) => n + typedWord.length);
-      } else {
-        setWordsIncorrect((n) => n + 1);
-        // Mark remaining untyped letters of current word as incorrect
-        setWordStates((prev) => {
-          const next = prev.map((w) => ({ ...w, letters: [...w.letters] }));
-          next[activeWordIndex].isWrong = true;
-          return next;
-        });
-      }
+  // Printable characters (and soft-keyboard backspace) arrive here so mobile keyboards,
+  // which send key "Unidentified" on keydown, work as well as desktop ones.
+  const handleInput = useCallback((e: React.FormEvent<HTMLInputElement>) => {
+    const { inputType, data } = e.nativeEvent as InputEvent;
+    if (words.length === 0 || isFinished) return;
 
-      if (textInput.current) textInput.current.value = "";
-      setActiveLetterIndex(0);
-      setActiveWordIndex((i) => i + 1);
+    if (inputType === "deleteContentBackward") {
+      // Desktop already handled Backspace on keydown
+      if (!didKeyDownBackspace.current) backspace();
       return;
     }
+    if (inputType !== "insertText" || !data) return;
 
-    // Regular printable character (length===1 guards modifiers)
-    if (e.key.length !== 1) return;
-
-    const targetWord = words[activeWordIndex] ?? "";
-    const letterState: LetterState = e.key === targetWord[activeLetterIndex] ? "correct" : "incorrect";
-
-    setWordStates((prev) => {
-      const next = prev.map((w) => ({ ...w, letters: [...w.letters] }));
-      if (next[activeWordIndex] && activeLetterIndex < targetWord.length) {
-        next[activeWordIndex].letters[activeLetterIndex] = letterState;
+    for (const char of data) {
+      if (char === " ") {
+        submitWord();
+      } else {
+        start(); // no-op if already running
+        typeChar(char);
       }
-      return next;
-    });
-    setActiveLetterIndex((i) => i + 1);
-  }, [words, isStarted, isFinished, activeWordIndex, activeLetterIndex, start]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // just keep controlled value updated — logic is in handleKeyDown
-    e.preventDefault();
-  }, []);
+    }
+  }, [words, isFinished, start, typeChar, backspace, submitWord]);
 
   const handleSelect = useCallback((e: React.UIEvent<HTMLInputElement>) => {
     const el = e.target as HTMLInputElement;
     el.setSelectionRange(el.value.length, el.value.length);
   }, []);
 
-  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const relTarget = e.relatedTarget as HTMLElement | null;
-    if (relTarget?.id === "reset-btn" || relTarget?.dataset.timerBtn) return; // don't blur when clicking reset
+  // A setting change refocuses the input via the words effect; onFocus then restores isFocused
+  const handleBlur = useCallback(() => {
+    setIsTabArmed(false);
     setIsFocused(false);
   }, []);
 
@@ -239,156 +260,108 @@ const TypingTest = () => {
     e.preventDefault();
   }, []);
 
+  let announcement = "";
   if (isFinished) {
-    return (
-      <ResultCard
-        wpm={finalStats.wpm}
-        cpm={finalStats.cpm}
-        accuracy={finalStats.accuracy}
-        onReset={resetTest}
-      />
-    );
+    announcement = `Test complete. ${finalStats.wpm} words per minute, ${finalStats.accuracy} percent accuracy.`;
+  } else if (isStarted) {
+    announcement = !isWordsMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
-  // Timer selections UI
-  const TimerOptions = () => (
-    <div className="flex bg-white/5 rounded-lg p-1 text-sm font-medium border border-white/5">
-      {[15, 30, 45, 60].map((t) => (
-        <button
-          key={t}
-          data-timer-btn="true"
-          onClick={() => handleTimeChange(t)}
-          className={`px-3 py-1 rounded-md transition-colors duration-200 ${
-            timeLimit === t ? "bg-[#FFD523] text-black" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-          }`}
-        >
-          {t}s
-        </button>
-      ))}
-    </div>
-  );
+  const remainingSeconds = Math.ceil(Math.max(0, seconds));
+  const timeLabel = `${Math.floor(remainingSeconds / SECONDS_PER_MINUTE)}:${String(remainingSeconds % SECONDS_PER_MINUTE).padStart(2, "0")}`;
+  const wordIndex = Math.min(activeWordIndex, words.length);
+  const timerRow = isWordsMode
+    ? { label: `${wordIndex}/${words.length}`, goal: `${elapsedSeconds}s`, progress: words.length > 0 ? wordIndex / words.length : 0 }
+    : { label: timeLabel, goal: `${timeLimit}s`, progress: timeLimit > 0 ? elapsedSeconds / timeLimit : 0 };
+
+  const shownStats = isFinished ? finalStats : liveStats;
+  const liveStatsProps = state.status === "idle" ? null : {
+    wpm: shownStats.wpm,
+    cpm: shownStats.cpm,
+    accuracy: shownStats.accuracy,
+    errors: state.incorrectKeystrokes,
+    words: getWordCounts(state).wordsMatched,
+  };
+  const series = (isFinished ? finalSamples : liveSamples).map((sample) => sample.wpm);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl gap-6 relative">
-      <input
-        ref={textInput}
-        className="absolute w-0 h-0 opacity-0 pointer-events-none"
-        id="typing-input"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        onKeyDown={handleKeyDown}
-        onChange={handleInputChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={handleBlur}
-        onSelect={handleSelect}
-        type="text"
-        aria-label="Typing input"
-      />
-
-      <div className="flex items-center justify-between w-full h-8 px-1">
-        <CapsLockAlert isVisible={isCapsLockOn} />
-        {!isStarted && <div className="ml-auto flex items-center gap-4 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg> <TimerOptions /></div>}
-      </div>
-
-      <div className="flex w-full justify-between items-end px-1 mb-2">
-        <div className="flex gap-8">
-          <Stat label="WPM" value={isStarted ? wpm : 0} />
-          <Stat label="CPM" value={isStarted ? cpm : 0} />
-          <Stat label="ACC" value={isStarted ? accuracy : 100} unit="%" />
-        </div>
-        <div className={`text-5xl font-mono tracking-tighter font-semibold transition-colors duration-300 opacity-90 ${seconds <= 5 ? "text-red-400" : "text-[#FFD523]"}`}>
-          {seconds}
-        </div>
-      </div>
-
-      <div
-        ref={containerRef}
-        className="relative w-full cursor-text overflow-hidden p-1"
-        onClick={handleContainerClick}
-        onMouseDown={handleContainerMouseDown}
-        role="button"
-        tabIndex={-1}
-        aria-label="Typing area"
-      >
-        {!isFocused && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-transparent backdrop-blur-[2px]">
-            <span className="text-white bg-slate-900/80 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2">
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-               </svg>
-               Click to focus
-            </span>
-          </div>
-        )}
-
-        <div ref={scrollRef} className="relative overflow-hidden h-40 border-l-2 border-transparent">
-          <div className="relative flex flex-wrap gap-x-[0.4em] gap-y-2 text-3xl font-medium tracking-wide leading-relaxed select-none">
-            
-            {isFocused && words.length > 0 && !isFinished && (
-               <div 
-                 ref={cursorRef}
-                 className="absolute bg-[#FFD523] w-[2.5px] rounded-full z-10"
-                 style={{ height: "1.35em" }}
-               />
-            )}
-
-            {words.map((word, wi) => {
-              const ws = wordStates[wi];
-              const isActive = wi === activeWordIndex;
-              return (
-                <div
-                  key={wi}
-                  ref={(el) => { wordRefs.current[wi] = el; }}
-                  className={`flex whitespace-pre ${ws?.isWrong ? "underline decoration-red-500/50 decoration-2 underline-offset-4" : ""}`}
-                  aria-label={word}
+    <>
+      <LiveAnnouncer message={announcement} />
+      <main className="mx-auto flex w-full max-w-[1360px] flex-wrap items-start gap-5 px-4 pt-6 pb-12 sm:px-8 sm:pt-10">
+        <SettingsPanel isDimmed={isStarted} />
+        <section
+          aria-label="Typing test"
+          className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
+        >
+          {isFinished ? (
+            <ResultCard
+              stats={finalStats}
+              samples={finalSamples}
+              personalBest={personalBest}
+              config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
+              options={{ punctuation, numbers }}
+              durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
+              onReset={resetTest}
+              onRepeat={repeatTest}
+            />
+          ) : (
+            <>
+              <TimerRow {...timerRow} />
+              <CapsLockAlert isVisible={isCapsLockOn} />
+              <TypingArea
+                state={state}
+                activeLetterIndex={activeLetterIndex}
+                isFocused={isFocused}
+                isIdle={state.status === "idle"}
+                boxRef={boxRef}
+                targetRef={targetRef}
+                onClick={handleContainerClick}
+                onMouseDown={handleContainerMouseDown}
+              >
+                <input
+                  ref={textInput}
+                  autoFocus
+                  className="absolute inset-0 h-full w-full cursor-text border-0 p-0 opacity-0 caret-transparent"
+                  id="typing-input"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  value=""
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  onInput={handleInput}
+                  onChange={() => {}}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={handleBlur}
+                  onSelect={handleSelect}
+                  type="text"
+                  aria-label="Type the words shown"
+                />
+              </TypingArea>
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-5">
+                <button
+                  type="button"
+                  onClick={resetTest}
+                  className="flex min-h-[44px] items-center gap-2.5 rounded-xl border border-border bg-surface px-[18px] text-[15px] font-semibold text-ink"
                 >
-                  {word.split("").map((letter, li) => {
-                    const state: LetterState = ws?.letters[li] ?? "idle";
-                    const isActiveLetter = isActive && li === activeLetterIndex;
-                    return (
-                      <span 
-                        key={li} 
-                        id={isActiveLetter ? "active-character" : undefined}
-                        className={`${LETTER_CLASSES[state]} transition-colors duration-200`}
-                      >
-                        {letter}
-                      </span>
-                    );
-                  })}
-                  <span 
-                    id={isActive && activeLetterIndex >= word.length ? "active-character" : undefined}
-                    className="w-[0.4em]"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <button
-        id="reset-btn"
-        onClick={resetTest}
-        onMouseDown={(e) => e.preventDefault()}
-        className="flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200"
-        aria-label="Restart test"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Restart Test
-      </button>
-    </div>
+                  <RotateCcwIcon />
+                  Restart
+                </button>
+                <p className="flex items-center gap-2 text-[13px] text-muted">
+                  <kbd className={`rounded-md border border-border px-2 py-[3px] font-mono text-xs text-ink ${isTabArmed ? "bg-accent-soft" : "bg-kbd-bg"}`}>tab</kbd>
+                  +
+                  <kbd className="rounded-md border border-border bg-kbd-bg px-2 py-[3px] font-mono text-xs text-ink">enter</kbd>
+                  to restart
+                </p>
+              </div>
+            </>
+          )}
+        </section>
+        <LiveStatsPanel stats={liveStatsProps} series={series} />
+      </main>
+    </>
   );
 };
-
-const Stat = ({ label, value, unit = "" }: { label: string; value: number; unit?: string }) => (
-  <div className="flex flex-col items-start leading-none opacity-90">
-    <span className="text-3xl font-semibold tabular-nums text-white/90">{value}{unit}</span>
-    <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-widest mt-1.5">{label}</span>
-  </div>
-);
 
 export default TypingTest;

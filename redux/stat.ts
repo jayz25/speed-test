@@ -1,14 +1,15 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { statsInstancePayload, statState } from "../types/types";
+import { isStatsInstance, StatsInstance, StatsInstancePayload, StatState } from "../types/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+export const isStatsApiEnabled = API_BASE !== "";
 
 export const statSlice = createSlice({
   name: "stats",
   initialState: {
     stats: [],
     status: null,
-  } as statState,
+  } as StatState,
   reducers: {},
   extraReducers(builder) {
     builder
@@ -19,7 +20,9 @@ export const statSlice = createSlice({
         state.stats = action.payload;
         state.status = "Stats Received";
       })
-      .addCase(getStatCall.rejected, (state) => {
+      .addCase(getStatCall.rejected, (state, action) => {
+        // An aborted request (unmount) isn't a failure; a newer request owns the status.
+        if (action.meta.aborted) return;
         state.status = "Stats API Failed";
       })
       .addCase(addStatCall.pending, (state) => {
@@ -36,11 +39,11 @@ export const statSlice = createSlice({
 
 export const addStatCall = createAsyncThunk(
   "stats/addStat", // Fixed: was duplicate 'stats/getStats'
-  async (newStat: statsInstancePayload) => {
+  async (newStat: StatsInstancePayload) => {
     const response = await fetch(`${API_BASE}/addStat/`, {
       method: "POST",
       body: JSON.stringify({
-        user: "Anonymous", // Fixed typo: was 'Anonymouse'
+        user: newStat.user,
         words_per_minute: newStat.words,
         characters_per_minute: newStat.chars,
         accuracy: newStat.accuracy,
@@ -49,15 +52,19 @@ export const addStatCall = createAsyncThunk(
         "Content-type": "application/json; charset=UTF-8",
       },
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 );
 
 export const getStatCall = createAsyncThunk(
   "stats/getStats",
-  async () => {
-    const response = await fetch(`${API_BASE}/getStats/`);
-    return response.json();
+  async (_arg, { signal }): Promise<StatsInstance[]> => {
+    const response = await fetch(`${API_BASE}/getStats/`, { signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const body: unknown = await response.json();
+    if (!Array.isArray(body)) throw new Error("Invalid stats response: expected an array");
+    return body.filter(isStatsInstance);
   }
 );
 
