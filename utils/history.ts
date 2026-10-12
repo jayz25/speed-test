@@ -55,10 +55,52 @@ export function appendEntry(history: readonly HistoryEntry[], entry: HistoryEntr
 
 export function saveHistory(history: readonly HistoryEntry[]): void {
   writeJSON(HISTORY_KEY, history);
+  notifyHistory();
 }
 
 export function clearHistory(): void {
   writeJSON(HISTORY_KEY, []);
+  notifyHistory();
+}
+
+// External store over the stored history for useSyncExternalStore. The snapshot is cached by
+// the raw stored string, so unchanged storage keeps returning the same array.
+let snapshotRaw: string | null | undefined;
+let snapshot: readonly HistoryEntry[] = [];
+const historyListeners = new Set<() => void>();
+
+function readRawHistory(): string | null {
+  try {
+    return window.localStorage.getItem(HISTORY_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function notifyHistory(): void {
+  historyListeners.forEach((listener) => listener());
+}
+
+function handleHistoryStorage(event: StorageEvent): void {
+  if (event.key === HISTORY_KEY) notifyHistory();
+}
+
+export function getHistorySnapshot(): readonly HistoryEntry[] {
+  const raw = readRawHistory();
+  if (raw !== snapshotRaw) {
+    snapshotRaw = raw;
+    snapshot = loadHistory();
+  }
+  return snapshot;
+}
+
+export function subscribeHistory(listener: () => void): () => void {
+  if (historyListeners.size === 0) window.addEventListener("storage", handleHistoryStorage);
+  historyListeners.add(listener);
+  return () => {
+    historyListeners.delete(listener);
+    if (historyListeners.size === 0) window.removeEventListener("storage", handleHistoryStorage);
+  };
 }
 
 export const isSameConfig = (a: TestConfigKey, b: TestConfigKey) =>

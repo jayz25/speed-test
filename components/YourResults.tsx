@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
-  clearHistory, formatConfig, getAverages, getPersonalBests, getRecent, HistoryEntry, loadHistory,
+  clearHistory, formatConfig, getAverages, getHistorySnapshot, getPersonalBests, getRecent, subscribeHistory,
 } from "../utils/history";
 
 const RECENT_RUNS = 20;
@@ -14,19 +14,12 @@ const formatDate = (iso: string) => new Date(iso).toLocaleString(undefined, { da
 
 /** Personal bests, averages and recent runs from localStorage history. */
 export default function YourResults() {
-  // null until mounted: history only exists in the browser
-  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
-
-  useEffect(() => {
-    // localStorage is only readable after mount; reading it during render would break hydration
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHistory(loadHistory());
-  }, []);
+  // null on the server and during hydration: history only exists in the browser
+  const history = useSyncExternalStore(subscribeHistory, getHistorySnapshot, () => null);
 
   const handleClear = () => {
     if (!window.confirm("Clear all saved results? This cannot be undone.")) return;
     clearHistory();
-    setHistory([]);
   };
 
   if (history === null) return <p className="text-muted text-sm">Loading your results…</p>;
