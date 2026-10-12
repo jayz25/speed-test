@@ -14,6 +14,11 @@ Last full analysis: 2026-10-05 (against commit `d005c7d`).
 > Not verified: a real phone, and a real stats API (covered by unit tests
 > with mocked `fetch` only).
 > Remaining work: "Optional / later" (9.x) and the "Parking lot".
+> **Update (2026-10-12, branch `jz/next-16`):** 9.2 (Next 16), Tailwind 4 migration, 9.3 (dark
+> theme) and 9.4 (quote mode) done. Prod `npm audit` clean; one dev-only advisory chain remains
+> (Parking lot). Verified: lint, type-check, 286 unit tests (98.0% statements), build, 20/20
+> Playwright E2E, plus a 128-check scripted browser QA (desktop light, 375px dark-OS touch,
+> 820px reduced-motion) with zero console errors/warnings. Not verified: a real phone.
 > The "Current-state findings" section below describes the app **before**
 > the refinement and is kept for history.
 
@@ -882,5 +887,7 @@ Add things you noticed but didn't fix here, one line each, with file:line.
 - `components/TypingTest.tsx:95` — live WPM sampler mirrors `samplesRef` into `liveSamples` state from an effect (`react-hooks/set-state-in-effect` disabled); could keep samples in state only, or use `useSyncExternalStore`.
 - `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
 - `components/SettingsPanel.tsx` / `components/LiveStatsPanel.tsx:32` — below `md` the settings card and live stats column don't fill the width (`max-w-[280px]` etc.), leaving a ragged right edge at 375px; pre-existing.
+- `components/TypingTest.tsx` (hidden input `onInput`) — text arriving in one input event (paste, `insertText`) is scored, so a whole quote "typed" in ~0ms yields millions of WPM, a "New personal best!" in local history, and a WPM number that overflows the result card at 375px. Pre-existing in every mode; consider ignoring multi-char insertions / pastes or a minimum elapsed time before recording. Found by the 2026-10-12 browser QA.
+- `components/SettingsPanel.tsx` (quote "Length" group) — "Medium" nearly touches its button edges in the 220px desktop panel; `ResultCard` "Repeat same words" could read "Repeat same quote" in quote mode.
 - `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest). Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob`. (`source-map-js` and the Tailwind 3 chain were fixed by `npm audit fix` + Tailwind 4.)
 - `components/SettingsPanel.tsx:47` (also `ResultCard.tsx:96,119`, `FocusOverlay.tsx:6`, `LiveStatsPanel.tsx:33`, `GlobalStats.tsx:41`) — `text-white` on `bg-ink`/`bg-accent` is not a token; the dark-theme work should replace it with an on-ink token.
