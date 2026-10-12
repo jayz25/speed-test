@@ -30,9 +30,9 @@ The flow is **engine -> hook -> components**:
    stats. The reducer never mutates; unchanged `typed` entries keep identity.
 2. **Hook** (`utils/hooks/useTypingEngine.ts`): wraps `useReducer`, resets
    when `words` changes, returns memoized action callbacks and
-   `activeLetterIndex`. `useTimer` (timestamp-based countdown) and `useCaret`
-   (ref-based caret positioning, plus 3-line translate scrolling of the
-   words container; re-runs on resize and font load) are sibling hooks.
+   `activeLetterIndex`. `useTimer` (timestamp-based countdown), `useCaret`
+   (glides one caret bar onto the active letter and scrolls the words box by
+   lines; see below) and `useWpmSampler` (per-second WPM samples) are sibling hooks.
 3. **Components**: `components/TypingTest.tsx` is the thin orchestrator. It
    loads words from Redux (`loadWords`/`refreshWords`), maps the visually hidden `<input>`'s events to engine actions
    (`onKeyDown` for Backspace/Space/Tab; printable characters and soft-keyboard
@@ -77,10 +77,10 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`, then applies optional punctuation/numbers (`applyWordOptions`, injectable `rng`). Exports `getWords`, `applyWordOptions`, `WordMode`, `WordOptions`. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
 | `quotes.ts` | Quote mode data: `QUOTES` (~70 public-domain, plain-ASCII `{ text, source }`), `getQuoteLength` (short <= 20 words, medium 21-45, long 46+; thresholds `SHORT_MAX_WORDS`/`MEDIUM_MAX_WORDS`), `pickQuote(length, rng, excludeText)`, `quoteToWords`. |
-| `history.ts`, `getGrade.ts`, `wpmSamples.ts` | Run history in `speedtype:v1:history` (newest 100, personal bests per mode+limit+difficulty; quote runs are `mode: "quote"`, `limit` = tier 1/2/3 via `quoteLimit`, `difficulty: "mixed"`, shown as "quote · medium"); WPM-aware grade table; per-second chart samples. `hooks/useRecordResult.ts` appends the finished test once per round. |
+| `history.ts`, `getGrade.ts`, `wpmSamples.ts` | Run history in `speedtype:v1:history` (newest 100; entries over `MAX_PLAUSIBLE_WPM` are dropped on load; `subscribeHistory`/`getHistorySnapshot` are a cached-snapshot store for `useSyncExternalStore`, notified by save/clear and cross-tab `storage` events; personal bests per mode+limit+difficulty; quote runs are `mode: "quote"`, `limit` = tier 1/2/3 via `quoteLimit`, `difficulty: "mixed"`, shown as "quote · medium"); WPM-aware grade table; per-second chart samples (`appendSample`, used by `hooks/useWpmSampler.ts`, which updates during render, no refs/effects). `hooks/useRecordResult.ts` appends the finished test once per round, only if `isPlausibleWpm` (≤ `MAX_PLAUSIBLE_WPM` = 300, in `calculateStats.ts`); `ResultCard` shows "Not saved" for faster runs. |
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
-| `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
+| `hooks/useCaret.ts` | Moves the caret bar (`[data-caret-bar]` in `TypingArea`, absolutely positioned inside the scrolling box) onto the letter marked `data-caret="before|after"` via `transform` (`getCaretTransform`), and scrolls the box by lines (3 visible). Sets `data-animate`: keystrokes glide (120ms ease-out, `motion-safe` only); first placement, a new engine round (`resetKey`), resize and `document.fonts.ready` jump. The bar blinks (`animate-caret-blink`) while idle. |
 | `hooks/useFocusMode.ts` | While a test runs, sets `data-focus-mode` on `<html>` so `[data-focus-fade]` chrome fades (CSS in `globals.css`); mouse move reveals it. |
 | `theme.ts` | Colour theme preference (`system`/`light`/`dark`) at `speedtype:v1:theme`: a tiny external store (`getThemePreference`/`setThemePreference`/`subscribeTheme`) for `useSyncExternalStore`, `applyThemePreference` (sets/removes `data-theme` on `<html>`), and the dependency-free `THEME_INIT_SCRIPT`. |
 | `motion.ts` | `prefersReducedMotion()` helper (caret transition, `RenderStat`). |
@@ -91,7 +91,7 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | File | Status |
 |---|---|
 | `TypingTest.tsx` | Orchestrator, see above. |
-| `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
+| `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`, which marks the caret letter with `data-caret`), the caret bar, click-to-focus overlay. |
 | `SettingsPanel.tsx` | Settings UI (mode incl. Quote, time/word count/quote length, difficulty, punctuation, numbers; quote mode hides difficulty and the Include toggles) + player name; reads/writes `state.settings`; dimmed while running. |
 | `LiveStatsPanel.tsx` | Live stats display: dark WPM tile with sparkline, plus grid of small tiles for accuracy/CPM/errors/words. |
 | `Sparkline.tsx` | Inline-SVG mini chart of WPM over time (one point per second). |
@@ -100,7 +100,7 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | `RestartButton.tsx` | Restart button. |
 | `CapsLockAlert.tsx` | Active — shows a warning when Caps Lock is on while typing. |
 | `ResultCard.tsx` | Active — shown after a test ends; two-column on `md+`: WPM/accuracy plus a details list (raw WPM, CPM, char counts, duration); uses `RenderStat.tsx`. |
-| `YourResults.tsx` | `/stats` personal results from history. |
+| `YourResults.tsx` | `/stats` personal results from history (`useSyncExternalStore` over the history store; `null` = loading on the server/hydration). |
 | `WpmChart.tsx` | Inline-SVG WPM / raw WPM line chart (+ mistake dots) on the result card; data from `utils/wpmSamples.ts`. |
 | `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
@@ -124,7 +124,7 @@ types in `redux/settings.ts`.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
 - `.github/workflows/ci.yml` runs lint → type-check → `test:coverage` →
   build on Node 22 and 24 (npm cache enabled).
-- E2E: Playwright (`@playwright/test`, dev dependency). `playwright.config.ts` builds and serves the production app (`npm run build && npm start`; reuses a running server locally, not in CI) and defines two projects: desktop Chromium and a 375px-wide viewport. Specs in `e2e/` (`typing`, `config`, `focus`, `quote`, shared `helpers.ts`) automate the Smoke script, reading randomized words from the DOM. Run with `npm run test:e2e`; deliberately not part of `npm test`, and Vitest excludes `e2e/**`. CI runs it in a separate `e2e` job (Node 22, `playwright install --with-deps chromium`, uploads `test-results/` and `playwright-report/` on failure).
+- E2E: Playwright (`@playwright/test`, dev dependency). `playwright.config.ts` builds and serves the production app (`npm run build && npm start`; reuses a running server locally, not in CI) and defines two projects: desktop Chromium and a 375px-wide viewport. Specs in `e2e/` (`typing`, `config`, `focus`, `quote`, `theme`, `caret`, shared `helpers.ts`) automate the Smoke script, reading randomized words from the DOM. Run with `npm run test:e2e`; deliberately not part of `npm test`, and Vitest excludes `e2e/**`. CI runs it in a separate `e2e` job (Node 22, `playwright install --with-deps chromium`, uploads `test-results/` and `playwright-report/` on failure).
 - Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
   thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
   layout, verified in a real browser instead).
@@ -136,7 +136,8 @@ types in `redux/settings.ts`.
 - `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.
 - `next.config.mjs`: `reactStrictMode: true`, `poweredByHeader: false`.
 - Styling: Tailwind CSS 4 via `@tailwindcss/postcss` (`postcss.config.js`). Config is CSS-first:
-  design tokens live in `@theme` in `styles/globals.css`, each as `light-dark(light, dark)`.
+  layout breakpoint `panels` (1144px: settings 240 + typing card 560 + live stats 240 fit on one row;
+  below it the side panels are full-width rows) and design tokens live in `@theme` in `styles/globals.css`, each as `light-dark(light, dark)`.
   `:root` has `color-scheme: light dark` (follows the OS); `data-theme="light|dark"` on `<html>`
   pins it, so no component needs `dark:` variants. Fonts use `@theme inline` because
   next/font sets `--font-schibsted` / `--font-plex-mono` on the app wrapper, not `:root`.

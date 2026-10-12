@@ -884,10 +884,12 @@ var, nothing network-related happens (check the Network tab).
 
 Add things you noticed but didn't fix here, one line each, with file:line.
 
-- `components/TypingTest.tsx:95` — live WPM sampler mirrors `samplesRef` into `liveSamples` state from an effect (`react-hooks/set-state-in-effect` disabled); could keep samples in state only, or use `useSyncExternalStore`.
-- `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
-- `components/SettingsPanel.tsx` / `components/LiveStatsPanel.tsx:32` — below `md` the settings card and live stats column don't fill the width (`max-w-[280px]` etc.), leaving a ragged right edge at 375px; pre-existing.
-- `components/TypingTest.tsx` (hidden input `onInput`) — text arriving in one input event (paste, `insertText`) is scored, so a whole quote "typed" in ~0ms yields millions of WPM, a "New personal best!" in local history, and a WPM number that overflows the result card at 375px. Pre-existing in every mode; consider ignoring multi-char insertions / pastes or a minimum elapsed time before recording. Found by the 2026-10-12 browser QA.
-- `components/SettingsPanel.tsx` (quote "Length" group) — "Medium" nearly touches its button edges in the 220px desktop panel; `ResultCard` "Repeat same words" could read "Repeat same quote" in quote mode.
-- `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest). Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob`. (`source-map-js` and the Tailwind 3 chain were fixed by `npm audit fix` + Tailwind 4.)
-- `components/SettingsPanel.tsx:47` (also `ResultCard.tsx:96,119`, `FocusOverlay.tsx:6`, `LiveStatsPanel.tsx:33`, `GlobalStats.tsx:41`) — `text-white` on `bg-ink`/`bg-accent` is not a token; the dark-theme work should replace it with an on-ink token.
+- `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest) and `npm audit fix --force` would downgrade `eslint-config-next` to 14. Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob` or `braces` ships a fix.
+
+_Cleared 2026-10-12:_ ref-backed WPM sampler → `useWpmSampler`; `YourResults` mount effect →
+history store + `useSyncExternalStore` (no `set-state-in-effect` disables remain); side panels
+full-width below the `panels` breakpoint (settings 240px, so quote "Medium" fits); implausible
+(> 300 WPM) runs are shown as "Not saved", never stored, and dropped from stored history — paste
+and drop were already ignored, multi-char `insertText` (swipe typing) is still accepted; huge
+numbers wrap; "Repeat same quote" label; the `text-white` entry was already fixed by 9.3.
+Also: the caret now glides (one caret bar + transform transition) instead of snapping.
