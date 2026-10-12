@@ -57,6 +57,19 @@ describe("theme", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
+  it("adopts a preference changed in another tab", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeTheme(listener);
+    localStorage.setItem(THEME_KEY, '"dark"');
+    window.dispatchEvent(new StorageEvent("storage", { key: "other" }));
+    expect(listener).not.toHaveBeenCalled();
+    window.dispatchEvent(new StorageEvent("storage", { key: THEME_KEY }));
+    expect(getThemePreference()).toBe("dark");
+    expect(document.documentElement.getAttribute(THEME_ATTR)).toBe("dark");
+    expect(listener).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
   it("init script applies a stored explicit theme and tolerates garbage", () => {
     localStorage.setItem(THEME_KEY, '"dark"');
     new Function(THEME_INIT_SCRIPT)();

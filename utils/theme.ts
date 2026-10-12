@@ -45,14 +45,25 @@ export function setThemePreference(preference: ThemePreference): void {
   listeners.forEach((listener) => listener());
 }
 
+/** Another tab changed the preference: adopt it so every open tab stays in sync. */
+function handleStorage(event: StorageEvent): void {
+  if (event.key !== THEME_KEY) return;
+  cached = readJSON(THEME_KEY, DEFAULT_PREFERENCE, isThemePreference);
+  applyThemePreference(cached);
+  listeners.forEach((listener) => listener());
+}
+
 export function subscribeTheme(listener: () => void): () => void {
+  if (listeners.size === 0) window.addEventListener("storage", handleStorage);
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
+    if (listeners.size === 0) window.removeEventListener("storage", handleStorage);
   };
 }
 
 export function resetThemeStoreForTests(): void {
   cached = null;
   listeners.clear();
+  window.removeEventListener("storage", handleStorage);
 }
