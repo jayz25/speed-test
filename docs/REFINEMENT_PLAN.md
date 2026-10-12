@@ -837,6 +837,18 @@ var, nothing network-related happens (check the Network tab).
   and there is no live leaderboard, so hardening a path nothing submits to would
   be work against a hypothetical._
 
+- [ ] **9.6 Frequency-ranked word lists** — replace the hand-curated
+  `utils/wordBank.ts` tiers with a filtered top 10k–20k English frequency list
+  (public corpus or Monkeytype-style open-licensed lists; strip profanity and
+  proper nouns). Tier by frequency rank (e.g. easy 1–1k, medium 1k–5k, hard
+  5k–20k), keep the `DIFFICULTY_MIX` blending in `utils/getWords.ts`, and
+  ship the lists as JSON loaded via dynamic `import()` per tier (~30 KB gzip
+  for 10k words) so the first load stays light. No runtime word API: it would
+  add latency, break offline use, and need content filtering anyway.
+  _Context (2026-10-12): tier lengths were already de-uniformed by blending
+  easy/medium/hard per difficulty; this item is about more variety, deferred
+  by the user._
+
 ---
 
 ## Parking lot

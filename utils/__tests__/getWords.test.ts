@@ -1,5 +1,25 @@
-import { applyWordOptions, getWords } from "../getWords";
+import { DIFFICULTY_MIX, applyWordOptions, getWords, type WordMode } from "../getWords";
 import { easyWords, hardWords, mediumWords } from "../wordBank";
+
+const MODES: WordMode[] = ["easy", "medium", "hard", "mixed"];
+
+describe("word bank", () => {
+  it.each([
+    ["easy", easyWords],
+    ["medium", mediumWords],
+    ["hard", hardWords],
+  ] as const)("%s tier is lowercase a-z with no duplicates and no length over 40%%", (_name, tier) => {
+    expect(tier.every((w) => /^[a-z]+$/.test(w))).toBe(true);
+    expect(new Set(tier).size).toBe(tier.length);
+    const counts = new Map<number, number>();
+    tier.forEach((w) => counts.set(w.length, (counts.get(w.length) ?? 0) + 1));
+    expect(Math.max(...counts.values()) / tier.length).toBeLessThanOrEqual(0.4);
+  });
+  it("has no duplicates across tiers", () => {
+    const all = [...easyWords, ...mediumWords, ...hardWords];
+    expect(new Set(all).size).toBe(all.length);
+  });
+});
 
 describe("getWords", () => {
   it("returns exactly `count` words", () => {
@@ -8,23 +28,44 @@ describe("getWords", () => {
   it("defaults to 60 words", () => {
     expect(getWords()).toHaveLength(60);
   });
-  it.each([
-    ["easy", easyWords],
-    ["medium", mediumWords],
-    ["hard", hardWords],
-  ] as const)("draws %s mode only from its own pool", (mode, pool) => {
-    const words = getWords(40, mode);
-    expect(words.every((w) => pool.includes(w))).toBe(true);
+  it("draws easy mode only from the easy and medium tiers", () => {
+    const pool = [...easyWords, ...mediumWords];
+    expect(getWords(200, "easy").every((w) => pool.includes(w))).toBe(true);
+  });
+  it("draws medium and hard modes from the word bank", () => {
+    const all = [...easyWords, ...mediumWords, ...hardWords];
+    expect(getWords(200, "medium").every((w) => all.includes(w))).toBe(true);
+    expect(getWords(200, "hard").every((w) => all.includes(w))).toBe(true);
   });
   it("draws mixed mode from the combined pool", () => {
     const all = [...easyWords, ...mediumWords, ...hardWords];
     expect(getWords(100, "mixed").every((w) => all.includes(w))).toBe(true);
   });
-  it("cycles through the pool when count exceeds pool size", () => {
-    const count = easyWords.length * 2 + 3;
-    const words = getWords(count, "easy");
-    expect(words).toHaveLength(count);
-    expect(words.every((w) => easyWords.includes(w))).toBe(true);
+  it("can produce more words than the bank holds", () => {
+    expect(getWords(5000, "easy")).toHaveLength(5000);
+  });
+  it.each(MODES)("yields at least 3 distinct word lengths in %s mode", (mode) => {
+    const lengths = new Set(getWords(200, mode, {}, mulberry(3)).map((w) => w.length));
+    expect(lengths.size).toBeGreaterThanOrEqual(3);
+  });
+  it("makes words longer on average as difficulty rises", () => {
+    const mean = (mode: WordMode) => {
+      const words = getWords(2000, mode, {}, mulberry(11));
+      return words.reduce((sum, w) => sum + w.length, 0) / words.length;
+    };
+    expect(mean("easy")).toBeLessThan(mean("medium"));
+    expect(mean("medium")).toBeLessThan(mean("hard"));
+  });
+  it.each(MODES)("never repeats a word back to back in %s mode", (mode) => {
+    const words = getWords(500, mode, {}, mulberry(5));
+    expect(words.some((w, i) => i > 0 && w === words[i - 1])).toBe(false);
+  });
+  it("is deterministic for a seeded rng", () => {
+    expect(getWords(50, "hard", {}, mulberry(9))).toEqual(getWords(50, "hard", {}, mulberry(9)));
+  });
+  it.each(MODES)("has mix weights summing to 1 for %s", (mode) => {
+    const { easy, medium, hard } = DIFFICULTY_MIX[mode];
+    expect(easy + medium + hard).toBeCloseTo(1);
   });
   it("does not mutate the word bank", () => {
     const before = [...easyWords];
@@ -89,7 +130,7 @@ describe("getWords options", () => {
   });
   it("leaves words plain when options are off", () => {
     const words = getWords(50, "easy", { punctuation: false, numbers: false });
-    expect(words.every((w) => easyWords.includes(w))).toBe(true);
+    expect(words.every((w) => [...easyWords, ...mediumWords].includes(w))).toBe(true);
   });
 });
 
