@@ -6,7 +6,7 @@ import { SETTINGS_KEY } from "../../utils/storage";
 describe("settings slice", () => {
   it("has documented defaults", () => {
     expect(DEFAULT_SETTINGS).toEqual({
-      mode: "time", timeLimit: 30, wordCount: 25, difficulty: "mixed",
+      mode: "time", timeLimit: 30, wordCount: 25, difficulty: "mixed", quoteLength: "medium",
       punctuation: false, numbers: false, playerName: "",
     });
     expect(settingsReducer(undefined, { type: "init" })).toEqual(DEFAULT_SETTINGS);
@@ -31,6 +31,18 @@ describe("sanitizeSettings", () => {
   it("keeps valid fields and falls back per field", () => {
     const out = sanitizeSettings({ mode: "words", timeLimit: 45, wordCount: 100, difficulty: "nope", punctuation: true, numbers: "yes", playerName: "Bo" });
     expect(out).toEqual({ ...DEFAULT_SETTINGS, mode: "words", wordCount: 100, punctuation: true, playerName: "Bo" });
+  });
+  it("accepts quote mode and a valid quote length", () => {
+    expect(sanitizeSettings({ mode: "quote", quoteLength: "long" })).toEqual({ ...DEFAULT_SETTINGS, mode: "quote", quoteLength: "long" });
+  });
+  it("falls back to the default quote length when it is missing or invalid", () => {
+    expect(sanitizeSettings({ mode: "quote" }).quoteLength).toBe("medium");
+    expect(sanitizeSettings({ quoteLength: "huge" }).quoteLength).toBe("medium");
+    expect(sanitizeSettings({ quoteLength: 3 }).quoteLength).toBe("medium");
+  });
+  it("loads old stored settings that predate quote mode", () => {
+    const old = { mode: "words", timeLimit: 60, wordCount: 50, difficulty: "hard", punctuation: true, numbers: false, playerName: "Ann" };
+    expect(sanitizeSettings(old)).toEqual({ ...old, quoteLength: "medium" });
   });
   it("preserves a legacy { playerName } only record", () => {
     expect(sanitizeSettings({ playerName: "Legacy" })).toEqual({ ...DEFAULT_SETTINGS, playerName: "Legacy" });

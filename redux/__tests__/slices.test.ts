@@ -2,6 +2,7 @@ import { makeStore } from "../store";
 import { loadWords, refreshWords, repeatWords } from "../paragraph";
 import { getWords } from "../../utils/getWords";
 import { addStatCall, getStatCall } from "../stat";
+import { getQuoteLength, QUOTES } from "../../utils/quotes";
 
 vi.mock("../../utils/getWords", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../utils/getWords")>();
@@ -44,6 +45,57 @@ describe("paragraph slice", () => {
     const store = makeStore();
     store.dispatch(refreshWords());
     expect(store.getState().paragraph.wordsCollection).toHaveLength(60);
+  });
+});
+
+describe("paragraph slice quote path", () => {
+  const sourceOf = (text: string) => QUOTES.find((q) => q.text === text)?.source;
+
+  it("loadWords with a quoteLength loads a quote of that tier, split into exact words, with its source", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ quoteLength: "short" }));
+    const { wordsCollection, source, quoteLength, status } = store.getState().paragraph;
+    const text = wordsCollection.join(" ");
+    expect(getQuoteLength({ text, source: "" })).toBe("short");
+    expect(source).toBe(sourceOf(text));
+    expect(quoteLength).toBe("short");
+    expect(status).toBe("ready");
+  });
+  it("ignores difficulty, punctuation and numbers for quotes", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ quoteLength: "medium", mode: "easy", punctuation: true, numbers: true, count: 3 }));
+    const text = store.getState().paragraph.wordsCollection.join(" ");
+    expect(QUOTES.some((q) => q.text === text)).toBe(true);
+  });
+  it("refreshWords picks a different quote of the same tier", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ quoteLength: "long" }));
+    for (let i = 0; i < 20; i++) {
+      const before = store.getState().paragraph.wordsCollection.join(" ");
+      store.dispatch(refreshWords());
+      const after = store.getState().paragraph;
+      expect(after.wordsCollection.join(" ")).not.toBe(before);
+      expect(after.quoteLength).toBe("long");
+      expect(after.source).toBe(sourceOf(after.wordsCollection.join(" ")));
+    }
+  });
+  it("repeatWords keeps the same quote and source but starts a new round", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ quoteLength: "medium" }));
+    const before = store.getState().paragraph;
+    store.dispatch(repeatWords());
+    const after = store.getState().paragraph;
+    expect(after.wordsCollection).toEqual(before.wordsCollection);
+    expect(after.source).toBe(before.source);
+    expect(after.round).toBe(before.round + 1);
+  });
+  it("loading random words afterwards clears the quote state", () => {
+    const store = makeStore();
+    store.dispatch(loadWords({ quoteLength: "short" }));
+    store.dispatch(loadWords({ count: 5 }));
+    expect(store.getState().paragraph).toMatchObject({ quoteLength: null, source: null });
+    store.dispatch(refreshWords());
+    expect(store.getState().paragraph.wordsCollection).toHaveLength(5);
   });
 });
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TestStats } from "../utils/calculateStats";
 import { getGrade } from "../utils/getGrade";
-import { describePb, type TestConfigKey } from "../utils/history";
+import { describePb, formatConfig, type TestConfigKey } from "../utils/history";
 import { formatResultText } from "../utils/shareText";
 import type { WpmSample } from "../utils/wpmSamples";
 import { ArrowRightIcon, RotateCcwIcon } from "./icons";
@@ -17,8 +17,9 @@ const TILE = "flex flex-col gap-1 rounded-[14px] bg-surface-muted px-[18px] py-4
 const COPY_FEEDBACK_MS = 1500;
 type CopyStatus = "idle" | "copied" | "failed";
 
-/** "30 seconds · mixed · punctuation · numbers" / "25 words · hard". */
+/** "30 seconds · mixed · punctuation · numbers" / "25 words · hard" / "quote · medium". */
 export function formatSummary(config: TestConfigKey, options: { punctuation: boolean; numbers: boolean }): string {
+  if (config.mode === "quote") return formatConfig(config);
   const length = config.mode === "time" ? `${config.limit} seconds` : `${config.limit} words`;
   return [length, config.difficulty, options.punctuation && "punctuation", options.numbers && "numbers"]
     .filter(Boolean)
@@ -35,6 +36,8 @@ interface ResultCardProps {
   durationSeconds: number;
   /** Mode / limit / difficulty of this test (used in the copied text). */
   config: TestConfigKey;
+  /** Attribution of the quote that was typed (quote mode only). */
+  source?: string | null;
   /** Punctuation / numbers toggles that were on for this test (shown in the summary). */
   options: { punctuation: boolean; numbers: boolean };
   onReset: () => void;
@@ -42,7 +45,7 @@ interface ResultCardProps {
   onRepeat: () => void;
 }
 
-export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, options, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, source, options, onReset, onRepeat }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +98,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
             </p>
           )}
           <span className="text-sm text-muted">{formatSummary(config, options)}</span>
+          {config.mode === "quote" && source && <span className="text-sm text-muted">{`\u2014 ${source}`}</span>}
           <span className="text-sm text-muted">
             Raw {rawWpm} WPM · {durationSeconds}s · Grade <span className="font-semibold text-ink">{grade}</span>
           </span>

@@ -30,7 +30,7 @@ describe("TypingTest render cost", () => {
 
   it("re-renders at most 2 Words per letter keystroke (300 words loaded)", async () => {
     const user = userEvent.setup();
-    const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {}, round: 0 } });
+    const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {}, quoteLength: null, source: null, round: 0 } });
     render(<Provider store={store}><TypingTest /></Provider>);
     await user.click(screen.getByLabelText("Type the words shown"));
     expect(getWordEls().length).toBeGreaterThan(40);

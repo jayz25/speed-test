@@ -11,6 +11,7 @@ import { useCaret } from "../utils/hooks/useCaret";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
+import { quoteLimit } from "../utils/history";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import { getWordCounts } from "../utils/typingEngine";
@@ -40,15 +41,24 @@ const TypingTest = () => {
   const round = useSelector((state: RootState) => state.paragraph.round);
   const dispatch = useDispatch<AppDispatch>();
 
-  const { mode, timeLimit, wordCount, difficulty, punctuation, numbers } = useSelector((state: RootState) => state.settings);
+  const source = useSelector((state: RootState) => state.paragraph.source);
+
+  const { mode, timeLimit, wordCount, difficulty, quoteLength, punctuation, numbers } = useSelector((state: RootState) => state.settings);
 
   // (Re)generate words whenever a setting changes (and on mount)
   useEffect(() => {
+    if (mode === "quote") {
+      dispatch(loadWords({ quoteLength }));
+      return;
+    }
     dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty, punctuation, numbers }));
-  }, [dispatch, mode, wordCount, difficulty, punctuation, numbers, timeLimit]);
+  }, [dispatch, mode, wordCount, difficulty, quoteLength, punctuation, numbers, timeLimit]);
 
-  const isWordsMode = mode === "words";
-  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode, round });
+  // Words and quote mode count up and finish when the last word is completed; time mode counts down.
+  const isCountUpMode = mode !== "time";
+  const configLimit = mode === "quote" ? quoteLimit(quoteLength) : isCountUpMode ? wordCount : timeLimit;
+  const testConfig = { mode, limit: configLimit, difficulty: mode === "quote" ? "mixed" : difficulty } as const;
+  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isCountUpMode, round });
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
@@ -64,7 +74,7 @@ const TypingTest = () => {
   const textInput = useRef<HTMLInputElement>(null);
   const didKeyDownBackspace = useRef(false);
 
-  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
+  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isCountUpMode ? "up" : "down");
 
   // Computed stats
   // Live stats are recomputed once per timer tick (or new test), not per keystroke
@@ -76,8 +86,8 @@ const TypingTest = () => {
 
   // Time mode: game over when the countdown reaches 0 (words mode ends in the engine)
   useEffect(() => {
-    if (!isWordsMode && seconds === 0 && isStarted) finish();
-  }, [isWordsMode, seconds, isStarted, finish]);
+    if (!isCountUpMode && seconds === 0 && isStarted) finish();
+  }, [isCountUpMode, seconds, isStarted, finish]);
 
   // Sample WPM / raw WPM / mistakes once per elapsed second while running (for the result chart)
   const samplesRef = useRef<WpmSample[]>([]);
@@ -131,7 +141,7 @@ const TypingTest = () => {
     isFinished,
     roundId: state.round,
     stats: finalStats,
-    config: { mode, limit: isWordsMode ? wordCount : timeLimit, difficulty },
+    config: testConfig,
   });
 
   useCaret({
@@ -154,7 +164,7 @@ const TypingTest = () => {
   // A settings change restarts the test (new words arrive via the effect above)
   useEffect(() => {
     reset(timeLimit);
-  }, [reset, timeLimit, mode, wordCount, difficulty, punctuation, numbers]);
+  }, [reset, timeLimit, mode, wordCount, difficulty, quoteLength, punctuation, numbers]);
 
   const resetTest = useCallback(() => {
     reset(timeLimit);
@@ -266,13 +276,13 @@ const TypingTest = () => {
   if (isFinished) {
     announcement = `Test complete. ${finalStats.wpm} words per minute, ${finalStats.accuracy} percent accuracy.`;
   } else if (isStarted) {
-    announcement = !isWordsMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
+    announcement = !isCountUpMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
   const remainingSeconds = Math.ceil(Math.max(0, seconds));
   const timeLabel = `${Math.floor(remainingSeconds / SECONDS_PER_MINUTE)}:${String(remainingSeconds % SECONDS_PER_MINUTE).padStart(2, "0")}`;
   const wordIndex = Math.min(activeWordIndex, words.length);
-  const timerRow = isWordsMode
+  const timerRow = isCountUpMode
     ? { label: `${wordIndex}/${words.length}`, goal: `${elapsedSeconds}s`, progress: words.length > 0 ? wordIndex / words.length : 0 }
     : { label: timeLabel, goal: `${timeLimit}s`, progress: timeLimit > 0 ? elapsedSeconds / timeLimit : 0 };
 
@@ -300,9 +310,10 @@ const TypingTest = () => {
               stats={finalStats}
               samples={finalSamples}
               personalBest={personalBest}
-              config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
+              config={testConfig}
+              source={source}
               options={{ punctuation, numbers }}
-              durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
+              durationSeconds={isCountUpMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
               onReset={resetTest}
               onRepeat={repeatTest}
             />
@@ -341,6 +352,7 @@ const TypingTest = () => {
                   aria-label="Type the words shown"
                 />
               </TypingArea>
+              {mode === "quote" && source && <p className="text-sm text-muted">{`\u2014 ${source}`}</p>}
               <div className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-5">
                 <button
                   type="button"

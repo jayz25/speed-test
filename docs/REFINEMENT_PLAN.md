@@ -830,7 +830,15 @@ var, nothing network-related happens (check the Network tab).
   (all pairs ≥ the light theme's). Header padding is now `px-4` below `sm` (the toggle overflowed
   375px). `e2e/theme.spec.ts` covers OS default, cycling, and pre-hydration apply. Vitest/tsc now
   also ignore `.claude/**` (agent worktrees)._
-- [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+- [x] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+  _Done: `utils/quotes.ts` (~70 public-domain ASCII quotes, `getQuoteLength`/`pickQuote`/`quoteToWords`),
+  settings `mode: "quote"` + persisted `quoteLength` (short/medium/long, validated per field), `paragraph`
+  slice stores the quote's `source` (`loadWords({ quoteLength })`; refresh = new quote, repeat = same quote).
+  Reuses the words-mode path (count-up timer, finishes on the last word). `SettingsPanel` has a third
+  "Quote" mode with a Short/Medium/Long group and hides Difficulty/Include; the source shows under the
+  typing area and on `ResultCard`. History: `mode: "quote"`, `limit` = tier 1/2/3 (`quoteLimit`),
+  `difficulty: "mixed"`; `formatConfig` renders "quote · medium"; PBs are per tier. Unit, component and
+  `e2e/quote.spec.ts` tests added._
 - [ ] **9.5 Harden the result-submit path** — **blocked: do not start until a
   stats API actually exists and its owner is known.** Today
   `utils/hooks/usePostResultOnFinish.ts:27` guards with a client-side
@@ -875,3 +883,4 @@ Add things you noticed but didn't fix here, one line each, with file:line.
 - `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
 - `components/SettingsPanel.tsx` / `components/LiveStatsPanel.tsx:32` — below `md` the settings card and live stats column don't fill the width (`max-w-[280px]` etc.), leaving a ragged right edge at 375px; pre-existing.
 - `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest). Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob`. (`source-map-js` and the Tailwind 3 chain were fixed by `npm audit fix` + Tailwind 4.)
+- `components/SettingsPanel.tsx:47` (also `ResultCard.tsx:96,119`, `FocusOverlay.tsx:6`, `LiveStatsPanel.tsx:33`, `GlobalStats.tsx:41`) — `text-white` on `bg-ink`/`bg-accent` is not a token; the dark-theme work should replace it with an on-ink token.

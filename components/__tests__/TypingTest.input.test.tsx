@@ -24,7 +24,7 @@ describe("TypingTest input-event path (soft keyboards)", () => {
       disconnect() {}
     };
     Element.prototype.scrollIntoView = vi.fn();
-    const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {}, round: 0 } });
+    const store = makeStore({ paragraph: { wordsCollection: KNOWN_WORDS, status: "ready", mode: "mixed", options: {}, quoteLength: null, source: null, round: 0 } });
     render(<Provider store={store}><TypingTest /></Provider>);
   });
 

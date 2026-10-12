@@ -4,7 +4,7 @@
 
 A single-player typing-speed test built on Next.js 16 (Pages Router, Turbopack for dev and build) +
 React 19, with Redux Toolkit for state and Tailwind CSS for styling. A
-visitor types a stream of randomized words for a fixed time limit (15/30/60/120s) or word count (10-100) and sees live WPM / CPM / accuracy, then a result card. Optionally, a
+visitor types a stream of randomized words for a fixed time limit (15/30/60/120s) or word count (10-100), or types a real public-domain quote (short/medium/long), and sees live WPM / CPM / accuracy, then a result card. Optionally, a
 result can be posted to an external stats API and a "/stats" page can show
 a global leaderboard of past results — both gated behind an env var, so the
 app works standalone with no backend.
@@ -38,7 +38,7 @@ The flow is **engine -> hook -> components**:
    (`onKeyDown` for Backspace/Space/Tab; printable characters and soft-keyboard
    backspace via `onInput`, so mobile keyboards work), starts the timer on
    the first printable character, and on `seconds === 0` dispatches `finish` and
-   freezes `finalStats` from `calculateStats` (words mode instead finishes in the engine when the last word is completed). It renders `ConfigBar`, `LiveStat`,
+   freezes `finalStats` from `calculateStats` (words and quote mode instead finish in the engine when the last word is completed; both count up). It renders `ConfigBar`, `LiveStat`,
    `TypingArea` (memoized `Word`s, `FocusOverlay`, `TypingAreaSkeleton` while loading, and the hidden input as children), a `LiveAnnouncer` live region, `useFocusMode` (fades chrome while running),
    `RestartButton`, and `ResultCard` once finished.
 
@@ -46,7 +46,8 @@ The flow is **engine -> hook -> components**:
 
 Three slices, combined in `redux/store.ts`:
 
-- **`paragraph`** (`redux/paragraph.ts`) — holds `wordsCollection: string[]`, the last `mode`/`options`, and a `round` counter (bumped by `loadWords`/`refreshWords`/`repeatWords`; Repeat keeps the words but starts a new round).
+- **`paragraph`** (`redux/paragraph.ts`) — holds `wordsCollection: string[]`, the last `mode`/`options`, `quoteLength` and `source` (both `null` unless the words are a quote), and a `round` counter (bumped by `loadWords`/`refreshWords`/`repeatWords`; Repeat keeps the words but starts a new round).
+  Quote flow: `loadWords({ quoteLength })` picks a quote with `pickQuote` and stores `quoteToWords(quote)` (exact case/punctuation; difficulty and the punctuation/numbers options are ignored) plus its `source`; `refreshWords` picks a different quote of the same tier; `repeatWords` keeps the same quote. `TypingTest` reads `source` to show "— Author" under the typing area and on the `ResultCard`.
   `loadWords({ count, mode })` and `refreshWords()` both call
   `utils/getWords.ts`, which shuffles (Fisher-Yates) a word pool from
   `utils/wordBank.ts` (`easy`/`medium`/`hard`/`mixed`) and repeats it to
@@ -60,7 +61,7 @@ Three slices, combined in `redux/store.ts`:
   once per round from `utils/hooks/usePostResultOnFinish.ts` (called by
   `TypingTest`); the player name (`PlayerNameInput`, persisted at
   `speedtype:v1:settings`) is the posted `user`.
-- **`settings`** (`redux/settings.ts`, `state.settings`) — `mode` (time/words), `timeLimit` (15/30/60/120), `wordCount` (10/25/50/100), `difficulty`, `punctuation`, `numbers`, `playerName`. `setSetting` (partial) / `hydrateSettings`. `redux/persistSettings.ts` loads (per-field validated) and saves (debounced 300ms + on `pagehide`) it at `speedtype:v1:settings`; `_app.tsx` wires both after mount.
+- **`settings`** (`redux/settings.ts`, `state.settings`) — `mode` (time/words/quote), `timeLimit` (15/30/60/120), `wordCount` (10/25/50/100), `difficulty`, `quoteLength` (short/medium/long, default medium; quote mode only), `punctuation`, `numbers`, `playerName`. `setSetting` (partial) / `hydrateSettings`. `redux/persistSettings.ts` loads (per-field validated) and saves (debounced 300ms + on `pagehide`) it at `speedtype:v1:settings`; `_app.tsx` wires both after mount.
 - `redux/stat.ts` is covered by `redux/__tests__/stat.test.ts`.
 
 ## Utilities (`utils/`)
@@ -75,14 +76,15 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | `calculateStats.ts` | `calculateStats(state, elapsedMs)` -> net `wpm`, `rawWpm`, `cpm`, keystroke `accuracy`, correct/incorrect/extra/missed char counts. |
 | `getWords.ts` | Builds a shuffled word list of a given length/difficulty from `wordBank.ts`, then applies optional punctuation/numbers (`applyWordOptions`, injectable `rng`). Exports `getWords`, `applyWordOptions`, `WordMode`, `WordOptions`. |
 | `wordBank.ts` | Static word lists (`easyWords`/`mediumWords`/`hardWords`). |
-| `history.ts`, `getGrade.ts`, `wpmSamples.ts` | Run history in `speedtype:v1:history` (newest 100, personal bests per mode+limit+difficulty); WPM-aware grade table; per-second chart samples. `hooks/useRecordResult.ts` appends the finished test once per round. |
+| `quotes.ts` | Quote mode data: `QUOTES` (~70 public-domain, plain-ASCII `{ text, source }`), `getQuoteLength` (short <= 20 words, medium 21-45, long 46+; thresholds `SHORT_MAX_WORDS`/`MEDIUM_MAX_WORDS`), `pickQuote(length, rng, excludeText)`, `quoteToWords`. |
+| `history.ts`, `getGrade.ts`, `wpmSamples.ts` | Run history in `speedtype:v1:history` (newest 100, personal bests per mode+limit+difficulty; quote runs are `mode: "quote"`, `limit` = tier 1/2/3 via `quoteLimit`, `difficulty: "mixed"`, shown as "quote · medium"); WPM-aware grade table; per-second chart samples. `hooks/useRecordResult.ts` appends the finished test once per round. |
 | `typingEngine.ts` | Pure typing reducer + selectors (see Core flow). |
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
 | `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
 | `hooks/useFocusMode.ts` | While a test runs, sets `data-focus-mode` on `<html>` so `[data-focus-fade]` chrome fades (CSS in `globals.css`); mouse move reveals it. |
 | `theme.ts` | Colour theme preference (`system`/`light`/`dark`) at `speedtype:v1:theme`: a tiny external store (`getThemePreference`/`setThemePreference`/`subscribeTheme`) for `useSyncExternalStore`, `applyThemePreference` (sets/removes `data-theme` on `<html>`), and the dependency-free `THEME_INIT_SCRIPT`. |
 | `motion.ts` | `prefersReducedMotion()` helper (caret transition, `RenderStat`). |
-| `hooks/useTimer.ts` | Timer hook, `direction` `"down"` (time mode) or `"up"` (words mode) (100ms tick, derived from `performance.now()`): `start()`, `stop()`, `reset(newTimeout?)`, `seconds`, `elapsedSeconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
+| `hooks/useTimer.ts` | Timer hook, `direction` `"down"` (time mode) or `"up"` (words and quote mode) (100ms tick, derived from `performance.now()`): `start()`, `stop()`, `reset(newTimeout?)`, `seconds`, `elapsedSeconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
 
 ## Components (`components/`)
 
@@ -90,7 +92,7 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 |---|---|
 | `TypingTest.tsx` | Orchestrator, see above. |
 | `TypingArea.tsx`, `Word.tsx`, `FocusOverlay.tsx` | Words rendering (memoized `Word`), caret host, click-to-focus overlay. |
-| `SettingsPanel.tsx` | Settings UI (mode, time/word count, difficulty, punctuation, numbers) + player name; reads/writes `state.settings`; dimmed while running. |
+| `SettingsPanel.tsx` | Settings UI (mode incl. Quote, time/word count/quote length, difficulty, punctuation, numbers; quote mode hides difficulty and the Include toggles) + player name; reads/writes `state.settings`; dimmed while running. |
 | `LiveStatsPanel.tsx` | Live stats display: dark WPM tile with sparkline, plus grid of small tiles for accuracy/CPM/errors/words. |
 | `Sparkline.tsx` | Inline-SVG mini chart of WPM over time (one point per second). |
 | `TimerRow.tsx` | Timer label, progress bar, and goal text. |
@@ -122,7 +124,7 @@ types in `redux/settings.ts`.
 - `.env.example` documents `NEXT_PUBLIC_API_BASE_URL`.
 - `.github/workflows/ci.yml` runs lint → type-check → `test:coverage` →
   build on Node 22 and 24 (npm cache enabled).
-- E2E: Playwright (`@playwright/test`, dev dependency). `playwright.config.ts` builds and serves the production app (`npm run build && npm start`; reuses a running server locally, not in CI) and defines two projects: desktop Chromium and a 375px-wide viewport. Specs in `e2e/` (`typing`, `config`, `focus`, shared `helpers.ts`) automate the Smoke script, reading randomized words from the DOM. Run with `npm run test:e2e`; deliberately not part of `npm test`, and Vitest excludes `e2e/**`. CI runs it in a separate `e2e` job (Node 22, `playwright install --with-deps chromium`, uploads `test-results/` and `playwright-report/` on failure).
+- E2E: Playwright (`@playwright/test`, dev dependency). `playwright.config.ts` builds and serves the production app (`npm run build && npm start`; reuses a running server locally, not in CI) and defines two projects: desktop Chromium and a 375px-wide viewport. Specs in `e2e/` (`typing`, `config`, `focus`, `quote`, shared `helpers.ts`) automate the Smoke script, reading randomized words from the DOM. Run with `npm run test:e2e`; deliberately not part of `npm test`, and Vitest excludes `e2e/**`. CI runs it in a separate `e2e` job (Node 22, `playwright install --with-deps chromium`, uploads `test-results/` and `playwright-report/` on failure).
 - Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
   thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
   layout, verified in a real browser instead).
@@ -161,6 +163,6 @@ types in `redux/settings.ts`.
 | Key | Owner | Shape |
 |---|---|---|
 | `speedtype:v1:settings` | `redux/persistSettings.ts` | `SettingsState` incl. `playerName` (validated per field on load) |
-| `speedtype:v1:history` | `utils/history.ts` | newest 100 finished runs (`mode`, `limit`, `difficulty`, `wpm`, `rawWpm`, `accuracy`, `date`) |
+| `speedtype:v1:history` | `utils/history.ts` | newest 100 finished runs (`mode` time/words/quote, `limit`, `difficulty`, `wpm`, `rawWpm`, `accuracy`, `date`) |
 
 Bump the `v1` segment if a shape changes incompatibly.
