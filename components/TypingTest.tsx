@@ -8,6 +8,7 @@ import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
 import { useFocusMode } from "../utils/hooks/useFocusMode";
 import { useCaret } from "../utils/hooks/useCaret";
+import { useWpmSampler } from "../utils/hooks/useWpmSampler";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
@@ -15,7 +16,6 @@ import { quoteLimit } from "../utils/history";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import { getWordCounts } from "../utils/typingEngine";
-import { makeSample, WpmSample } from "../utils/wpmSamples";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveAnnouncer from "./LiveAnnouncer";
 import LiveStatsPanel from "./LiveStatsPanel";
@@ -89,32 +89,6 @@ const TypingTest = () => {
     if (!isCountUpMode && seconds === 0 && isStarted) finish();
   }, [isCountUpMode, seconds, isStarted, finish]);
 
-  // Sample WPM / raw WPM / mistakes once per elapsed second while running (for the result chart)
-  const samplesRef = useRef<WpmSample[]>([]);
-  const incorrectAtLastSample = useRef(0);
-  const [finalSamples, setFinalSamples] = useState<readonly WpmSample[]>([]);
-  // Mirror of samplesRef so the live sparkline re-renders when a sample is pushed
-  const [liveSamples, setLiveSamples] = useState<readonly WpmSample[]>([]);
-  const pushSample = useCallback((second: number) => {
-    const last = samplesRef.current[samplesRef.current.length - 1];
-    if (last && last.second >= second) return;
-    samplesRef.current = [...samplesRef.current, makeSample(state, second, incorrectAtLastSample.current)];
-    incorrectAtLastSample.current = state.incorrectKeystrokes;
-  }, [state]);
-
-  useEffect(() => {
-    if (state.status === "idle") {
-      samplesRef.current = [];
-      incorrectAtLastSample.current = 0;
-      // Mirrors the ref-backed sampler into state; see Parking lot for a ref-free rewrite
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLiveSamples((prev) => (prev.length === 0 ? prev : []));
-    } else if (isStarted && elapsedSeconds >= 1) {
-      pushSample(elapsedSeconds);
-      setLiveSamples((prev) => (prev === samplesRef.current ? prev : samplesRef.current));
-    }
-  }, [state.status, isStarted, elapsedSeconds, pushSample]);
-
   // The result is derived (not stored) so it is already correct in the first finished render,
   // which the post/record hooks rely on. Engine state is stable once finished.
   const finalElapsedMs = useMemo(() => (isFinished ? elapsedMs() : 0), [isFinished, elapsedMs]);
@@ -123,13 +97,14 @@ const TypingTest = () => {
     [isFinished, state, finalElapsedMs],
   );
 
-  // Freeze the clock and finish the chart samples once the engine reports finished
+  // Sample WPM / raw WPM / mistakes once per elapsed second (live sparkline + result chart)
+  const finalSecond = isFinished ? Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)) : null;
+  const samples = useWpmSampler(state, elapsedSeconds, finalSecond);
+
+  // Freeze the clock once the engine reports finished
   useEffect(() => {
-    if (!isFinished) return;
-    stopTimer();
-    pushSample(Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)));
-    setFinalSamples(samplesRef.current);
-  }, [isFinished, finalElapsedMs, stopTimer, pushSample]);
+    if (isFinished) stopTimer();
+  }, [isFinished, stopTimer]);
 
   const [playerName] = usePlayerName();
 
@@ -294,7 +269,7 @@ const TypingTest = () => {
     errors: state.incorrectKeystrokes,
     words: getWordCounts(state).wordsMatched,
   };
-  const series = (isFinished ? finalSamples : liveSamples).map((sample) => sample.wpm);
+  const series = samples.map((sample) => sample.wpm);
 
   return (
     <>
@@ -308,7 +283,7 @@ const TypingTest = () => {
           {isFinished ? (
             <ResultCard
               stats={finalStats}
-              samples={finalSamples}
+              samples={samples}
               personalBest={personalBest}
               config={testConfig}
               source={source}
