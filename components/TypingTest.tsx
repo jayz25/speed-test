@@ -96,6 +96,8 @@ const TypingTest = () => {
     if (state.status === "idle") {
       samplesRef.current = [];
       incorrectAtLastSample.current = 0;
+      // Mirrors the ref-backed sampler into state; see Parking lot for a ref-free rewrite
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveSamples((prev) => (prev.length === 0 ? prev : []));
     } else if (isStarted && elapsedSeconds >= 1) {
       pushSample(elapsedSeconds);

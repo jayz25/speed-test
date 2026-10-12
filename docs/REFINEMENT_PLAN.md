@@ -810,8 +810,15 @@ var, nothing network-related happens (check the Network tab).
   `npm run build && npm start`; desktop + 375px projects), `e2e/{typing,config,focus}.spec.ts`
   covering Smoke steps 1-7 (reads words from the DOM, real 15s run, no clock mock),
   `npm run test:e2e`, Vitest excludes `e2e/**`, separate `e2e` CI job. No component changes/test ids needed._
-- [ ] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
+- [x] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
   own PR after Phase 4 so tests catch regressions.
+  _Done: `next@16.4` + `eslint-config-next@16.4`; `eslint.config.mjs` uses the native flat exports
+  (dropped `FlatCompat` / `@eslint/eslintrc`). Turbopack is now the default for dev and build; `next build`
+  set `tsconfig` `jsx: react-jsx` and rewrote `next-env.d.ts`. The new `react-hooks` compiler rules flagged
+  7 spots: `useTimer` (ref sync moved into an effect; limit reset via adjust-state-during-render),
+  `useFocusMode` (adjust-state-during-render), `useRecordResult` (result keyed by `roundId` and derived on
+  return instead of reset in the effect) were rewritten; `YourResults` mount read and the `TypingTest`
+  sampler mirror got a commented `eslint-disable-next-line` (see Parking lot). Prod `npm audit` 3 → 1._
 - [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
   (requires replacing hard-coded `slate-*`/`#FFD523` with tokens first).
 - [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
@@ -854,3 +861,7 @@ var, nothing network-related happens (check the Network tab).
 ## Parking lot
 
 Add things you noticed but didn't fix here, one line each, with file:line.
+
+- `components/TypingTest.tsx:95` — live WPM sampler mirrors `samplesRef` into `liveSamples` state from an effect (`react-hooks/set-state-in-effect` disabled); could keep samples in state only, or use `useSyncExternalStore`.
+- `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
+- `npm audit --omit=dev` — `source-map-js` ≤ 1.2.1 (GHSA-68fv-2mgg-jv7q, transitive via `next`/`postcss`); `npm audit fix` available, pre-existing.

@@ -21,12 +21,20 @@ export function getDisplaySeconds(elapsedMs: number, limit: number, direction: T
 const useTimer = (timeout: number, direction: TimerDirection = "down") => {
   const limit = timeout || DEFAULT_LIMIT_SECONDS;
   const limitRef = useRef(limit);
-  limitRef.current = limit;
   const directionRef = useRef(direction);
-  directionRef.current = direction;
+  useEffect(() => {
+    limitRef.current = limit;
+    directionRef.current = direction;
+  }, [limit, direction]);
 
   const initialSeconds = direction === "up" ? 0 : limit;
   const [seconds, setSeconds] = useState(initialSeconds);
+  // Reset the display when the configured limit/direction changes (adjust-state-during-render)
+  const [prevInitialSeconds, setPrevInitialSeconds] = useState(initialSeconds);
+  if (prevInitialSeconds !== initialSeconds) {
+    setPrevInitialSeconds(initialSeconds);
+    setSeconds(initialSeconds);
+  }
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number | null>(null);
@@ -38,10 +46,6 @@ const useTimer = (timeout: number, direction: TimerDirection = "down") => {
       intervalRef.current = null;
     }
   }, []);
-
-  useEffect(() => {
-    setSeconds(initialSeconds);
-  }, [initialSeconds]);
 
   const elapsedMs = useCallback(() => {
     if (startedAtRef.current === null) return frozenElapsedRef.current;

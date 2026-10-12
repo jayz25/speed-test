@@ -18,6 +18,8 @@ export default function YourResults() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
 
   useEffect(() => {
+    // localStorage is only readable after mount; reading it during render would break hydration
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(loadHistory());
   }, []);
 

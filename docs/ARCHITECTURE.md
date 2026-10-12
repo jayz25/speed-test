@@ -2,7 +2,7 @@
 
 ## What this is
 
-A single-player typing-speed test built on Next.js 15 (Pages Router) +
+A single-player typing-speed test built on Next.js 16 (Pages Router, Turbopack for dev and build) +
 React 19, with Redux Toolkit for state and Tailwind CSS for styling. A
 visitor types a stream of randomized words for a fixed time limit (15/30/60/120s) or word count (10-100) and sees live WPM / CPM / accuracy, then a result card. Optionally, a
 result can be posted to an external stats API and a "/stats" page can show
@@ -124,8 +124,9 @@ types in `redux/settings.ts`.
 - Coverage: `npm run test:coverage` (`@vitest/coverage-v8`) enforces 80%
   thresholds on `utils/**` and `redux/**` (`useCaret.ts` excluded — DOM
   layout, verified in a real browser instead).
-- Lint: ESLint 9 flat config (`eslint.config.mjs`, `next/core-web-vitals` +
-  `next/typescript` via `FlatCompat`, `eslint-config-next@15.5`); `npm run lint` = `eslint .`.
+- Lint: ESLint 9 flat config (`eslint.config.mjs`, native flat exports
+  `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`, `eslint-config-next@16`,
+  which includes the React Compiler `react-hooks` rules); `npm run lint` = `eslint .`.
 - Tests: Vitest 5 (`vitest.config.ts`, jsdom, `vitest.setup.ts` loads
   jest-dom matchers, globals on); tests live next to code in `__tests__/`.
 - `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.

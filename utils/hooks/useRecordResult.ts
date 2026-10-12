@@ -19,21 +19,18 @@ interface RecordResultArgs {
  */
 export function useRecordResult({ isFinished, roundId, stats, config }: RecordResultArgs): { previousBest: number | null } | undefined {
   const recordedRound = useRef<number | null>(null);
-  const [result, setResult] = useState<{ previousBest: number | null }>();
+  const [result, setResult] = useState<{ roundId: number; previousBest: number | null }>();
   const { mode, limit, difficulty } = config;
 
   useEffect(() => {
-    if (!isFinished) {
-      setResult(undefined);
-      return;
-    }
-    if (recordedRound.current === roundId) return;
+    if (!isFinished || recordedRound.current === roundId) return;
     recordedRound.current = roundId;
     const key = { mode, limit, difficulty };
     const history = loadHistory();
-    setResult({ previousBest: getPersonalBest(history, key) });
+    setResult({ roundId, previousBest: getPersonalBest(history, key) });
     saveHistory(appendEntry(history, createHistoryEntry(key, stats)));
   }, [isFinished, roundId, stats, mode, limit, difficulty]);
 
-  return result;
+  if (!isFinished || result?.roundId !== roundId) return undefined;
+  return { previousBest: result.previousBest };
 }
