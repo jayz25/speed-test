@@ -802,15 +802,52 @@ var, nothing network-related happens (check the Network tab).
 
 ## Optional / later
 
-- [ ] **9.1 Playwright E2E smoke** _(Note: the final review drove the
+- [x] **9.1 Playwright E2E smoke** _(Note: the final review drove the
   Smoke script with `playwright-core` + the system Chrome; port that into
   `e2e/` with `@playwright/test` and a CI job.)_ covering the Smoke script (desktop +
   mobile viewport) in CI.
+  _Done: `@playwright/test` (dev only), `playwright.config.ts` (prod build via
+  `npm run build && npm start`; desktop + 375px projects), `e2e/{typing,config,focus}.spec.ts`
+  covering Smoke steps 1-7 (reads words from the DOM, real 15s run, no clock mock),
+  `npm run test:e2e`, Vitest excludes `e2e/**`, separate `e2e` CI job. No component changes/test ids needed._
 - [ ] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
   own PR after Phase 4 so tests catch regressions.
 - [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
   (requires replacing hard-coded `slate-*`/`#FFD523` with tokens first).
 - [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+- [ ] **9.5 Harden the result-submit path** — **blocked: do not start until a
+  stats API actually exists and its owner is known.** Today
+  `utils/hooks/usePostResultOnFinish.ts:27` guards with a client-side
+  `wpm > MAX_PLAUSIBLE_WPM` check and `redux/stat.ts` POSTs straight from the
+  browser to `${NEXT_PUBLIC_API_BASE_URL}/addStat/`, so the leaderboard is
+  stuffable by anyone calling the endpoint directly — a client cannot enforce a
+  rule against itself. The client guard is politeness, not a control.
+  **Preconditions:** a live `/addStat/` endpoint, and an answer to who operates
+  it. **Then, depending on that answer:** (a) if we own the service, the work
+  lands there — plausibility validation, per-IP rate limiting, throttling on
+  `/addStat/` — and this repo changes only to note it; (b) if we don't, add
+  `pages/api/stats/*` here as the only writer, move the env var from
+  `NEXT_PUBLIC_API_BASE_URL` to a server-only `API_BASE_URL`, and put
+  validation + rate limiting in that route. Option (b) adds a server tier:
+  update `ARCHITECTURE.md`'s "works standalone with no backend" framing, the
+  `.env.example` and README env docs, and note that the app then needs a
+  Node/serverless deploy target. Re-brainstorm before starting either path —
+  the shape depends on the precondition answers.
+  _Context (2026-10-11): deferred by the user; the env var is unset in practice
+  and there is no live leaderboard, so hardening a path nothing submits to would
+  be work against a hypothetical._
+
+- [ ] **9.6 Frequency-ranked word lists** — replace the hand-curated
+  `utils/wordBank.ts` tiers with a filtered top 10k–20k English frequency list
+  (public corpus or Monkeytype-style open-licensed lists; strip profanity and
+  proper nouns). Tier by frequency rank (e.g. easy 1–1k, medium 1k–5k, hard
+  5k–20k), keep the `DIFFICULTY_MIX` blending in `utils/getWords.ts`, and
+  ship the lists as JSON loaded via dynamic `import()` per tier (~30 KB gzip
+  for 10k words) so the first load stays light. No runtime word API: it would
+  add latency, break offline use, and need content filtering anyway.
+  _Context (2026-10-12): tier lengths were already de-uniformed by blending
+  easy/medium/hard per difficulty; this item is about more variety, deferred
+  by the user._
 
 ---
 
