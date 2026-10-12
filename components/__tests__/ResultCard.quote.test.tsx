@@ -38,4 +38,15 @@ describe("ResultCard in quote mode", () => {
     renderCard({ config: { mode: "time", limit: 30, difficulty: "mixed" }, source: "Mark Twain" });
     expect(screen.queryByText("— Mark Twain")).not.toBeInTheDocument();
   });
+
+  it("offers to repeat the same quote", () => {
+    renderCard();
+    expect(screen.getByRole("button", { name: "Repeat same quote" })).toBeInTheDocument();
+  });
+
+  it("flags an implausible result as not saved instead of a personal best", () => {
+    renderCard({ stats: { ...STATS, wpm: 6000, cpm: 30000 }, personalBest: { previousBest: null } });
+    expect(screen.getByText(/Not saved/)).toBeInTheDocument();
+    expect(screen.queryByText("New personal best!")).toBeNull();
+  });
 });

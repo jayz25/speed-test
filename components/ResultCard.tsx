@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TestStats } from "../utils/calculateStats";
+import { isPlausibleWpm, MAX_PLAUSIBLE_WPM, type TestStats } from "../utils/calculateStats";
 import { getGrade } from "../utils/getGrade";
 import { describePb, formatConfig, type TestConfigKey } from "../utils/history";
 import { formatResultText } from "../utils/shareText";
@@ -73,7 +73,8 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
   }, [onReset]);
 
   const grade = getGrade(wpm, accuracy);
-  const pb = personalBest ? describePb(wpm, personalBest.previousBest) : null;
+  const isPlausible = isPlausibleWpm(wpm);
+  const pb = isPlausible && personalBest ? describePb(wpm, personalBest.previousBest) : null;
 
   return (
     <div className="flex flex-col gap-7 motion-safe:animate-fade-in">
@@ -81,7 +82,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         <div className="flex flex-wrap items-end gap-10">
           <div className="flex flex-col gap-1">
             <span className={LABEL}>Words / min</span>
-            <span className="text-[112px] font-extrabold leading-[0.9] tracking-tighter text-ink">{wpm}</span>
+            <span className="break-all text-[112px] font-extrabold leading-[0.9] tracking-tighter text-ink">{wpm}</span>
           </div>
           <div className="flex flex-col gap-1 pb-1.5">
             <span className={LABEL}>Accuracy</span>
@@ -92,6 +93,11 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
           </div>
         </div>
         <div className="flex flex-col items-start gap-1.5 pb-2 sm:items-end">
+          {!isPlausible && (
+            <p className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-ink-2">
+              Not saved: over {MAX_PLAUSIBLE_WPM} WPM
+            </p>
+          )}
           {pb && (
             <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-on-ink" : "bg-surface-muted text-ink-2"}`}>
               {pb.label}
@@ -122,7 +128,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         </button>
         <button type="button" onClick={onRepeat} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
           <RotateCcwIcon />
-          Repeat same words
+          {config.mode === "quote" ? "Repeat same quote" : "Repeat same words"}
         </button>
         <button type="button" onClick={handleCopy} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
           {copyStatus === "copied" ? "Copied!" : copyStatus === "failed" ? "Couldn't copy" : "Copy result"}
@@ -139,7 +145,7 @@ function Tile({ label, value, valueClass = "text-ink" }: { label: string; value:
   return (
     <div className={TILE}>
       <dt className={LABEL}>{label}</dt>
-      <dd className={`text-[26px] font-bold tabular-nums ${valueClass}`}>{value}</dd>
+      <dd className={`break-all text-[26px] font-bold tabular-nums ${valueClass}`}>{value}</dd>
     </div>
   );
 }

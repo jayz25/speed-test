@@ -18,6 +18,8 @@ describe("TypingTest quote mode", () => {
   });
   beforeEach(() => localStorage.clear());
 
+  afterEach(() => vi.restoreAllMocks());
+
   const setup = () => {
     const store = makeStore();
     store.dispatch(setSetting({ mode: "quote", quoteLength: "short" }));
@@ -36,6 +38,10 @@ describe("TypingTest quote mode", () => {
   });
 
   it("finishes on the last word, shows the source on the result and records a quote run", async () => {
+    // user-event types instantly; advance the clock a minute per read so the run is human-paced
+    // (implausibly fast runs are deliberately not recorded)
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => (now += 60_000));
     const { store, user } = setup();
     await screen.findByText(/^0\/\d+$/);
     const { wordsCollection, source } = store.getState().paragraph;

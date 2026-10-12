@@ -29,6 +29,13 @@ const EMPTY_STATS: TestStats = {
   missedChars: 0,
 };
 
+/** Faster than any human has sustained; above it a result is treated as injected text, not typing. */
+export const MAX_PLAUSIBLE_WPM = 300;
+
+export function isPlausibleWpm(wpm: number): boolean {
+  return wpm <= MAX_PLAUSIBLE_WPM;
+}
+
 export function calculateAccuracy(state: EngineState): number {
   const total = state.correctKeystrokes + state.incorrectKeystrokes;
   if (total === 0) return 100;

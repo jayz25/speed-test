@@ -3,7 +3,9 @@ import { useDispatch } from "react-redux";
 import { addStatCall, isStatsApiEnabled } from "../../redux/stat";
 import { AppDispatch } from "../../types/types";
 
-export const MAX_PLAUSIBLE_WPM = 300;
+import { isPlausibleWpm } from "../calculateStats";
+
+export { MAX_PLAUSIBLE_WPM } from "../calculateStats";
 
 interface PostResultArgs {
   isFinished: boolean;
@@ -24,7 +26,7 @@ export function usePostResultOnFinish({ isFinished, roundId, wpm, cpm, accuracy,
     if (!isFinished || !isStatsApiEnabled) return;
     if (postedRound.current === roundId) return;
     postedRound.current = roundId;
-    if (wpm > MAX_PLAUSIBLE_WPM) return;
+    if (!isPlausibleWpm(wpm)) return;
     dispatch(addStatCall({ words: wpm, chars: cpm, accuracy, user }));
   }, [isFinished, roundId, wpm, cpm, accuracy, user, dispatch]);
 }

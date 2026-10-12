@@ -36,4 +36,9 @@ describe("useRecordResult", () => {
     expect(result.current).toEqual({ previousBest: 50 });
     expect(loadHistory()).toHaveLength(2);
   });
+
+  it("does not save an implausible result (e.g. text injected in one event)", () => {
+    renderHook(() => useRecordResult({ ...base, stats: stats(5000) }));
+    expect(loadHistory()).toHaveLength(0);
+  });
 });

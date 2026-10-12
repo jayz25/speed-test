@@ -1,4 +1,5 @@
 import type { TestMode } from "../redux/settings";
+import { isPlausibleWpm } from "./calculateStats";
 import type { WordMode } from "./getWords";
 import { QUOTE_LENGTHS, type QuoteLength } from "./quotes";
 import { HISTORY_KEY, readJSON, writeJSON } from "./storage";
@@ -35,7 +36,7 @@ export const isHistoryEntry = (v: unknown): v is HistoryEntry => {
     typeof o.mode === "string" && MODES.includes(o.mode) &&
     typeof o.difficulty === "string" && DIFFICULTIES.includes(o.difficulty) &&
     typeof o.limit === "number" &&
-    typeof o.wpm === "number" &&
+    typeof o.wpm === "number" && isPlausibleWpm(o.wpm) &&
     typeof o.rawWpm === "number" &&
     typeof o.accuracy === "number"
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { TestStats } from "../calculateStats";
+import { isPlausibleWpm, type TestStats } from "../calculateStats";
 import {
   appendEntry, createHistoryEntry, getPersonalBest, loadHistory, saveHistory, type TestConfigKey,
 } from "../history";
@@ -13,7 +13,7 @@ interface RecordResultArgs {
 }
 
 /**
- * Appends the finished test to the stored history exactly once per round.
+ * Appends the finished test to the stored history exactly once per round (plausible speeds only).
  * Returns the personal best from *before* this run (`null` = first run), or
  * `undefined` while the test is not finished.
  */
@@ -28,7 +28,8 @@ export function useRecordResult({ isFinished, roundId, stats, config }: RecordRe
     const key = { mode, limit, difficulty };
     const history = loadHistory();
     setResult({ roundId, previousBest: getPersonalBest(history, key) });
-    saveHistory(appendEntry(history, createHistoryEntry(key, stats)));
+    // An implausible run (text injected in one event) is shown but never stored or counted as a PB
+    if (isPlausibleWpm(stats.wpm)) saveHistory(appendEntry(history, createHistoryEntry(key, stats)));
   }, [isFinished, roundId, stats, mode, limit, difficulty]);
 
   if (!isFinished || result?.roundId !== roundId) return undefined;

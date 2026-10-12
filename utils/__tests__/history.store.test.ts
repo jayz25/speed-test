@@ -44,3 +44,10 @@ describe("history store", () => {
     vi.restoreAllMocks();
   });
 });
+
+describe("history validation", () => {
+  it("drops stored entries faster than humanly possible", () => {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([entry("ok"), { ...entry("junk"), wpm: 6180000 }]));
+    expect(getHistorySnapshot().map((e) => e.id)).toEqual(["ok"]);
+  });
+});
