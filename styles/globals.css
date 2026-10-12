@@ -7,29 +7,36 @@
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
+/* Colour tokens: light-dark(light, dark) resolves from `color-scheme` on :root, which follows
+   the OS unless the theme toggle sets data-theme (see utils/theme.ts). */
 @theme {
-  --color-bg: #e8eaed;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f6f7f8;
-  --color-surface-sunken: #e3e5e9;
-  --color-nav-track: #dadde2;
-  --color-ink: #16181d;
-  --color-ink-2: #3b404a;
-  --color-muted: #5a606c;
-  --color-pending: #6b7180;
+  --color-bg: light-dark(#e8eaed, #0e1014);
+  --color-surface: light-dark(#ffffff, #171a20);
+  --color-surface-muted: light-dark(#f6f7f8, #1e2128);
+  --color-surface-sunken: light-dark(#e3e5e9, #0b0d10);
+  --color-nav-track: light-dark(#dadde2, #23272f);
+  --color-ink: light-dark(#16181d, #e8eaed);
+  --color-ink-2: light-dark(#3b404a, #c3c7cf);
+  --color-muted: light-dark(#5a606c, #9ba1ac);
+  --color-pending: light-dark(#6b7180, #8a909c);
+  --color-on-ink: light-dark(#ffffff, #0e1014);
+  /* Live WPM tile: dark in both themes (raised above the surface in dark mode) */
+  --color-tile: light-dark(#16181d, #262b34);
+  --color-on-tile: light-dark(#ffffff, #f1f2f4);
   --color-on-dark-muted: #a3a9b4;
-  --color-border: #d5d8dd;
-  --color-divider: #eceef1;
-  --color-kbd-bg: #f1f2f4;
-  --color-accent: #ff5a1f;
-  --color-accent-soft: #ff5a1f1f;
-  --color-error: #c2410c;
-  --color-error-extra: #9a3412;
+  --color-border: light-dark(#d5d8dd, #2c313a);
+  --color-divider: light-dark(#eceef1, #22262d);
+  --color-kbd-bg: light-dark(#f1f2f4, #23272f);
+  --color-accent: light-dark(#ff5a1f, #ff6a33);
+  --color-accent-soft: light-dark(#ff5a1f1f, #ff6a3329);
+  --color-error: light-dark(#c2410c, #fb923c);
+  --color-error-extra: light-dark(#9a3412, #fdba74);
 
   --shadow-card:
-    0 1px 2px rgba(22, 24, 29, 0.06), 0 12px 32px -12px rgba(22, 24, 29, 0.12);
-  --shadow-caret-before: inset 3px 0 0 #ff5a1f;
-  --shadow-caret-after: inset -3px 0 0 #ff5a1f;
+    0 1px 2px light-dark(rgba(22, 24, 29, 0.06), rgba(0, 0, 0, 0.4)),
+    0 12px 32px -12px light-dark(rgba(22, 24, 29, 0.12), rgba(0, 0, 0, 0.6));
+  --shadow-caret-before: inset 3px 0 0 var(--color-accent);
+  --shadow-caret-after: inset -3px 0 0 var(--color-accent);
 
   --radius-card: 20px;
 
@@ -63,7 +70,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-border, currentcolor);
   }
 }
 
@@ -72,6 +79,20 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: light dark;
+  }
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-bg);
+  }
+
   /* Tailwind v4 dropped the v3 pointer cursor on buttons */
   button:not(:disabled),
   [role='button']:not(:disabled) {

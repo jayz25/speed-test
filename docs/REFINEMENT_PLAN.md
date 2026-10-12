@@ -819,8 +819,17 @@ var, nothing network-related happens (check the Network tab).
   `useFocusMode` (adjust-state-during-render), `useRecordResult` (result keyed by `roundId` and derived on
   return instead of reset in the effect) were rewritten; `YourResults` mount read and the `TypingTest`
   sampler mirror got a commented `eslint-disable-next-line` (see Parking lot). Prod `npm audit` 3 → 1._
-- [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
+- [x] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
   (requires replacing hard-coded `slate-*`/`#FFD523` with tokens first).
+  _Done (as a **dark** theme: the Instrument Panel redesign had already made the app light and
+  tokenised). Preceded by the Tailwind 4 migration. Every `@theme` colour is `light-dark()`;
+  `color-scheme` on `:root` follows the OS, `data-theme` pins it. `utils/theme.ts` +
+  `ThemeToggle` (system → light → dark, `speedtype:v1:theme`), inline head script in `_document`
+  (no flash), per-scheme `theme-color` metas. New tokens `on-ink` (replaces `text-white`) and
+  `tile`/`on-tile` (live WPM tile stays dark in both themes). Dark palette checked for WCAG AA
+  (all pairs ≥ the light theme's). Header padding is now `px-4` below `sm` (the toggle overflowed
+  375px). `e2e/theme.spec.ts` covers OS default, cycling, and pre-hydration apply. Vitest/tsc now
+  also ignore `.claude/**` (agent worktrees)._
 - [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
 - [ ] **9.5 Harden the result-submit path** — **blocked: do not start until a
   stats API actually exists and its owner is known.** Today
@@ -864,4 +873,5 @@ Add things you noticed but didn't fix here, one line each, with file:line.
 
 - `components/TypingTest.tsx:95` — live WPM sampler mirrors `samplesRef` into `liveSamples` state from an effect (`react-hooks/set-state-in-effect` disabled); could keep samples in state only, or use `useSyncExternalStore`.
 - `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
+- `components/SettingsPanel.tsx` / `components/LiveStatsPanel.tsx:32` — below `md` the settings card and live stats column don't fill the width (`max-w-[280px]` etc.), leaving a ragged right edge at 375px; pre-existing.
 - `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest). Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob`. (`source-map-js` and the Tailwind 3 chain were fixed by `npm audit fix` + Tailwind 4.)

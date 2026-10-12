@@ -73,9 +73,11 @@ outside the scope of what you're already touching — note it in the
 - Use the design tokens defined in `styles/globals.css` `@theme` (Tailwind 4, CSS-first; there is
   no `tailwind.config.js`) (see `docs/SPEEDTYPE_REDESIGN_SPEC.md` §1):
   `bg`, `surface`, `surface-muted`, `surface-sunken`, `nav-track`, `ink`, `ink-2`,
-  `muted`, `pending`, `on-dark-muted`, `border`, `divider`, `kbd-bg`, `accent`,
-  `accent-soft`, `error`, `error-extra`. Never use ad-hoc hex colors or arbitrary
-  utility values for semantic colors.
+  `muted`, `pending`, `on-ink` (text on `bg-ink`), `tile`/`on-tile`/`on-dark-muted` (live WPM
+  tile), `border`, `divider`, `kbd-bg`, `accent`, `accent-soft`, `error`, `error-extra`.
+  Never use ad-hoc hex colors, `text-white`/`bg-black`, or arbitrary utility values for
+  semantic colors. Every token is `light-dark(<light>, <dark>)`: when adding one, give
+  both values and check WCAG AA contrast in both themes.
 
 ## File organization
 

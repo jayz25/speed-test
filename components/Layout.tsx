@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import ThemeToggle from './ThemeToggle'
 
 type Props = {
   children?: ReactNode
@@ -25,11 +26,12 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
         <meta charSet="utf-8" />
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <meta name="description" content={DESCRIPTION} />
-        <meta name="theme-color" content="#E8EAED" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#E8EAED" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1014" />
       </Head>
       <header
         data-focus-fade
-        className='transition-opacity duration-300 max-w-[1360px] mx-auto w-full px-8 py-6 flex items-center justify-between gap-6'
+        className='transition-opacity duration-300 max-w-[1360px] mx-auto w-full px-4 sm:px-8 py-6 flex items-center justify-between gap-3 sm:gap-6'
       >
         <Link
           href="/"
@@ -37,6 +39,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
         >
           Speed<span className="text-accent">Type</span>
         </Link>
+        <div className="flex items-center gap-2">
         <nav aria-label="Main" className="flex gap-1 p-1 rounded-xl bg-nav-track">
           {NAV_LINKS.map(({ href, label }) => {
             const isActive = pathname === href
@@ -54,6 +57,8 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
             )
           })}
         </nav>
+        <ThemeToggle />
+        </div>
       </header>
 
       <div className="flex-1 flex flex-col w-full">

@@ -30,7 +30,7 @@ export default function LiveStatsPanel({ stats, series }: LiveStatsPanelProps) {
   const show = (v: number | undefined, suffix = "") => (stats && v !== undefined ? `${v}${suffix}` : EMPTY);
   return (
     <aside aria-label="Live stats" className="flex basis-[240px] grow shrink max-w-[280px] flex-col gap-3">
-      <div className="flex flex-col gap-1.5 rounded-card bg-ink p-6 text-white">
+      <div className="flex flex-col gap-1.5 rounded-card bg-tile p-6 text-on-tile">
         <span className={`${LABEL} text-on-dark-muted`}>Words / min</span>
         <span aria-live="off" className="text-[88px] leading-none font-extrabold tracking-[-0.04em]">
           {show(stats?.wpm)}

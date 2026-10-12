@@ -38,7 +38,7 @@ export const GlobalStats = () => {
         <button
           type="button"
           onClick={() => dispatch(getStatCall())}
-          className="px-3 py-1 rounded-lg bg-accent text-white font-semibold hover:opacity-90 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+          className="px-3 py-1 rounded-lg bg-accent text-on-ink font-semibold hover:opacity-90 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
         >
           Retry
         </button>

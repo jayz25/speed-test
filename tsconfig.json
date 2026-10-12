@@ -29,6 +29,7 @@
   ],
   "exclude": [
     ".worktrees",
+    ".claude",
     "node_modules"
   ]
 }

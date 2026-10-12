@@ -43,7 +43,7 @@ function SegmentedGroup<T extends string | number>({ label, options, value, onCh
           type="button"
           aria-pressed={value === o}
           onClick={() => onChange(o)}
-          className={`${OPTION_BASE} rounded-[9px] ${value === o ? "bg-ink font-semibold text-white" : "font-medium text-ink-2"}`}
+          className={`${OPTION_BASE} rounded-[9px] ${value === o ? "bg-ink font-semibold text-on-ink" : "font-medium text-ink-2"}`}
         >
           {format(o)}
         </button>

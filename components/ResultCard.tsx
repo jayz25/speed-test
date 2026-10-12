@@ -90,7 +90,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         </div>
         <div className="flex flex-col items-start gap-1.5 pb-2 sm:items-end">
           {pb && (
-            <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-white" : "bg-surface-muted text-ink-2"}`}>
+            <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-on-ink" : "bg-surface-muted text-ink-2"}`}>
               {pb.label}
             </p>
           )}
@@ -112,7 +112,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
       </dl>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-5">
-        <button type="button" onClick={onReset} className={`${BUTTON_BASE} bg-ink text-white hover:bg-ink-2`}>
+        <button type="button" onClick={onReset} className={`${BUTTON_BASE} bg-ink text-on-ink hover:bg-ink-2`}>
           Next test
           <ArrowRightIcon />
         </button>

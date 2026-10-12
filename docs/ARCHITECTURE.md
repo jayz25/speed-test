@@ -16,7 +16,7 @@ app works standalone with no backend.
 | `/` | `pages/index.tsx` | Renders `TypingTest` — the main app. |
 | `/stats` | `pages/stats/index.tsx` | "Your results" (`YourResults`: averages, personal bests, last 20 runs from localStorage history, Clear history) and, only if `NEXT_PUBLIC_API_BASE_URL` is set, "Global leaderboard" (`GlobalStats`). |
 | `pages/_app.tsx` | — | Wraps every page in the Redux `<Provider>`, loads `Schibsted Grotesk` (UI) and `IBM Plex Mono` (typing area) fonts, and hydrates/persists `state.settings` after mount. |
-| `pages/_document.tsx` | — | Sets `<Html lang="en">`. |
+| `pages/_document.tsx` | — | Sets `<Html lang="en">` and inlines `THEME_INIT_SCRIPT` in `<head>` so a stored explicit theme applies before first paint. |
 
 ## Core flow: the typing test
 
@@ -80,6 +80,7 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | `hooks/useTypingEngine.ts` | `useReducer` wrapper around the engine. |
 | `hooks/useCaret.ts` | Caret positioned from a ref to the active letter; scrolls the words container by lines (3 visible); ResizeObserver + `document.fonts.ready`. |
 | `hooks/useFocusMode.ts` | While a test runs, sets `data-focus-mode` on `<html>` so `[data-focus-fade]` chrome fades (CSS in `globals.css`); mouse move reveals it. |
+| `theme.ts` | Colour theme preference (`system`/`light`/`dark`) at `speedtype:v1:theme`: a tiny external store (`getThemePreference`/`setThemePreference`/`subscribeTheme`) for `useSyncExternalStore`, `applyThemePreference` (sets/removes `data-theme` on `<html>`), and the dependency-free `THEME_INIT_SCRIPT`. |
 | `motion.ts` | `prefersReducedMotion()` helper (caret transition, `RenderStat`). |
 | `hooks/useTimer.ts` | Timer hook, `direction` `"down"` (time mode) or `"up"` (words mode) (100ms tick, derived from `performance.now()`): `start()`, `stop()`, `reset(newTimeout?)`, `seconds`, `elapsedSeconds`, `elapsedMs()`. Guards against double-start; cleans up its interval on unmount. |
 
@@ -102,7 +103,8 @@ Top-level `utils/*.ts` files are pure and unit-tested (`utils/__tests__/`);
 | `LiveAnnouncer.tsx`, `TypingAreaSkeleton.tsx` | Visually hidden polite live region; loading placeholder lines. |
 | `RenderStat.tsx` | Active — count-up animation for a single stat. |
 | `GlobalStats.tsx` | Active — leaderboard list for `/stats`, handles the "API not configured" state. |
-| `Layout.tsx` | Active — page shell: header with logo + Test/Stats nav, footer, default title, description and theme-color meta. |
+| `Layout.tsx` | Active — page shell: header with logo + Test/Stats nav + `ThemeToggle`, footer, default title, description and per-scheme theme-color meta. |
+| `ThemeToggle.tsx` | Header button cycling system → light → dark (`utils/theme.ts`). |
 
 ## Types (`types/types.ts`)
 
@@ -132,7 +134,9 @@ types in `redux/settings.ts`.
 - `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.
 - `next.config.mjs`: `reactStrictMode: true`, `poweredByHeader: false`.
 - Styling: Tailwind CSS 4 via `@tailwindcss/postcss` (`postcss.config.js`). Config is CSS-first:
-  design tokens live in `@theme` in `styles/globals.css`; fonts use `@theme inline` because
+  design tokens live in `@theme` in `styles/globals.css`, each as `light-dark(light, dark)`.
+  `:root` has `color-scheme: light dark` (follows the OS); `data-theme="light|dark"` on `<html>`
+  pins it, so no component needs `dark:` variants. Fonts use `@theme inline` because
   next/font sets `--font-schibsted` / `--font-plex-mono` on the app wrapper, not `:root`.
 - `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
   graft instead of whole-file reads/greps on indexed source. See the graft
