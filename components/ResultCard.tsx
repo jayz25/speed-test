@@ -2,23 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TestStats } from "../utils/calculateStats";
+import { INVALID_REASON_LABELS, type InvalidReason } from "../utils/resultValidity";
 import { getGrade } from "../utils/getGrade";
-import { describePb, type TestConfigKey } from "../utils/history";
+import { describePb, formatConfig, type TestConfigKey } from "../utils/history";
 import { formatResultText } from "../utils/shareText";
 import type { WpmSample } from "../utils/wpmSamples";
 import { ArrowRightIcon, RotateCcwIcon } from "./icons";
 import WpmChart from "./WpmChart";
 
 const BUTTON_BASE =
-  "flex min-h-[48px] items-center gap-2.5 rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+  "flex min-h-[48px] items-center gap-2.5 rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent";
 const LABEL = "text-xs font-semibold uppercase tracking-[0.08em] text-muted";
 const TILE = "flex flex-col gap-1 rounded-[14px] bg-surface-muted px-[18px] py-4";
 
 const COPY_FEEDBACK_MS = 1500;
 type CopyStatus = "idle" | "copied" | "failed";
 
-/** "30 seconds · mixed · punctuation · numbers" / "25 words · hard". */
+/** "30 seconds · mixed · punctuation · numbers" / "25 words · hard" / "quote · medium". */
 export function formatSummary(config: TestConfigKey, options: { punctuation: boolean; numbers: boolean }): string {
+  if (config.mode === "quote") return formatConfig(config);
   const length = config.mode === "time" ? `${config.limit} seconds` : `${config.limit} words`;
   return [length, config.difficulty, options.punctuation && "punctuation", options.numbers && "numbers"]
     .filter(Boolean)
@@ -35,14 +37,18 @@ interface ResultCardProps {
   durationSeconds: number;
   /** Mode / limit / difficulty of this test (used in the copied text). */
   config: TestConfigKey;
+  /** Attribution of the quote that was typed (quote mode only). */
+  source?: string | null;
   /** Punctuation / numbers toggles that were on for this test (shown in the summary). */
   options: { punctuation: boolean; numbers: boolean };
   onReset: () => void;
   /** Restart with the same words. */
   onRepeat: () => void;
+  /** Set when the run is not saved (too short / too fast); replaces the personal-best badge. */
+  invalidReason?: InvalidReason | null;
 }
 
-export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, options, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, source, options, onReset, onRepeat, invalidReason = null }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,7 +76,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
   }, [onReset]);
 
   const grade = getGrade(wpm, accuracy);
-  const pb = personalBest ? describePb(wpm, personalBest.previousBest) : null;
+  const pb = !invalidReason && personalBest ? describePb(wpm, personalBest.previousBest) : null;
 
   return (
     <div className="flex flex-col gap-7 motion-safe:animate-fade-in">
@@ -78,7 +84,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         <div className="flex flex-wrap items-end gap-10">
           <div className="flex flex-col gap-1">
             <span className={LABEL}>Words / min</span>
-            <span className="text-[112px] font-extrabold leading-[0.9] tracking-[-0.05em] text-ink">{wpm}</span>
+            <span className="break-all text-[112px] font-extrabold leading-[0.9] tracking-tighter text-ink">{wpm}</span>
           </div>
           <div className="flex flex-col gap-1 pb-1.5">
             <span className={LABEL}>Accuracy</span>
@@ -89,12 +95,18 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
           </div>
         </div>
         <div className="flex flex-col items-start gap-1.5 pb-2 sm:items-end">
+          {invalidReason && (
+            <p className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-ink-2">
+              {INVALID_REASON_LABELS[invalidReason]}
+            </p>
+          )}
           {pb && (
-            <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-white" : "bg-surface-muted text-ink-2"}`}>
+            <p className={`rounded-full px-3 py-1 text-sm font-semibold ${pb.isNew ? "bg-ink text-on-ink" : "bg-surface-muted text-ink-2"}`}>
               {pb.label}
             </p>
           )}
           <span className="text-sm text-muted">{formatSummary(config, options)}</span>
+          {config.mode === "quote" && source && <span className="text-sm text-muted">{`\u2014 ${source}`}</span>}
           <span className="text-sm text-muted">
             Raw {rawWpm} WPM · {durationSeconds}s · Grade <span className="font-semibold text-ink">{grade}</span>
           </span>
@@ -112,13 +124,13 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
       </dl>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-divider pt-5">
-        <button type="button" onClick={onReset} className={`${BUTTON_BASE} bg-ink text-white hover:bg-ink-2`}>
+        <button type="button" onClick={onReset} className={`${BUTTON_BASE} bg-ink text-on-ink hover:bg-ink-2`}>
           Next test
           <ArrowRightIcon />
         </button>
         <button type="button" onClick={onRepeat} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
           <RotateCcwIcon />
-          Repeat same words
+          {config.mode === "quote" ? "Repeat same quote" : "Repeat same words"}
         </button>
         <button type="button" onClick={handleCopy} className={`${BUTTON_BASE} border border-border bg-surface text-ink hover:bg-surface-muted`}>
           {copyStatus === "copied" ? "Copied!" : copyStatus === "failed" ? "Couldn't copy" : "Copy result"}
@@ -135,7 +147,7 @@ function Tile({ label, value, valueClass = "text-ink" }: { label: string; value:
   return (
     <div className={TILE}>
       <dt className={LABEL}>{label}</dt>
-      <dd className={`text-[26px] font-bold tabular-nums ${valueClass}`}>{value}</dd>
+      <dd className={`break-all text-[26px] font-bold tabular-nums ${valueClass}`}>{value}</dd>
     </div>
   );
 }

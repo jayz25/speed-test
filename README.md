@@ -1,6 +1,6 @@
 # SpeedType — Typing Speed Test
 
-A minimal, focused typing speed test built on Next.js 15 + React 19 with Redux Toolkit for state and Tailwind CSS for styling.
+A minimal, focused typing speed test built on Next.js 16 + React 19 with Redux Toolkit for state and Tailwind CSS for styling.
 
 ## Features
 

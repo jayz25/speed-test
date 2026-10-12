@@ -29,6 +29,18 @@ const EMPTY_STATS: TestStats = {
   missedChars: 0,
 };
 
+/**
+ * Above this a result is treated as injected text (one-event insertText, synthetic input), not
+ * typing. Deliberately generous: the fastest recorded human burst is ~319 WPM over 15s, and short
+ * tests (10 words, a short quote) are exactly where bursts happen. Injected text scores in the
+ * thousands or millions, so a high cap loses nothing.
+ */
+export const MAX_PLAUSIBLE_WPM = 500;
+
+export function isPlausibleWpm(wpm: number): boolean {
+  return wpm <= MAX_PLAUSIBLE_WPM;
+}
+
 export function calculateAccuracy(state: EngineState): number {
   const total = state.correctKeystrokes + state.incorrectKeystrokes;
   if (total === 0) return 100;

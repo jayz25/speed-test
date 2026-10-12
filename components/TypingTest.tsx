@@ -8,13 +8,16 @@ import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
 import { useFocusMode } from "../utils/hooks/useFocusMode";
 import { useCaret } from "../utils/hooks/useCaret";
+import { useWpmSampler } from "../utils/hooks/useWpmSampler";
+import { useKeystrokeTiming } from "../utils/hooks/useKeystrokeTiming";
+import { getInvalidReason } from "../utils/resultValidity";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
+import { quoteLimit } from "../utils/history";
 import { sanitizePlayerName } from "../utils/playerName";
 import { useTypingEngine } from "../utils/hooks/useTypingEngine";
 import { getWordCounts } from "../utils/typingEngine";
-import { makeSample, WpmSample } from "../utils/wpmSamples";
 import CapsLockAlert from "./CapsLockAlert";
 import LiveAnnouncer from "./LiveAnnouncer";
 import LiveStatsPanel from "./LiveStatsPanel";
@@ -40,15 +43,24 @@ const TypingTest = () => {
   const round = useSelector((state: RootState) => state.paragraph.round);
   const dispatch = useDispatch<AppDispatch>();
 
-  const { mode, timeLimit, wordCount, difficulty, punctuation, numbers } = useSelector((state: RootState) => state.settings);
+  const source = useSelector((state: RootState) => state.paragraph.source);
+
+  const { mode, timeLimit, wordCount, difficulty, quoteLength, punctuation, numbers } = useSelector((state: RootState) => state.settings);
 
   // (Re)generate words whenever a setting changes (and on mount)
   useEffect(() => {
+    if (mode === "quote") {
+      dispatch(loadWords({ quoteLength }));
+      return;
+    }
     dispatch(loadWords({ count: mode === "words" ? wordCount : TIME_MODE_WORDS, mode: difficulty, punctuation, numbers }));
-  }, [dispatch, mode, wordCount, difficulty, punctuation, numbers, timeLimit]);
+  }, [dispatch, mode, wordCount, difficulty, quoteLength, punctuation, numbers, timeLimit]);
 
-  const isWordsMode = mode === "words";
-  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isWordsMode, round });
+  // Words and quote mode count up and finish when the last word is completed; time mode counts down.
+  const isCountUpMode = mode !== "time";
+  const configLimit = mode === "quote" ? quoteLimit(quoteLength) : isCountUpMode ? wordCount : timeLimit;
+  const testConfig = { mode, limit: configLimit, difficulty: mode === "quote" ? "mixed" : difficulty } as const;
+  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isCountUpMode, round });
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
@@ -59,12 +71,13 @@ const TypingTest = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [isTabArmed, setIsTabArmed] = useState(false);
   const targetRef = useRef<HTMLSpanElement>(null);
+  const caretRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
   const didKeyDownBackspace = useRef(false);
 
-  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isWordsMode ? "up" : "down");
+  const { seconds, elapsedSeconds, start, stop: stopTimer, reset, elapsedMs } = useTimer(timeLimit, isCountUpMode ? "up" : "down");
 
   // Computed stats
   // Live stats are recomputed once per timer tick (or new test), not per keystroke
@@ -76,32 +89,8 @@ const TypingTest = () => {
 
   // Time mode: game over when the countdown reaches 0 (words mode ends in the engine)
   useEffect(() => {
-    if (!isWordsMode && seconds === 0 && isStarted) finish();
-  }, [isWordsMode, seconds, isStarted, finish]);
-
-  // Sample WPM / raw WPM / mistakes once per elapsed second while running (for the result chart)
-  const samplesRef = useRef<WpmSample[]>([]);
-  const incorrectAtLastSample = useRef(0);
-  const [finalSamples, setFinalSamples] = useState<readonly WpmSample[]>([]);
-  // Mirror of samplesRef so the live sparkline re-renders when a sample is pushed
-  const [liveSamples, setLiveSamples] = useState<readonly WpmSample[]>([]);
-  const pushSample = useCallback((second: number) => {
-    const last = samplesRef.current[samplesRef.current.length - 1];
-    if (last && last.second >= second) return;
-    samplesRef.current = [...samplesRef.current, makeSample(state, second, incorrectAtLastSample.current)];
-    incorrectAtLastSample.current = state.incorrectKeystrokes;
-  }, [state]);
-
-  useEffect(() => {
-    if (state.status === "idle") {
-      samplesRef.current = [];
-      incorrectAtLastSample.current = 0;
-      setLiveSamples((prev) => (prev.length === 0 ? prev : []));
-    } else if (isStarted && elapsedSeconds >= 1) {
-      pushSample(elapsedSeconds);
-      setLiveSamples((prev) => (prev === samplesRef.current ? prev : samplesRef.current));
-    }
-  }, [state.status, isStarted, elapsedSeconds, pushSample]);
+    if (!isCountUpMode && seconds === 0 && isStarted) finish();
+  }, [isCountUpMode, seconds, isStarted, finish]);
 
   // The result is derived (not stored) so it is already correct in the first finished render,
   // which the post/record hooks rely on. Engine state is stable once finished.
@@ -111,38 +100,50 @@ const TypingTest = () => {
     [isFinished, state, finalElapsedMs],
   );
 
-  // Freeze the clock and finish the chart samples once the engine reports finished
+  // Too-short or implausibly fast runs are shown but never saved, posted or counted as a PB
+  const invalidReason = isFinished
+    ? getInvalidReason({ wpm: finalStats.wpm, rawWpm: finalStats.rawWpm, wordCount: words.length, elapsedMs: finalElapsedMs })
+    : null;
+  const isValid = invalidReason === null;
+  const keyTiming = useKeystrokeTiming();
+
+  // Sample WPM / raw WPM / mistakes once per elapsed second (live sparkline + result chart)
+  const finalSecond = isFinished ? Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)) : null;
+  const samples = useWpmSampler(state, elapsedSeconds, finalSecond);
+
+  // Freeze the clock once the engine reports finished
   useEffect(() => {
-    if (!isFinished) return;
-    stopTimer();
-    pushSample(Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)));
-    setFinalSamples(samplesRef.current);
-  }, [isFinished, finalElapsedMs, stopTimer, pushSample]);
+    if (isFinished) stopTimer();
+  }, [isFinished, stopTimer]);
 
   const [playerName] = usePlayerName();
 
   usePostResultOnFinish({
-    isFinished, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
+    isFinished, isValid, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
   });
 
   const personalBest = useRecordResult({
     isFinished,
+    isValid,
     roundId: state.round,
     stats: finalStats,
-    config: { mode, limit: isWordsMode ? wordCount : timeLimit, difficulty },
+    config: testConfig,
+    getKeyTiming: keyTiming.getStats,
   });
 
   useCaret({
-    boxRef, targetRef,
-    deps: [activeWordIndex, activeLetterIndex, words, round, isFocused, isFinished],
+    boxRef, targetRef, caretRef,
+    resetKey: state.round,
+    deps: [activeWordIndex, activeLetterIndex, words, isFocused, isFinished],
   });
 
   // Reset view state whenever the word list changes (engine resets itself)
   useEffect(() => {
+    keyTiming.reset();
     if (words.length > 0) {
       textInput.current?.focus();
     }
-  }, [words, round]);
+  }, [words, round, keyTiming]);
 
   // The input is autoFocus'd; reflect whether it really has focus after mount
   useEffect(() => {
@@ -152,7 +153,7 @@ const TypingTest = () => {
   // A settings change restarts the test (new words arrive via the effect above)
   useEffect(() => {
     reset(timeLimit);
-  }, [reset, timeLimit, mode, wordCount, difficulty, punctuation, numbers]);
+  }, [reset, timeLimit, mode, wordCount, difficulty, quoteLength, punctuation, numbers]);
 
   const resetTest = useCallback(() => {
     reset(timeLimit);
@@ -181,6 +182,7 @@ const TypingTest = () => {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
+    if (!isFinished) keyTiming.onKeyDown(e.nativeEvent);
 
     if (e.key === "Tab") {
       // Tab + Enter restarts instead of moving focus to the settings
@@ -210,11 +212,12 @@ const TypingTest = () => {
       e.preventDefault();
       submitWord();
     }
-  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord]);
+  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord, keyTiming]);
 
-  const handleKeyUp = useCallback(() => {
+  const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     didKeyDownBackspace.current = false;
-  }, []);
+    keyTiming.onKeyUp(e.nativeEvent);
+  }, [keyTiming]);
 
   // Printable characters (and soft-keyboard backspace) arrive here so mobile keyboards,
   // which send key "Unidentified" on keydown, work as well as desktop ones.
@@ -264,13 +267,13 @@ const TypingTest = () => {
   if (isFinished) {
     announcement = `Test complete. ${finalStats.wpm} words per minute, ${finalStats.accuracy} percent accuracy.`;
   } else if (isStarted) {
-    announcement = !isWordsMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
+    announcement = !isCountUpMode && seconds === WARNING_SECONDS ? `${WARNING_SECONDS} seconds left` : "Test started";
   }
 
   const remainingSeconds = Math.ceil(Math.max(0, seconds));
   const timeLabel = `${Math.floor(remainingSeconds / SECONDS_PER_MINUTE)}:${String(remainingSeconds % SECONDS_PER_MINUTE).padStart(2, "0")}`;
   const wordIndex = Math.min(activeWordIndex, words.length);
-  const timerRow = isWordsMode
+  const timerRow = isCountUpMode
     ? { label: `${wordIndex}/${words.length}`, goal: `${elapsedSeconds}s`, progress: words.length > 0 ? wordIndex / words.length : 0 }
     : { label: timeLabel, goal: `${timeLimit}s`, progress: timeLimit > 0 ? elapsedSeconds / timeLimit : 0 };
 
@@ -282,7 +285,7 @@ const TypingTest = () => {
     errors: state.incorrectKeystrokes,
     words: getWordCounts(state).wordsMatched,
   };
-  const series = (isFinished ? finalSamples : liveSamples).map((sample) => sample.wpm);
+  const series = samples.map((sample) => sample.wpm);
 
   return (
     <>
@@ -291,18 +294,20 @@ const TypingTest = () => {
         <SettingsPanel isDimmed={isStarted} />
         <section
           aria-label="Typing test"
-          className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
+          className="flex min-w-0 shrink grow-999 basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
         >
           {isFinished ? (
             <ResultCard
               stats={finalStats}
-              samples={finalSamples}
+              samples={samples}
               personalBest={personalBest}
-              config={{ mode, limit: isWordsMode ? wordCount : timeLimit, difficulty }}
+              config={testConfig}
+              source={source}
               options={{ punctuation, numbers }}
-              durationSeconds={isWordsMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
+              durationSeconds={isCountUpMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
               onReset={resetTest}
               onRepeat={repeatTest}
+              invalidReason={invalidReason}
             />
           ) : (
             <>
@@ -315,6 +320,7 @@ const TypingTest = () => {
                 isIdle={state.status === "idle"}
                 boxRef={boxRef}
                 targetRef={targetRef}
+                caretRef={caretRef}
                 onClick={handleContainerClick}
                 onMouseDown={handleContainerMouseDown}
               >
@@ -339,6 +345,7 @@ const TypingTest = () => {
                   aria-label="Type the words shown"
                 />
               </TypingArea>
+              {mode === "quote" && source && <p className="text-sm text-muted">{`\u2014 ${source}`}</p>}
               <div className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-5">
                 <button
                   type="button"

@@ -16,7 +16,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   <Provider store={fakeStore as never}>{children}</Provider>
 );
 
-const base = { isFinished: true, roundId: 1, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
+const base = { isFinished: true, isValid: true, roundId: 1, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
 
 describe("usePostResultOnFinish", () => {
   beforeEach(() => addStatCall.mockClear());
@@ -34,8 +34,8 @@ describe("usePostResultOnFinish", () => {
     expect(addStatCall).not.toHaveBeenCalled();
   });
 
-  it("skips implausible WPM", () => {
-    renderHook(() => usePostResultOnFinish({ ...base, wpm: 301 }), { wrapper });
+  it("skips invalid results (too short or too fast)", () => {
+    renderHook(() => usePostResultOnFinish({ ...base, isValid: false }), { wrapper });
     expect(addStatCall).not.toHaveBeenCalled();
   });
 

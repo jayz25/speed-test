@@ -9,11 +9,13 @@ export const FOCUS_MODE_ATTR = "data-focus-mode";
  */
 export function useFocusMode(isRunning: boolean): boolean {
   const [isRevealed, setIsRevealed] = useState(false);
-  const isActive = isRunning && !isRevealed;
-
-  useEffect(() => {
+  // Hide the chrome again whenever a new run starts (adjust-state-during-render)
+  const [wasRunning, setWasRunning] = useState(isRunning);
+  if (wasRunning !== isRunning) {
+    setWasRunning(isRunning);
     if (isRunning) setIsRevealed(false);
-  }, [isRunning]);
+  }
+  const isActive = isRunning && !isRevealed;
 
   useEffect(() => {
     if (!isRunning) return;

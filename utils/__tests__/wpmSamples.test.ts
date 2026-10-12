@@ -1,5 +1,5 @@
 import { createEngineState, engineReducer, type EngineAction } from "../typingEngine";
-import { getAxisMax, makeSample, summarizeSamples, type WpmSample } from "../wpmSamples";
+import { appendSample, EMPTY_SAMPLER, getAxisMax, makeSample, summarizeSamples, type WpmSample } from "../wpmSamples";
 
 const type = (text: string): EngineAction[] => Array.from(text, (char) => ({ type: "typeChar", char }));
 const state = (...a: EngineAction[]) => a.reduce(engineReducer, createEngineState(["hello", "world"]));
@@ -43,5 +43,26 @@ describe("summarizeSamples", () => {
     expect(text).toContain("ended at 50 WPM");
     expect(text).toContain("peaked at 50 WPM");
     expect(text).toContain("1 of 2 seconds");
+  });
+});
+
+describe("appendSample", () => {
+  it("appends a sample and remembers the incorrect count", () => {
+    const s = state(...type("hx"));
+    const next = appendSample(EMPTY_SAMPLER, s, 1);
+    expect(next.samples).toHaveLength(1);
+    expect(next.samples[0]).toMatchObject({ second: 1, errors: 1 });
+    expect(next.incorrectAtLast).toBe(1);
+  });
+  it("returns the same object when a sample at or after that second exists", () => {
+    const s = state(...type("he"));
+    const once = appendSample(EMPTY_SAMPLER, s, 2);
+    expect(appendSample(once, s, 2)).toBe(once);
+    expect(appendSample(once, s, 1)).toBe(once);
+  });
+  it("counts only errors made since the previous sample", () => {
+    const first = appendSample(EMPTY_SAMPLER, state(...type("hx")), 1);
+    const second = appendSample(first, state(...type("hxxx")), 2);
+    expect(second.samples[1].errors).toBe(2);
   });
 });

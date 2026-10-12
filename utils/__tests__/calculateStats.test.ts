@@ -1,4 +1,4 @@
-import { calculateStats } from "../calculateStats";
+import { calculateStats, isPlausibleWpm, MAX_PLAUSIBLE_WPM } from "../calculateStats";
 import { createEngineState, engineReducer, type EngineAction } from "../typingEngine";
 
 const WORDS = ["the", "cat", "sat"];
@@ -57,5 +57,15 @@ describe("calculateStats", () => {
     expect(stats.correctChars).toBe(2 + 2); // th + c,t
     expect(stats.incorrectChars).toBe(1); // x
     expect(stats.extraChars).toBe(2); // zz
+  });
+});
+
+describe("isPlausibleWpm", () => {
+  it("accepts human speeds up to the limit and rejects anything faster", () => {
+    expect(isPlausibleWpm(0)).toBe(true);
+    // Fastest recorded human burst (319 WPM over 15s) must never be rejected
+    expect(isPlausibleWpm(319)).toBe(true);
+    expect(isPlausibleWpm(MAX_PLAUSIBLE_WPM)).toBe(true);
+    expect(isPlausibleWpm(MAX_PLAUSIBLE_WPM + 1)).toBe(false);
   });
 });

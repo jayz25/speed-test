@@ -19,6 +19,24 @@ export function makeSample(state: EngineState, second: number, previousIncorrect
   return { second, wpm, rawWpm, errors: Math.max(0, state.incorrectKeystrokes - previousIncorrect) };
 }
 
+/** Samples so far plus the incorrect-keystroke count at the last sample (to count per-second errors). */
+export interface SamplerState {
+  readonly samples: readonly WpmSample[];
+  readonly incorrectAtLast: number;
+}
+
+export const EMPTY_SAMPLER: SamplerState = { samples: [], incorrectAtLast: 0 };
+
+/** Appends a sample for `second`; returns `sampler` itself when one at or after that second exists. */
+export function appendSample(sampler: SamplerState, state: EngineState, second: number): SamplerState {
+  const last = sampler.samples[sampler.samples.length - 1];
+  if (last && last.second >= second) return sampler;
+  return {
+    samples: [...sampler.samples, makeSample(state, second, sampler.incorrectAtLast)],
+    incorrectAtLast: state.incorrectKeystrokes,
+  };
+}
+
 /** Y-axis maximum: highest raw WPM rounded up to a multiple of 10 (at least 10). */
 export function getAxisMax(samples: readonly WpmSample[]): number {
   const peak = Math.max(0, ...samples.map((s) => Math.max(s.rawWpm, s.wpm)));

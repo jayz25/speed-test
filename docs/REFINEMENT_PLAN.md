@@ -14,6 +14,11 @@ Last full analysis: 2026-10-05 (against commit `d005c7d`).
 > Not verified: a real phone, and a real stats API (covered by unit tests
 > with mocked `fetch` only).
 > Remaining work: "Optional / later" (9.x) and the "Parking lot".
+> **Update (2026-10-12, branch `jz/next-16`):** 9.2 (Next 16), Tailwind 4 migration, 9.3 (dark
+> theme) and 9.4 (quote mode) done. Prod `npm audit` clean; one dev-only advisory chain remains
+> (Parking lot). Verified: lint, type-check, 286 unit tests (98.0% statements), build, 20/20
+> Playwright E2E, plus a 128-check scripted browser QA (desktop light, 375px dark-OS touch,
+> 820px reduced-motion) with zero console errors/warnings. Not verified: a real phone.
 > The "Current-state findings" section below describes the app **before**
 > the refinement and is kept for history.
 
@@ -810,11 +815,35 @@ var, nothing network-related happens (check the Network tab).
   `npm run build && npm start`; desktop + 375px projects), `e2e/{typing,config,focus}.spec.ts`
   covering Smoke steps 1-7 (reads words from the DOM, real 15s run, no clock mock),
   `npm run test:e2e`, Vitest excludes `e2e/**`, separate `e2e` CI job. No component changes/test ids needed._
-- [ ] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
+- [x] **9.2 Upgrade to Next 16** (aligns with `eslint-config-next@16`); its
   own PR after Phase 4 so tests catch regressions.
-- [ ] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
+  _Done: `next@16.4` + `eslint-config-next@16.4`; `eslint.config.mjs` uses the native flat exports
+  (dropped `FlatCompat` / `@eslint/eslintrc`). Turbopack is now the default for dev and build; `next build`
+  set `tsconfig` `jsx: react-jsx` and rewrote `next-env.d.ts`. The new `react-hooks` compiler rules flagged
+  7 spots: `useTimer` (ref sync moved into an effect; limit reset via adjust-state-during-render),
+  `useFocusMode` (adjust-state-during-render), `useRecordResult` (result keyed by `roundId` and derived on
+  return instead of reset in the effect) were rewritten; `YourResults` mount read and the `TypingTest`
+  sampler mirror got a commented `eslint-disable-next-line` (see Parking lot). Prod `npm audit` 3 → 1._
+- [x] **9.3 Light theme** via CSS variables + `prefers-color-scheme`
   (requires replacing hard-coded `slate-*`/`#FFD523` with tokens first).
-- [ ] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+  _Done (as a **dark** theme: the Instrument Panel redesign had already made the app light and
+  tokenised). Preceded by the Tailwind 4 migration. Every `@theme` colour is `light-dark()`;
+  `color-scheme` on `:root` follows the OS, `data-theme` pins it. `utils/theme.ts` +
+  `ThemeToggle` (system → light → dark, `speedtype:v1:theme`), inline head script in `_document`
+  (no flash), per-scheme `theme-color` metas. New tokens `on-ink` (replaces `text-white`) and
+  `tile`/`on-tile` (live WPM tile stays dark in both themes). Dark palette checked for WCAG AA
+  (all pairs ≥ the light theme's). Header padding is now `px-4` below `sm` (the toggle overflowed
+  375px). `e2e/theme.spec.ts` covers OS default, cycling, and pre-hydration apply. Vitest/tsc now
+  also ignore `.claude/**` (agent worktrees)._
+- [x] **9.4 Quote mode** (type real sentences) — needs a quotes data file.
+  _Done: `utils/quotes.ts` (~70 public-domain ASCII quotes, `getQuoteLength`/`pickQuote`/`quoteToWords`),
+  settings `mode: "quote"` + persisted `quoteLength` (short/medium/long, validated per field), `paragraph`
+  slice stores the quote's `source` (`loadWords({ quoteLength })`; refresh = new quote, repeat = same quote).
+  Reuses the words-mode path (count-up timer, finishes on the last word). `SettingsPanel` has a third
+  "Quote" mode with a Short/Medium/Long group and hides Difficulty/Include; the source shows under the
+  typing area and on `ResultCard`. History: `mode: "quote"`, `limit` = tier 1/2/3 (`quoteLimit`),
+  `difficulty: "mixed"`; `formatConfig` renders "quote · medium"; PBs are per tier. Unit, component and
+  `e2e/quote.spec.ts` tests added._
 - [ ] **9.5 Harden the result-submit path** — **blocked: do not start until a
   stats API actually exists and its owner is known.** Today
   `utils/hooks/usePostResultOnFinish.ts:27` guards with a client-side
@@ -833,6 +862,10 @@ var, nothing network-related happens (check the Network tab).
   `.env.example` and README env docs, and note that the app then needs a
   Node/serverless deploy target. Re-brainstorm before starting either path —
   the shape depends on the precondition answers.
+  _Update (2026-10-12): the client now drops too-short (under 1s / 10 words) and over-500-WPM runs
+  (`utils/resultValidity.ts`) and stores keystroke timing (`keySpacing`/`keyDuration` `{ average, sd }`)
+  with each saved run, modelled on Monkeytype, whose real bot detection is a private server-side module
+  that requires this data for fast results. A server here would re-check validity and judge the timing._
   _Context (2026-10-11): deferred by the user; the env var is unset in practice
   and there is no live leaderboard, so hardening a path nothing submits to would
   be work against a hypothetical._
@@ -854,3 +887,13 @@ var, nothing network-related happens (check the Network tab).
 ## Parking lot
 
 Add things you noticed but didn't fix here, one line each, with file:line.
+
+- `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest) and `npm audit fix --force` would downgrade `eslint-config-next` to 14. Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob` or `braces` ships a fix.
+
+_Cleared 2026-10-12:_ ref-backed WPM sampler → `useWpmSampler`; `YourResults` mount effect →
+history store + `useSyncExternalStore` (no `set-state-in-effect` disables remain); side panels
+full-width below the `panels` breakpoint (settings 240px, so quote "Medium" fits); implausible
+(> 500 WPM; raised from 300 so a record ~319 WPM burst still counts) runs are shown as "Not saved", never stored, and dropped from stored history — paste
+and drop were already ignored, multi-char `insertText` (swipe typing) is still accepted; huge
+numbers wrap; "Repeat same quote" label; the `text-white` entry was already fixed by 9.3.
+Also: the caret now glides (one caret bar + transform transition) instead of snapping.

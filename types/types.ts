@@ -1,5 +1,6 @@
 import store from "../redux/store";
 import type { WordMode, WordOptions } from "../utils/getWords";
+import type { QuoteLength } from "../utils/quotes";
 
 export type WordsCollection = Array<string>;
 
@@ -20,6 +21,10 @@ export interface ParagraphState {
     mode: WordMode,
     /** punctuation/numbers flags of the last `loadWords`, reused by `refreshWords` */
     options: WordOptions,
+    /** set while the words are a quote (`loadWords` with `quoteLength`); null for random words */
+    quoteLength: QuoteLength | null,
+    /** attribution of the current quote, null outside quote mode */
+    source: string | null,
     /** bumped by loadWords / refreshWords / repeatWords; identifies the current test round */
     round: number,
 }

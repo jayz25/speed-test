@@ -8,7 +8,7 @@ const stats = (wpm: number): TestStats => ({
   correctChars: 0, incorrectChars: 0, extraChars: 0, missedChars: 0,
 });
 const config = { mode: "time", limit: 30, difficulty: "mixed" } as const;
-const base = { isFinished: true, roundId: 1, stats: stats(50), config };
+const base = { isFinished: true, isValid: true, roundId: 1, stats: stats(50), config };
 
 describe("useRecordResult", () => {
   beforeEach(() => localStorage.clear());
@@ -35,5 +35,18 @@ describe("useRecordResult", () => {
     rerender({ ...base, roundId: 2, stats: stats(40) });
     expect(result.current).toEqual({ previousBest: 50 });
     expect(loadHistory()).toHaveLength(2);
+  });
+
+  it("does not save an invalid result (too short or too fast) but still reports the previous best", () => {
+    const { result } = renderHook(() => useRecordResult({ ...base, isValid: false }));
+    expect(loadHistory()).toHaveLength(0);
+    expect(result.current).toEqual({ previousBest: null });
+  });
+
+  it("stores keystroke timing with the entry when available", () => {
+    const getKeyTiming = () => ({ keySpacing: { average: 110, sd: 12.5 }, keyDuration: null });
+    renderHook(() => useRecordResult({ ...base, getKeyTiming }));
+    expect(loadHistory()[0]).toMatchObject({ keySpacing: { average: 110, sd: 12.5 } });
+    expect(loadHistory()[0]).not.toHaveProperty("keyDuration");
   });
 });

@@ -28,21 +28,21 @@ describe("Word", () => {
     expect(caretRef.current?.textContent).toBe("h");
   });
 
-  it("draws the caret before the next letter only when shown", () => {
+  it("marks the caret position before the next letter only when shown", () => {
     const { container, rerender } = render(
       <Word word="the" typed="t" isActive isWrong={false} activeLetterIndex={1} showCaret />,
     );
-    expect(container.querySelectorAll(".shadow-caret-before")).toHaveLength(1);
-    expect(container.querySelector(".shadow-caret-before")?.textContent).toBe("h");
+    expect(container.querySelectorAll('[data-caret="before"]')).toHaveLength(1);
+    expect(container.querySelector('[data-caret="before"]')?.textContent).toBe("h");
     rerender(<Word word="the" typed="t" isActive isWrong={false} activeLetterIndex={1} />);
-    expect(container.querySelector(".shadow-caret-before")).toBeNull();
+    expect(container.querySelector("[data-caret]")).toBeNull();
   });
 
-  it("draws the caret after the last letter when the word is fully typed", () => {
+  it("marks the caret after the last letter when the word is fully typed", () => {
     const { container } = render(
       <Word word="the" typed="the" isActive isWrong={false} activeLetterIndex={3} showCaret />,
     );
-    expect(container.querySelector(".shadow-caret-after")?.textContent).toBe("e");
+    expect(container.querySelector('[data-caret="after"]')?.textContent).toBe("e");
   });
 
   it("underlines wrong words", () => {

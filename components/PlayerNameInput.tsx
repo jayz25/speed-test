@@ -15,7 +15,7 @@ export default function PlayerNameInput({ value, onChange }: PlayerNameInputProp
         maxLength={MAX_PLAYER_NAME_LENGTH}
         placeholder={DEFAULT_PLAYER_NAME}
         onChange={(e) => onChange(e.target.value)}
-        className="min-h-[44px] w-full rounded-[10px] border border-border bg-surface px-3 text-[15px] font-normal normal-case tracking-normal text-ink placeholder:text-pending focus:border-accent focus:outline-none"
+        className="min-h-[44px] w-full rounded-[10px] border border-border bg-surface px-3 text-[15px] font-normal normal-case tracking-normal text-ink placeholder:text-pending focus:border-accent focus:outline-hidden"
       />
     </label>
   );

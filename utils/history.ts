@@ -1,9 +1,12 @@
 import type { TestMode } from "../redux/settings";
+import { isPlausibleWpm } from "./calculateStats";
+import { isKeyStat, type KeyStat } from "./keyStats";
 import type { WordMode } from "./getWords";
+import { QUOTE_LENGTHS, type QuoteLength } from "./quotes";
 import { HISTORY_KEY, readJSON, writeJSON } from "./storage";
 
 export const MAX_HISTORY_ENTRIES = 100;
-const MODES: readonly string[] = ["time", "words"];
+const MODES: readonly string[] = ["time", "words", "quote"];
 const DIFFICULTIES: readonly string[] = ["easy", "medium", "hard", "mixed"];
 
 export interface HistoryEntry {
@@ -11,13 +14,19 @@ export interface HistoryEntry {
   /** ISO 8601 */
   date: string;
   mode: TestMode;
-  /** seconds (time mode) or word count (words mode) */
+  /** seconds (time mode), word count (words mode) or quote length tier, 1-3 (quote mode; see `quoteLimit`) */
   limit: number;
   difficulty: WordMode;
   wpm: number;
   rawWpm: number;
   accuracy: number;
+  /** Keystroke timing (ms), recorded since 2026-10; absent on older entries. */
+  keySpacing?: KeyStat;
+  keyDuration?: KeyStat;
 }
+
+/** History `limit` for a quote run: the 1-based index of its length tier (short=1, medium=2, long=3). */
+export const quoteLimit = (length: QuoteLength): number => QUOTE_LENGTHS.indexOf(length) + 1;
 
 /** What identifies a personal-best bucket. */
 export type TestConfigKey = Pick<HistoryEntry, "mode" | "limit" | "difficulty">;
@@ -31,9 +40,11 @@ export const isHistoryEntry = (v: unknown): v is HistoryEntry => {
     typeof o.mode === "string" && MODES.includes(o.mode) &&
     typeof o.difficulty === "string" && DIFFICULTIES.includes(o.difficulty) &&
     typeof o.limit === "number" &&
-    typeof o.wpm === "number" &&
+    typeof o.wpm === "number" && isPlausibleWpm(o.wpm) &&
     typeof o.rawWpm === "number" &&
-    typeof o.accuracy === "number"
+    typeof o.accuracy === "number" &&
+    (o.keySpacing === undefined || isKeyStat(o.keySpacing)) &&
+    (o.keyDuration === undefined || isKeyStat(o.keyDuration))
   );
 };
 
@@ -51,10 +62,52 @@ export function appendEntry(history: readonly HistoryEntry[], entry: HistoryEntr
 
 export function saveHistory(history: readonly HistoryEntry[]): void {
   writeJSON(HISTORY_KEY, history);
+  notifyHistory();
 }
 
 export function clearHistory(): void {
   writeJSON(HISTORY_KEY, []);
+  notifyHistory();
+}
+
+// External store over the stored history for useSyncExternalStore. The snapshot is cached by
+// the raw stored string, so unchanged storage keeps returning the same array.
+let snapshotRaw: string | null | undefined;
+let snapshot: readonly HistoryEntry[] = [];
+const historyListeners = new Set<() => void>();
+
+function readRawHistory(): string | null {
+  try {
+    return window.localStorage.getItem(HISTORY_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function notifyHistory(): void {
+  historyListeners.forEach((listener) => listener());
+}
+
+function handleHistoryStorage(event: StorageEvent): void {
+  if (event.key === HISTORY_KEY) notifyHistory();
+}
+
+export function getHistorySnapshot(): readonly HistoryEntry[] {
+  const raw = readRawHistory();
+  if (raw !== snapshotRaw) {
+    snapshotRaw = raw;
+    snapshot = loadHistory();
+  }
+  return snapshot;
+}
+
+export function subscribeHistory(listener: () => void): () => void {
+  if (historyListeners.size === 0) window.addEventListener("storage", handleHistoryStorage);
+  historyListeners.add(listener);
+  return () => {
+    historyListeners.delete(listener);
+    if (historyListeners.size === 0) window.removeEventListener("storage", handleHistoryStorage);
+  };
 }
 
 export const isSameConfig = (a: TestConfigKey, b: TestConfigKey) =>
@@ -92,8 +145,9 @@ export function createHistoryEntry(key: TestConfigKey, stats: { wpm: number; raw
   };
 }
 
-/** "30s mixed" (time mode) or "25 words hard" (words mode). */
+/** "30s mixed" (time mode), "25 words hard" (words mode) or "quote · medium" (quote mode). */
 export function formatConfig(key: TestConfigKey): string {
+  if (key.mode === "quote") return `quote \u00b7 ${QUOTE_LENGTHS[key.limit - 1] ?? key.limit}`;
   const length = key.mode === "time" ? `${key.limit}s` : `${key.limit} words`;
   return `${length} ${key.difficulty}`;
 }
@@ -105,7 +159,7 @@ export interface PersonalBestRow extends TestConfigKey {
   runs: number;
 }
 
-/** One row per mode+limit+difficulty: time mode before words mode, then by limit, then difficulty. */
+/** One row per mode+limit+difficulty: time, words, then quote mode, then by limit, then difficulty. */
 export function getPersonalBests(history: readonly HistoryEntry[]): PersonalBestRow[] {
   const rows: PersonalBestRow[] = [];
   for (const h of history) {
@@ -117,7 +171,7 @@ export function getPersonalBests(history: readonly HistoryEntry[]): PersonalBest
       rows[i] = { ...row, runs: row.runs + 1, ...(h.wpm > row.wpm ? { wpm: h.wpm, accuracy: h.accuracy } : {}) };
     }
   }
-  const order = (r: PersonalBestRow) => [r.mode === "time" ? 0 : 1, r.limit, DIFFICULTIES.indexOf(r.difficulty)];
+  const order = (r: PersonalBestRow) => [MODES.indexOf(r.mode), r.limit, DIFFICULTIES.indexOf(r.difficulty)];
   return rows.sort((a, b) => {
     const [oa, ob] = [order(a), order(b)];
     return oa[0] - ob[0] || oa[1] - ob[1] || oa[2] - ob[2];

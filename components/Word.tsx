@@ -36,13 +36,14 @@ const Word = ({ word, typed, isActive, isWrong, activeLetterIndex, showCaret = f
     >
       {letters.map((letter, li) => {
         const isCaretLetter = li === caretIndex;
-        let caretClass = "";
-        if (showCaret && isCaretLetter) caretClass = isCaretAfter ? " shadow-caret-after" : " shadow-caret-before";
+        // Marks where the caret bar (drawn by TypingArea, moved by useCaret) sits
+        const caret = showCaret && isCaretLetter ? (isCaretAfter ? "after" : "before") : undefined;
         return (
           <span
             key={li}
             ref={isCaretLetter ? caretRef : undefined}
-            className={`${LETTER_CLASSES[states[li]]}${caretClass}`}
+            data-caret={caret}
+            className={LETTER_CLASSES[states[li]]}
           >
             {letter}
           </span>

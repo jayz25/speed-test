@@ -1,5 +1,6 @@
 export const SETTINGS_KEY = "speedtype:v1:settings";
 export const HISTORY_KEY = "speedtype:v1:history";
+export const THEME_KEY = "speedtype:v1:theme";
 
 /** Read and validate JSON from localStorage; returns `fallback` on any failure. */
 export function readJSON<T>(key: string, fallback: T, isValid: (v: unknown) => v is T): T {

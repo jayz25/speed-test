@@ -10,8 +10,8 @@ const TimerRow = ({ label, progress, goal }: TimerRowProps) => {
   return (
     <div className="flex items-center gap-4 font-mono">
       <span className="min-w-[72px] text-[28px] font-semibold text-ink">{label}</span>
-      <div aria-hidden="true" className="h-2 flex-1 overflow-hidden rounded bg-divider">
-        <div className="h-full rounded bg-accent" style={{ width: `${clamped * 100}%` }} />
+      <div aria-hidden="true" className="h-2 flex-1 overflow-hidden rounded-sm bg-divider">
+        <div className="h-full rounded-sm bg-accent" style={{ width: `${clamped * 100}%` }} />
       </div>
       <span className="text-sm text-muted">{goal}</span>
     </div>

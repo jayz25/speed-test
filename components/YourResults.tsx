@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import {
-  clearHistory, formatConfig, getAverages, getPersonalBests, getRecent, HistoryEntry, loadHistory,
+  clearHistory, formatConfig, getAverages, getHistorySnapshot, getPersonalBests, getRecent, subscribeHistory,
 } from "../utils/history";
 
 const RECENT_RUNS = 20;
@@ -14,17 +14,12 @@ const formatDate = (iso: string) => new Date(iso).toLocaleString(undefined, { da
 
 /** Personal bests, averages and recent runs from localStorage history. */
 export default function YourResults() {
-  // null until mounted: history only exists in the browser
-  const [history, setHistory] = useState<HistoryEntry[] | null>(null);
-
-  useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+  // null on the server and during hydration: history only exists in the browser
+  const history = useSyncExternalStore(subscribeHistory, getHistorySnapshot, () => null);
 
   const handleClear = () => {
     if (!window.confirm("Clear all saved results? This cannot be undone.")) return;
     clearHistory();
-    setHistory([]);
   };
 
   if (history === null) return <p className="text-muted text-sm">Loading your results…</p>;
@@ -33,7 +28,7 @@ export default function YourResults() {
     return (
       <p className="text-muted text-sm">
         No tests yet —{" "}
-        <Link href="/" className="text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">take one</Link>
+        <Link href="/" className="text-accent underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent rounded-sm">take one</Link>
       </p>
     );
   }
@@ -112,7 +107,7 @@ export default function YourResults() {
       <button
         type="button"
         onClick={handleClear}
-        className="self-start px-4 py-2 rounded-lg text-sm text-error border border-error/40 hover:bg-error/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="self-start px-4 py-2 rounded-lg text-sm text-error border border-error/40 hover:bg-error/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
       >
         Clear history
       </button>
