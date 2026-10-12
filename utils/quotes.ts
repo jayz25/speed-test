@@ -8,7 +8,7 @@ export type QuoteLength = "short" | "medium" | "long";
 
 export const QUOTE_LENGTHS = ["short", "medium", "long"] as const;
 
-/** Quotes of up to this many words are "short". */
+/** Quotes of up to this many words are "short" (every quote has at least `MIN_TEST_WORDS`, 10). */
 export const SHORT_MAX_WORDS = 20;
 /** Quotes of up to this many words (and more than `SHORT_MAX_WORDS`) are "medium"; longer ones are "long". */
 export const MEDIUM_MAX_WORDS = 45;
@@ -24,19 +24,15 @@ export const QUOTES: readonly Quote[] = [
   { text: "Begin at the beginning, and go on till you come to the end: then stop.", source: "Lewis Carroll, Alice's Adventures in Wonderland" },
   { text: "All that we see or seem is but a dream within a dream.", source: "Edgar Allan Poe" },
   { text: "You see, but you do not observe. The distinction is clear.", source: "Arthur Conan Doyle, A Scandal in Bohemia" },
-  { text: "The truth is rarely pure and never simple.", source: "Oscar Wilde, The Importance of Being Earnest" },
   { text: "We know what we are, but know not what we may be.", source: "William Shakespeare, Hamlet" },
   { text: "Our doubts are traitors, and make us lose the good we oft might win, by fearing to attempt.", source: "William Shakespeare, Measure for Measure" },
   { text: "Cowards die many times before their deaths; the valiant never taste of death but once.", source: "William Shakespeare, Julius Caesar" },
   { text: "Good night, good night! Parting is such sweet sorrow, that I shall say good night till it be morrow.", source: "William Shakespeare, Romeo and Juliet" },
-  { text: "The mass of men lead lives of quiet desperation.", source: "Henry David Thoreau, Walden" },
   { text: "The question is not what you look at, but what you see.", source: "Henry David Thoreau, Journal" },
-  { text: "Whoso would be a man must be a nonconformist.", source: "Ralph Waldo Emerson, Self-Reliance" },
   { text: "We are all in the gutter, but some of us are looking at the stars.", source: "Oscar Wilde, Lady Windermere's Fan" },
   { text: "To live is the rarest thing in the world. Most people exist, that is all.", source: "Oscar Wilde, The Soul of Man under Socialism" },
   { text: "No one is useless in this world who lightens the burdens of another.", source: "Charles Dickens, Our Mutual Friend" },
   { text: "There are strings in the human heart that had better not be vibrated.", source: "Charles Dickens, Barnaby Rudge" },
-  { text: "Well done is better than well said.", source: "Benjamin Franklin, Poor Richard's Almanack" },
   { text: "Courage is resistance to fear, mastery of fear - not absence of fear.", source: "Mark Twain, Pudd'nhead Wilson" },
   { text: "Always do right. This will gratify some people and astonish the rest.", source: "Mark Twain" },
   { text: "Few things are harder to put up with than the annoyance of a good example.", source: "Mark Twain, Pudd'nhead Wilson" },

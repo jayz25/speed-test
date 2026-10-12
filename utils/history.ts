@@ -1,5 +1,6 @@
 import type { TestMode } from "../redux/settings";
 import { isPlausibleWpm } from "./calculateStats";
+import { isKeyStat, type KeyStat } from "./keyStats";
 import type { WordMode } from "./getWords";
 import { QUOTE_LENGTHS, type QuoteLength } from "./quotes";
 import { HISTORY_KEY, readJSON, writeJSON } from "./storage";
@@ -19,6 +20,9 @@ export interface HistoryEntry {
   wpm: number;
   rawWpm: number;
   accuracy: number;
+  /** Keystroke timing (ms), recorded since 2026-10; absent on older entries. */
+  keySpacing?: KeyStat;
+  keyDuration?: KeyStat;
 }
 
 /** History `limit` for a quote run: the 1-based index of its length tier (short=1, medium=2, long=3). */
@@ -38,7 +42,9 @@ export const isHistoryEntry = (v: unknown): v is HistoryEntry => {
     typeof o.limit === "number" &&
     typeof o.wpm === "number" && isPlausibleWpm(o.wpm) &&
     typeof o.rawWpm === "number" &&
-    typeof o.accuracy === "number"
+    typeof o.accuracy === "number" &&
+    (o.keySpacing === undefined || isKeyStat(o.keySpacing)) &&
+    (o.keyDuration === undefined || isKeyStat(o.keyDuration))
   );
 };
 

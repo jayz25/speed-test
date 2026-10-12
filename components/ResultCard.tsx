@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { isPlausibleWpm, MAX_PLAUSIBLE_WPM, type TestStats } from "../utils/calculateStats";
+import type { TestStats } from "../utils/calculateStats";
+import { INVALID_REASON_LABELS, type InvalidReason } from "../utils/resultValidity";
 import { getGrade } from "../utils/getGrade";
 import { describePb, formatConfig, type TestConfigKey } from "../utils/history";
 import { formatResultText } from "../utils/shareText";
@@ -43,9 +44,11 @@ interface ResultCardProps {
   onReset: () => void;
   /** Restart with the same words. */
   onRepeat: () => void;
+  /** Set when the run is not saved (too short / too fast); replaces the personal-best badge. */
+  invalidReason?: InvalidReason | null;
 }
 
-export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, source, options, onReset, onRepeat }: ResultCardProps) {
+export default function ResultCard({ stats, samples = [], personalBest, durationSeconds, config, source, options, onReset, onRepeat, invalidReason = null }: ResultCardProps) {
   const { wpm, rawWpm, cpm, accuracy, correctChars, incorrectChars, extraChars, missedChars } = stats;
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,8 +76,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
   }, [onReset]);
 
   const grade = getGrade(wpm, accuracy);
-  const isPlausible = isPlausibleWpm(wpm);
-  const pb = isPlausible && personalBest ? describePb(wpm, personalBest.previousBest) : null;
+  const pb = !invalidReason && personalBest ? describePb(wpm, personalBest.previousBest) : null;
 
   return (
     <div className="flex flex-col gap-7 motion-safe:animate-fade-in">
@@ -93,9 +95,9 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
           </div>
         </div>
         <div className="flex flex-col items-start gap-1.5 pb-2 sm:items-end">
-          {!isPlausible && (
+          {invalidReason && (
             <p className="rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-ink-2">
-              Not saved: over {MAX_PLAUSIBLE_WPM} WPM
+              {INVALID_REASON_LABELS[invalidReason]}
             </p>
           )}
           {pb && (

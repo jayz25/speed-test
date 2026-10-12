@@ -1,6 +1,7 @@
 import {
   getQuoteLength, MEDIUM_MAX_WORDS, pickQuote, QUOTE_LENGTHS, QUOTES, quoteToWords, SHORT_MAX_WORDS, type Quote,
 } from "../quotes";
+import { MIN_TEST_WORDS } from "../resultValidity";
 
 const quote = (wordCount: number): Quote => ({ text: Array(wordCount).fill("word").join(" "), source: "Test" });
 
@@ -12,6 +13,10 @@ describe("QUOTES data", () => {
       expect(text, text).not.toMatch(/ {2}/);
       expect(source.trim().length, text).toBeGreaterThan(0);
     }
+  });
+
+  it("has at least MIN_TEST_WORDS words per quote, so every quote run can be saved", () => {
+    for (const { text } of QUOTES) expect(text.split(" ").length, text).toBeGreaterThanOrEqual(MIN_TEST_WORDS);
   });
 
   it("has no duplicate texts", () => {

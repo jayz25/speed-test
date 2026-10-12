@@ -44,9 +44,13 @@ describe("ResultCard in quote mode", () => {
     expect(screen.getByRole("button", { name: "Repeat same quote" })).toBeInTheDocument();
   });
 
-  it("flags an implausible result as not saved instead of a personal best", () => {
-    renderCard({ stats: { ...STATS, wpm: 6000, cpm: 30000 }, personalBest: { previousBest: null } });
-    expect(screen.getByText(/Not saved/)).toBeInTheDocument();
+  it("labels an invalid result as not saved instead of showing a personal best", () => {
+    const { rerender } = renderCard({ stats: { ...STATS, wpm: 6000, cpm: 30000 }, personalBest: { previousBest: null }, invalidReason: "too-fast" });
+    expect(screen.getByText(/Not saved: over \d+ WPM/)).toBeInTheDocument();
     expect(screen.queryByText("New personal best!")).toBeNull();
+    rerender(
+      <ResultCard stats={STATS} durationSeconds={1} config={QUOTE_CONFIG} options={OPTIONS} onReset={vi.fn()} onRepeat={vi.fn()} personalBest={{ previousBest: null }} invalidReason="too-short" />,
+    );
+    expect(screen.getByText("Not saved: test too short")).toBeInTheDocument();
   });
 });

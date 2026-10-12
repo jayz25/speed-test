@@ -9,6 +9,8 @@ import useTimer from "../utils/hooks/useTimer";
 import { useFocusMode } from "../utils/hooks/useFocusMode";
 import { useCaret } from "../utils/hooks/useCaret";
 import { useWpmSampler } from "../utils/hooks/useWpmSampler";
+import { useKeystrokeTiming } from "../utils/hooks/useKeystrokeTiming";
+import { getInvalidReason } from "../utils/resultValidity";
 import { usePostResultOnFinish } from "../utils/hooks/usePostResultOnFinish";
 import { useRecordResult } from "../utils/hooks/useRecordResult";
 import { usePlayerName } from "../utils/hooks/usePlayerName";
@@ -98,6 +100,13 @@ const TypingTest = () => {
     [isFinished, state, finalElapsedMs],
   );
 
+  // Too-short or implausibly fast runs are shown but never saved, posted or counted as a PB
+  const invalidReason = isFinished
+    ? getInvalidReason({ wpm: finalStats.wpm, rawWpm: finalStats.rawWpm, wordCount: words.length, elapsedMs: finalElapsedMs })
+    : null;
+  const isValid = invalidReason === null;
+  const keyTiming = useKeystrokeTiming();
+
   // Sample WPM / raw WPM / mistakes once per elapsed second (live sparkline + result chart)
   const finalSecond = isFinished ? Math.max(1, Math.round(finalElapsedMs / MS_PER_SECOND)) : null;
   const samples = useWpmSampler(state, elapsedSeconds, finalSecond);
@@ -110,14 +119,16 @@ const TypingTest = () => {
   const [playerName] = usePlayerName();
 
   usePostResultOnFinish({
-    isFinished, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
+    isFinished, isValid, roundId: state.round, wpm: finalStats.wpm, cpm: finalStats.cpm, accuracy: finalStats.accuracy, user: sanitizePlayerName(playerName),
   });
 
   const personalBest = useRecordResult({
     isFinished,
+    isValid,
     roundId: state.round,
     stats: finalStats,
     config: testConfig,
+    getKeyTiming: keyTiming.getStats,
   });
 
   useCaret({
@@ -128,10 +139,11 @@ const TypingTest = () => {
 
   // Reset view state whenever the word list changes (engine resets itself)
   useEffect(() => {
+    keyTiming.reset();
     if (words.length > 0) {
       textInput.current?.focus();
     }
-  }, [words, round]);
+  }, [words, round, keyTiming]);
 
   // The input is autoFocus'd; reflect whether it really has focus after mount
   useEffect(() => {
@@ -170,6 +182,7 @@ const TypingTest = () => {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
+    if (!isFinished) keyTiming.onKeyDown(e.nativeEvent);
 
     if (e.key === "Tab") {
       // Tab + Enter restarts instead of moving focus to the settings
@@ -199,11 +212,12 @@ const TypingTest = () => {
       e.preventDefault();
       submitWord();
     }
-  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord]);
+  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord, keyTiming]);
 
-  const handleKeyUp = useCallback(() => {
+  const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     didKeyDownBackspace.current = false;
-  }, []);
+    keyTiming.onKeyUp(e.nativeEvent);
+  }, [keyTiming]);
 
   // Printable characters (and soft-keyboard backspace) arrive here so mobile keyboards,
   // which send key "Unidentified" on keydown, work as well as desktop ones.
@@ -293,6 +307,7 @@ const TypingTest = () => {
               durationSeconds={isCountUpMode ? Math.round(finalElapsedMs / MS_PER_SECOND) : timeLimit}
               onReset={resetTest}
               onRepeat={repeatTest}
+              invalidReason={invalidReason}
             />
           ) : (
             <>

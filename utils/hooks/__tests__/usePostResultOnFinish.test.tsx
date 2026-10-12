@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 const addStatCall = vi.fn((payload: unknown) => ({ type: "test/add", payload }));
 vi.mock("../../../redux/stat", () => ({ addStatCall: (p: unknown) => addStatCall(p), isStatsApiEnabled: true }));
 
-import { MAX_PLAUSIBLE_WPM, usePostResultOnFinish } from "../usePostResultOnFinish";
+import { usePostResultOnFinish } from "../usePostResultOnFinish";
 
 const fakeStore = {
   getState: () => ({}),
@@ -16,7 +16,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   <Provider store={fakeStore as never}>{children}</Provider>
 );
 
-const base = { isFinished: true, roundId: 1, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
+const base = { isFinished: true, isValid: true, roundId: 1, wpm: 50, cpm: 250, accuracy: 90, user: "Ann" };
 
 describe("usePostResultOnFinish", () => {
   beforeEach(() => addStatCall.mockClear());
@@ -34,8 +34,8 @@ describe("usePostResultOnFinish", () => {
     expect(addStatCall).not.toHaveBeenCalled();
   });
 
-  it("skips implausible WPM", () => {
-    renderHook(() => usePostResultOnFinish({ ...base, wpm: MAX_PLAUSIBLE_WPM + 1 }), { wrapper });
+  it("skips invalid results (too short or too fast)", () => {
+    renderHook(() => usePostResultOnFinish({ ...base, isValid: false }), { wrapper });
     expect(addStatCall).not.toHaveBeenCalled();
   });
 

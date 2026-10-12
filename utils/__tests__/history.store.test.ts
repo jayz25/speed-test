@@ -46,6 +46,13 @@ describe("history store", () => {
 });
 
 describe("history validation", () => {
+  it("accepts optional keystroke timing and drops malformed timing", () => {
+    const timed = { ...entry("timed"), keySpacing: { average: 110, sd: 12 }, keyDuration: { average: 80, sd: 9 } };
+    const broken = { ...entry("broken"), keySpacing: { average: "fast" } };
+    localStorage.setItem(HISTORY_KEY, JSON.stringify([entry("plain"), timed, broken]));
+    expect(getHistorySnapshot().map((e) => e.id)).toEqual(["plain", "timed"]);
+  });
+
   it("drops stored entries faster than humanly possible", () => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify([entry("ok"), { ...entry("junk"), wpm: 6180000 }]));
     expect(getHistorySnapshot().map((e) => e.id)).toEqual(["ok"]);

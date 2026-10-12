@@ -52,5 +52,16 @@ describe("TypingTest quote mode", () => {
     const history = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]");
     expect(history).toHaveLength(1);
     expect(history[0]).toMatchObject({ mode: "quote", limit: 1, difficulty: "mixed" });
+    expect(history[0].keySpacing).toEqual({ average: expect.any(Number), sd: expect.any(Number) });
+    expect(history[0].keyDuration).toEqual({ average: expect.any(Number), sd: expect.any(Number) });
+  });
+
+  it("shows an instant run as not saved (too short) and records nothing", async () => {
+    const { store, user } = setup();
+    await screen.findByText(/^0\/\d+$/);
+    await user.keyboard(store.getState().paragraph.wordsCollection.join(" "));
+    expect(await screen.findByText("Not saved: test too short")).toBeInTheDocument();
+    expect(screen.queryByText("New personal best!")).toBeNull();
+    expect(JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]")).toHaveLength(0);
   });
 });

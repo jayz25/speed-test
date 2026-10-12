@@ -862,6 +862,10 @@ var, nothing network-related happens (check the Network tab).
   `.env.example` and README env docs, and note that the app then needs a
   Node/serverless deploy target. Re-brainstorm before starting either path —
   the shape depends on the precondition answers.
+  _Update (2026-10-12): the client now drops too-short (under 1s / 10 words) and over-500-WPM runs
+  (`utils/resultValidity.ts`) and stores keystroke timing (`keySpacing`/`keyDuration` `{ average, sd }`)
+  with each saved run, modelled on Monkeytype, whose real bot detection is a private server-side module
+  that requires this data for fast results. A server here would re-check validity and judge the timing._
   _Context (2026-10-11): deferred by the user; the env var is unset in practice
   and there is no live leaderboard, so hardening a path nothing submits to would
   be work against a hypothetical._

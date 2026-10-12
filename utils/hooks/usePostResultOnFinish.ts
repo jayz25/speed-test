@@ -3,12 +3,12 @@ import { useDispatch } from "react-redux";
 import { addStatCall, isStatsApiEnabled } from "../../redux/stat";
 import { AppDispatch } from "../../types/types";
 
-import { isPlausibleWpm } from "../calculateStats";
-
 export { MAX_PLAUSIBLE_WPM } from "../calculateStats";
 
 interface PostResultArgs {
   isFinished: boolean;
+  /** False for a too-short or implausibly fast run (see `getInvalidReason`): never posted. */
+  isValid: boolean;
   /** Identifies the current test round; a new value means a new test. */
   roundId: number;
   wpm: number;
@@ -18,7 +18,7 @@ interface PostResultArgs {
 }
 
 /** Posts the result exactly once per round, on the transition to finished. */
-export function usePostResultOnFinish({ isFinished, roundId, wpm, cpm, accuracy, user }: PostResultArgs) {
+export function usePostResultOnFinish({ isFinished, isValid, roundId, wpm, cpm, accuracy, user }: PostResultArgs) {
   const dispatch = useDispatch<AppDispatch>();
   const postedRound = useRef<number | null>(null);
 
@@ -26,7 +26,7 @@ export function usePostResultOnFinish({ isFinished, roundId, wpm, cpm, accuracy,
     if (!isFinished || !isStatsApiEnabled) return;
     if (postedRound.current === roundId) return;
     postedRound.current = roundId;
-    if (!isPlausibleWpm(wpm)) return;
+    if (!isValid) return;
     dispatch(addStatCall({ words: wpm, chars: cpm, accuracy, user }));
-  }, [isFinished, roundId, wpm, cpm, accuracy, user, dispatch]);
+  }, [isFinished, isValid, roundId, wpm, cpm, accuracy, user, dispatch]);
 }
