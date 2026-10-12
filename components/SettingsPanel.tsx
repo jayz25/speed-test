@@ -102,7 +102,7 @@ export default function SettingsPanel({ isDimmed }: { isDimmed: boolean }) {
   return (
     <aside
       aria-label="Test settings"
-      className={`flex basis-[220px] grow shrink max-w-[260px] flex-col gap-6 rounded-card bg-surface-muted p-6 transition-opacity duration-300 ${isDimmed ? "opacity-55" : ""}`}
+      className={`grid w-full basis-full grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] items-start gap-6 panels:flex panels:w-auto panels:basis-[240px] panels:grow panels:shrink panels:max-w-[260px] panels:flex-col panels:items-stretch rounded-card bg-surface-muted p-6 transition-opacity duration-300 ${isDimmed ? "opacity-55" : ""}`}
     >
       <Group title="Mode">
         <SegmentedGroup label="Test mode" options={TEST_MODES} value={mode} onChange={pickMode} columns="grid-cols-3" />

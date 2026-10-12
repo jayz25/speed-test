@@ -40,6 +40,10 @@
 
   --radius-card: 20px;
 
+  /* Width at which settings (240) + typing card (560) + live stats (240) + gaps + page padding
+     fit on one row; below it the side panels become full-width rows. */
+  --breakpoint-panels: 71.5rem;
+
   --animate-flash: flash 2s infinite;
 
   @keyframes flash {
