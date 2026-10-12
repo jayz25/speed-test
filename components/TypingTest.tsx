@@ -69,6 +69,7 @@ const TypingTest = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [isTabArmed, setIsTabArmed] = useState(false);
   const targetRef = useRef<HTMLSpanElement>(null);
+  const caretRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
 
   const textInput = useRef<HTMLInputElement>(null);
@@ -120,8 +121,9 @@ const TypingTest = () => {
   });
 
   useCaret({
-    boxRef, targetRef,
-    deps: [activeWordIndex, activeLetterIndex, words, round, isFocused, isFinished],
+    boxRef, targetRef, caretRef,
+    resetKey: state.round,
+    deps: [activeWordIndex, activeLetterIndex, words, isFocused, isFinished],
   });
 
   // Reset view state whenever the word list changes (engine resets itself)
@@ -303,6 +305,7 @@ const TypingTest = () => {
                 isIdle={state.status === "idle"}
                 boxRef={boxRef}
                 targetRef={targetRef}
+                caretRef={caretRef}
                 onClick={handleContainerClick}
                 onMouseDown={handleContainerMouseDown}
               >

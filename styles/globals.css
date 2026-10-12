@@ -44,17 +44,15 @@
      fit on one row; below it the side panels become full-width rows. */
   --breakpoint-panels: 71.5rem;
 
-  --animate-flash: flash 2s infinite;
+  /* Typing caret: blinks while waiting for the first keystroke, solid while typing */
+  --animate-caret-blink: caret-blink 1.1s step-end infinite;
 
-  @keyframes flash {
-    25%,
-    40% {
-      opacity: 0;
-    }
-    50% {
+  @keyframes caret-blink {
+    0%,
+    100% {
       opacity: 1;
     }
-    75% {
+    50% {
       opacity: 0;
     }
   }

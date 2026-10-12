@@ -6,7 +6,8 @@ const NEW_WORDS_PREVIEW = 10;
 test.describe("typing flow", () => {
   test("loads with a caret and accepts typing without clicking first", async ({ page }) => {
     await openTest(page);
-    await expect(page.locator("[data-word] .shadow-caret-before").first()).toBeVisible();
+    await expect(page.locator('[data-word] [data-caret="before"]').first()).toBeVisible();
+    await expect(page.locator("[data-caret-bar]")).toBeVisible();
 
     const first = await readWord(page, 0);
     await page.keyboard.type(first[0]);
@@ -19,16 +20,16 @@ test.describe("typing flow", () => {
     await page.keyboard.type(await readWord(page, 0));
     await page.keyboard.press("Space");
     await expect(words(page).nth(0)).not.toHaveClass(/underline/);
-    await expect(words(page).nth(1).locator("span").first()).toHaveClass(/shadow-caret-before/);
+    await expect(words(page).nth(1).locator("span").first()).toHaveAttribute("data-caret", "before");
 
     await page.keyboard.type("~~");
     await page.keyboard.press("Space");
     await expect(words(page).nth(1)).toHaveClass(/underline/);
-    await expect(words(page).nth(2).locator("span").first()).toHaveClass(/shadow-caret-before/);
+    await expect(words(page).nth(2).locator("span").first()).toHaveAttribute("data-caret", "before");
 
     // Backspace at a word start does nothing: still on word 2, word 1 still wrong.
     await page.keyboard.press("Backspace");
-    await expect(words(page).nth(2).locator("span").first()).toHaveClass(/shadow-caret-before/);
+    await expect(words(page).nth(2).locator("span").first()).toHaveAttribute("data-caret", "before");
     await expect(words(page).nth(1)).toHaveClass(/underline/);
 
     // Backspace inside a word removes the typed letter.
