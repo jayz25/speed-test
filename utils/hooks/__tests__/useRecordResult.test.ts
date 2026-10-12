@@ -37,6 +37,11 @@ describe("useRecordResult", () => {
     expect(loadHistory()).toHaveLength(2);
   });
 
+  it("saves a record-level human burst (319 WPM)", () => {
+    renderHook(() => useRecordResult({ ...base, stats: stats(319) }));
+    expect(loadHistory()).toHaveLength(1);
+  });
+
   it("does not save an implausible result (e.g. text injected in one event)", () => {
     renderHook(() => useRecordResult({ ...base, stats: stats(5000) }));
     expect(loadHistory()).toHaveLength(0);

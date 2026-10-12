@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 const addStatCall = vi.fn((payload: unknown) => ({ type: "test/add", payload }));
 vi.mock("../../../redux/stat", () => ({ addStatCall: (p: unknown) => addStatCall(p), isStatsApiEnabled: true }));
 
-import { usePostResultOnFinish } from "../usePostResultOnFinish";
+import { MAX_PLAUSIBLE_WPM, usePostResultOnFinish } from "../usePostResultOnFinish";
 
 const fakeStore = {
   getState: () => ({}),
@@ -35,7 +35,7 @@ describe("usePostResultOnFinish", () => {
   });
 
   it("skips implausible WPM", () => {
-    renderHook(() => usePostResultOnFinish({ ...base, wpm: 301 }), { wrapper });
+    renderHook(() => usePostResultOnFinish({ ...base, wpm: MAX_PLAUSIBLE_WPM + 1 }), { wrapper });
     expect(addStatCall).not.toHaveBeenCalled();
   });
 

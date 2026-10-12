@@ -889,7 +889,7 @@ Add things you noticed but didn't fix here, one line each, with file:line.
 _Cleared 2026-10-12:_ ref-backed WPM sampler → `useWpmSampler`; `YourResults` mount effect →
 history store + `useSyncExternalStore` (no `set-state-in-effect` disables remain); side panels
 full-width below the `panels` breakpoint (settings 240px, so quote "Medium" fits); implausible
-(> 300 WPM) runs are shown as "Not saved", never stored, and dropped from stored history — paste
+(> 500 WPM; raised from 300 so a record ~319 WPM burst still counts) runs are shown as "Not saved", never stored, and dropped from stored history — paste
 and drop were already ignored, multi-char `insertText` (swipe typing) is still accepted; huge
 numbers wrap; "Repeat same quote" label; the `text-white` entry was already fixed by 9.3.
 Also: the caret now glides (one caret bar + transform transition) instead of snapping.
