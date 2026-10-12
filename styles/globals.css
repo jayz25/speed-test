@@ -1,10 +1,85 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+/* next/font sets --font-schibsted / --font-plex-mono on the app wrapper, not :root,
+   so these must be inlined into the utilities rather than resolved on :root */
+@theme inline {
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+@theme {
+  --color-bg: #e8eaed;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f7f8;
+  --color-surface-sunken: #e3e5e9;
+  --color-nav-track: #dadde2;
+  --color-ink: #16181d;
+  --color-ink-2: #3b404a;
+  --color-muted: #5a606c;
+  --color-pending: #6b7180;
+  --color-on-dark-muted: #a3a9b4;
+  --color-border: #d5d8dd;
+  --color-divider: #eceef1;
+  --color-kbd-bg: #f1f2f4;
+  --color-accent: #ff5a1f;
+  --color-accent-soft: #ff5a1f1f;
+  --color-error: #c2410c;
+  --color-error-extra: #9a3412;
+
+  --shadow-card:
+    0 1px 2px rgba(22, 24, 29, 0.06), 0 12px 32px -12px rgba(22, 24, 29, 0.12);
+  --shadow-caret-before: inset 3px 0 0 #ff5a1f;
+  --shadow-caret-after: inset -3px 0 0 #ff5a1f;
+
+  --radius-card: 20px;
+
+  --animate-flash: flash 2s infinite;
+
+  @keyframes flash {
+    25%,
+    40% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
 
 @layer base {
+  /* Tailwind v4 dropped the v3 pointer cursor on buttons */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
   html {
-    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-family: ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -13,10 +88,6 @@
   [data-focus-mode] [data-focus-fade] {
     opacity: 0;
     pointer-events: none;
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.4s ease-out both;
   }
 }
 

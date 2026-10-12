@@ -13,7 +13,7 @@ const TypingAreaSkeleton = () => (
   >
     {Array.from({ length: SKELETON_LINES }, (_, i) => (
       <div key={i} className="flex items-center h-[1.625em]">
-        <div className={`motion-safe:animate-pulse bg-divider rounded h-[1em] ${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}`} />
+        <div className={`motion-safe:animate-pulse bg-divider rounded-sm h-[1em] ${SKELETON_WIDTHS[i % SKELETON_WIDTHS.length]}`} />
       </div>
     ))}
   </div>

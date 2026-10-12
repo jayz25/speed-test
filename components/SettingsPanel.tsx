@@ -13,7 +13,7 @@ const DEFAULT_TIME_LIMIT = 30;
 const DEFAULT_WORD_COUNT = 25;
 
 const LABEL = "text-xs font-semibold uppercase tracking-[0.08em] text-muted";
-const FOCUS = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+const FOCUS = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent";
 const titleCase = (v: string | number) => { const s = String(v); return s.charAt(0).toUpperCase() + s.slice(1); };
 const OPTION_BASE = `min-h-[44px] text-sm transition-colors duration-200 ${FOCUS}`;
 

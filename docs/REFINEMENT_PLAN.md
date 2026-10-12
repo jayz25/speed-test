@@ -864,4 +864,4 @@ Add things you noticed but didn't fix here, one line each, with file:line.
 
 - `components/TypingTest.tsx:95` — live WPM sampler mirrors `samplesRef` into `liveSamples` state from an effect (`react-hooks/set-state-in-effect` disabled); could keep samples in state only, or use `useSyncExternalStore`.
 - `components/YourResults.tsx:20` — mount-time `loadHistory()` in an effect (rule disabled); a `useSyncExternalStore` over a cached history snapshot would remove the disable.
-- `npm audit --omit=dev` — `source-map-js` ≤ 1.2.1 (GHSA-68fv-2mgg-jv7q, transitive via `next`/`postcss`); `npm audit fix` available, pre-existing.
+- `npm audit` (dev only) — `braces` (GHSA-vfj7-8cjw-p6xm) via `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`; no patched `braces` release exists (3.0.3 is latest). Lint-time only, over our own files. Revisit when `@next/eslint-plugin-next` drops `fast-glob`. (`source-map-js` and the Tailwind 3 chain were fixed by `npm audit fix` + Tailwind 4.)

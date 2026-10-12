@@ -10,13 +10,13 @@ import { loadStoredSettings, startSettingsPersistence } from '../redux/persistSe
 const schibsted = Schibsted_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-sans',
+  variable: '--font-schibsted',
 });
 
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
-  variable: '--font-mono',
+  variable: '--font-plex-mono',
 });
 
 export default function MyApp({ Component, pageProps }: AppProps) {

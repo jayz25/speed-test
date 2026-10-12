@@ -22,7 +22,7 @@ export const GlobalStats = () => {
   if (!isStatsApiEnabled) {
     return (
       <p className="text-muted text-sm">
-        Stats API not configured. Set <code className="text-ink-2 bg-surface-muted px-1 rounded">NEXT_PUBLIC_API_BASE_URL</code> to enable.
+        Stats API not configured. Set <code className="text-ink-2 bg-surface-muted px-1 rounded-sm">NEXT_PUBLIC_API_BASE_URL</code> to enable.
       </p>
     );
   }
@@ -38,7 +38,7 @@ export const GlobalStats = () => {
         <button
           type="button"
           onClick={() => dispatch(getStatCall())}
-          className="px-3 py-1 rounded-lg bg-accent text-white font-semibold hover:opacity-90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="px-3 py-1 rounded-lg bg-accent text-white font-semibold hover:opacity-90 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
         >
           Retry
         </button>

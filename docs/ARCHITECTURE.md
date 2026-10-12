@@ -131,6 +131,9 @@ types in `redux/settings.ts`.
   jest-dom matchers, globals on); tests live next to code in `__tests__/`.
 - `tsconfig.json`: target ES2017, `moduleResolution: bundler`, vitest globals types.
 - `next.config.mjs`: `reactStrictMode: true`, `poweredByHeader: false`.
+- Styling: Tailwind CSS 4 via `@tailwindcss/postcss` (`postcss.config.js`). Config is CSS-first:
+  design tokens live in `@theme` in `styles/globals.css`; fonts use `@theme inline` because
+  next/font sets `--font-schibsted` / `--font-plex-mono` on the app wrapper, not `:root`.
 - `.claude/helpers/graft-gate.cjs` (a `PreToolUse` hook) makes agents use
   graft instead of whole-file reads/greps on indexed source. See the graft
   protocol in `REFINEMENT_PLAN.md`.

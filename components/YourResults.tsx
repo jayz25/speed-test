@@ -35,7 +35,7 @@ export default function YourResults() {
     return (
       <p className="text-muted text-sm">
         No tests yet —{" "}
-        <Link href="/" className="text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded">take one</Link>
+        <Link href="/" className="text-accent underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent rounded-sm">take one</Link>
       </p>
     );
   }
@@ -114,7 +114,7 @@ export default function YourResults() {
       <button
         type="button"
         onClick={handleClear}
-        className="self-start px-4 py-2 rounded-lg text-sm text-error border border-error/40 hover:bg-error/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="self-start px-4 py-2 rounded-lg text-sm text-error border border-error/40 hover:bg-error/10 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
       >
         Clear history
       </button>

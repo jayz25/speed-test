@@ -293,7 +293,7 @@ const TypingTest = () => {
         <SettingsPanel isDimmed={isStarted} />
         <section
           aria-label="Typing test"
-          className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
+          className="flex min-w-0 shrink grow-999 basis-[560px] flex-col gap-7 rounded-card bg-surface px-5 py-6 shadow-card sm:px-11 sm:py-10"
         >
           {isFinished ? (
             <ResultCard

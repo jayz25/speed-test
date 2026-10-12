@@ -33,7 +33,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
       >
         <Link
           href="/"
-          className="text-[22px] font-[800] tracking-[-0.03em] text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+          className="text-[22px] font-extrabold tracking-[-0.03em] text-ink focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent rounded-sm"
         >
           Speed<span className="text-accent">Type</span>
         </Link>
@@ -45,7 +45,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
                 key={href}
                 href={href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`min-h-[44px] px-[18px] py-[10px] rounded-[9px] text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`min-h-[44px] px-[18px] py-[10px] rounded-[9px] text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent ${
                   isActive ? 'bg-surface font-semibold text-ink' : 'font-medium text-ink-2 hover:text-ink'
                 }`}
               >

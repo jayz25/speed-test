@@ -10,7 +10,7 @@ import { ArrowRightIcon, RotateCcwIcon } from "./icons";
 import WpmChart from "./WpmChart";
 
 const BUTTON_BASE =
-  "flex min-h-[48px] items-center gap-2.5 rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+  "flex min-h-[48px] items-center gap-2.5 rounded-xl px-5 text-[15px] font-semibold transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent";
 const LABEL = "text-xs font-semibold uppercase tracking-[0.08em] text-muted";
 const TILE = "flex flex-col gap-1 rounded-[14px] bg-surface-muted px-[18px] py-4";
 
@@ -78,7 +78,7 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
         <div className="flex flex-wrap items-end gap-10">
           <div className="flex flex-col gap-1">
             <span className={LABEL}>Words / min</span>
-            <span className="text-[112px] font-extrabold leading-[0.9] tracking-[-0.05em] text-ink">{wpm}</span>
+            <span className="text-[112px] font-extrabold leading-[0.9] tracking-tighter text-ink">{wpm}</span>
           </div>
           <div className="flex flex-col gap-1 pb-1.5">
             <span className={LABEL}>Accuracy</span>
