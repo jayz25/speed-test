@@ -69,6 +69,8 @@ export default function ResultCard({ stats, samples = [], personalBest, duration
   // Fixed: event listener was never cleaned up; now properly removed on unmount
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      // Enter on a focused button already activates that button (e.g. Repeat); don't also reset.
+      if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.closest("button")) return;
       if (e.key === "Enter" || e.key === "Escape") onReset();
     };
     window.addEventListener("keydown", handleKey);

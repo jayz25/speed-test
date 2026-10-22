@@ -50,6 +50,13 @@ describe("ResultCard", () => {
     expect(onReset).not.toHaveBeenCalled();
   });
 
+  it("does not also reset when Enter is pressed on the focused Repeat button", () => {
+    const onReset = vi.fn();
+    render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={onReset} onRepeat={vi.fn()} />);
+    fireEvent.keyDown(screen.getByRole("button", { name: "Repeat same words" }), { key: "Enter" });
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
   it("resets on the button, Enter and Escape", () => {
     const onReset = vi.fn();
     render(<ResultCard stats={STATS} durationSeconds={30} config={CONFIG} options={OPTIONS} onReset={onReset} onRepeat={vi.fn()} />);
