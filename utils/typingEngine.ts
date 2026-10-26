@@ -23,6 +23,7 @@ export type EngineAction =
   | { type: "reset"; words: readonly string[]; finishOnLastWord?: boolean; round?: number }
   | { type: "typeChar"; char: string } // single printable char, not space
   | { type: "backspace" }
+  | { type: "deleteWord" } // Option/Ctrl+Backspace: clear the active word
   | { type: "submitWord" } // space
   | { type: "finish" };
 
@@ -84,6 +85,13 @@ export function engineReducer(state: EngineState, action: EngineAction): EngineS
       const active = state.typed[state.activeWordIndex] ?? "";
       if (active.length === 0) return state;
       return { ...state, typed: withActiveTyped(state, active.slice(0, -1)) };
+    }
+
+    case "deleteWord": {
+      if (state.status === "finished" || state.words.length === 0) return state;
+      const active = state.typed[state.activeWordIndex] ?? "";
+      if (active.length === 0) return state; // like backspace, never returns to the previous word
+      return { ...state, typed: withActiveTyped(state, "") };
     }
 
     case "submitWord": {

@@ -20,10 +20,11 @@ export function useTypingEngine(
 
   const typeChar = useCallback((char: string) => dispatch({ type: "typeChar", char }), []);
   const backspace = useCallback(() => dispatch({ type: "backspace" }), []);
+  const deleteWord = useCallback(() => dispatch({ type: "deleteWord" }), []);
   const submitWord = useCallback(() => dispatch({ type: "submitWord" }), []);
   const finish = useCallback(() => dispatch({ type: "finish" }), []);
 
   const activeLetterIndex = state.typed[state.activeWordIndex]?.length ?? 0;
 
-  return { state, typeChar, backspace, submitWord, finish, activeLetterIndex };
+  return { state, typeChar, backspace, deleteWord, submitWord, finish, activeLetterIndex };
 }

@@ -215,3 +215,30 @@ describe("engine round", () => {
     expect(engineReducer(fresh(), { type: "reset", words: WORDS, round: 9 }).round).toBe(9);
   });
 });
+
+describe("deleteWord", () => {
+  it("clears every typed letter of the active word", () => {
+    const state = run(fresh(), ...type("th"), { type: "deleteWord" });
+    expect(state.typed).toEqual([""]);
+    expect(state.status).toBe("running");
+  });
+
+  it("is a no-op at the start of a word and never returns to the previous word", () => {
+    const state = run(fresh(), ...type("the"), { type: "submitWord" });
+    expect(engineReducer(state, { type: "deleteWord" })).toBe(state);
+  });
+
+  it("only clears the active word and does not mutate the previous state", () => {
+    const before = run(fresh(), ...type("the"), { type: "submitWord" }, ...type("ca"));
+    const after = engineReducer(before, { type: "deleteWord" });
+    expect(after.typed).toEqual(["the", ""]);
+    expect(before.typed).toEqual(["the", "ca"]);
+  });
+
+  it("is ignored when finished or without words", () => {
+    const done = engineReducer(run(fresh(), ...type("a")), { type: "finish" });
+    expect(engineReducer(done, { type: "deleteWord" })).toBe(done);
+    const empty = createEngineState([]);
+    expect(engineReducer(empty, { type: "deleteWord" })).toBe(empty);
+  });
+});

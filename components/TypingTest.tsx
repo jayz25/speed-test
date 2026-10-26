@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calculateStats, TestStats } from "../utils/calculateStats";
 import useTimer from "../utils/hooks/useTimer";
 import { useFocusMode } from "../utils/hooks/useFocusMode";
+import { useFocusPreference } from "../utils/hooks/useFocusPreference";
 import { useCaret } from "../utils/hooks/useCaret";
 import { useWpmSampler } from "../utils/hooks/useWpmSampler";
 import { useKeystrokeTiming } from "../utils/hooks/useKeystrokeTiming";
@@ -60,12 +61,13 @@ const TypingTest = () => {
   const isCountUpMode = mode !== "time";
   const configLimit = mode === "quote" ? quoteLimit(quoteLength) : isCountUpMode ? wordCount : timeLimit;
   const testConfig = { mode, limit: configLimit, difficulty: mode === "quote" ? "mixed" : difficulty } as const;
-  const { state, typeChar, backspace, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isCountUpMode, round });
+  const { state, typeChar, backspace, deleteWord, submitWord, finish, activeLetterIndex } = useTypingEngine(words, { finishOnLastWord: isCountUpMode, round });
   const { activeWordIndex } = state;
   const isStarted = state.status === "running";
   const isFinished = state.status === "finished";
 
-  useFocusMode(isStarted);
+  const [isFocusPinned, toggleFocusPinned] = useFocusPreference();
+  useFocusMode(isStarted, isFocusPinned && !isFinished);
 
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -196,6 +198,14 @@ const TypingTest = () => {
       return;
     }
     if (e.key !== "Shift") setIsTabArmed(false);
+    // Option+Backspace (macOS) / Ctrl+Backspace (Windows, Linux) erases the whole current word
+    if (e.key === "Backspace" && (e.altKey || e.ctrlKey) && !e.metaKey) {
+      if (words.length === 0 || isFinished) return;
+      didKeyDownBackspace.current = true;
+      e.preventDefault();
+      deleteWord();
+      return;
+    }
     if (e.ctrlKey || e.altKey || e.metaKey || e.key === "CapsLock") return;
     if (words.length === 0 || isFinished) return;
 
@@ -212,7 +222,7 @@ const TypingTest = () => {
       e.preventDefault();
       submitWord();
     }
-  }, [words, isFinished, isTabArmed, resetTest, backspace, submitWord, keyTiming]);
+  }, [words, isFinished, isTabArmed, resetTest, backspace, deleteWord, submitWord, keyTiming]);
 
   const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     didKeyDownBackspace.current = false;
@@ -225,6 +235,10 @@ const TypingTest = () => {
     const { inputType, data } = e.nativeEvent as InputEvent;
     if (words.length === 0 || isFinished) return;
 
+    if (inputType === "deleteWordBackward" || inputType === "deleteSoftLineBackward") {
+      if (!didKeyDownBackspace.current) deleteWord();
+      return;
+    }
     if (inputType === "deleteContentBackward") {
       // Desktop already handled Backspace on keydown
       if (!didKeyDownBackspace.current) backspace();
@@ -240,7 +254,7 @@ const TypingTest = () => {
         typeChar(char);
       }
     }
-  }, [words, isFinished, start, typeChar, backspace, submitWord]);
+  }, [words, isFinished, start, typeChar, backspace, deleteWord, submitWord]);
 
   const handleSelect = useCallback((e: React.UIEvent<HTMLInputElement>) => {
     const el = e.target as HTMLInputElement;
@@ -311,7 +325,7 @@ const TypingTest = () => {
             />
           ) : (
             <>
-              <TimerRow {...timerRow} />
+              <TimerRow {...timerRow} isContinuous={!isCountUpMode} />
               <CapsLockAlert isVisible={isCapsLockOn} />
               <TypingArea
                 state={state}
@@ -354,6 +368,14 @@ const TypingTest = () => {
                 >
                   <RotateCcwIcon />
                   Restart
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={isFocusPinned}
+                  onClick={() => { toggleFocusPinned(); textInput.current?.focus(); }}
+                  className="flex min-h-[44px] items-center gap-2.5 rounded-xl border border-border bg-surface px-[18px] text-[15px] font-semibold text-ink aria-pressed:bg-accent-soft"
+                >
+                  Focus
                 </button>
                 <p className="flex items-center gap-2 text-[13px] text-muted">
                   <kbd className={`rounded-md border border-border px-2 py-[3px] font-mono text-xs text-ink ${isTabArmed ? "bg-accent-soft" : "bg-kbd-bg"}`}>tab</kbd>

@@ -29,7 +29,7 @@ function Tile({ label, value, valueClass = "" }: { label: string; value: string;
 export default function LiveStatsPanel({ stats, series }: LiveStatsPanelProps) {
   const show = (v: number | undefined, suffix = "") => (stats && v !== undefined ? `${v}${suffix}` : EMPTY);
   return (
-    <aside aria-label="Live stats" className="grid w-full basis-full gap-3 sm:grid-cols-2 panels:flex panels:w-auto panels:basis-[240px] panels:grow panels:shrink panels:max-w-[280px] panels:flex-col">
+    <aside aria-label="Live stats" data-focus-collapse className="grid w-full basis-full gap-3 sm:grid-cols-2 panels:flex panels:w-auto panels:basis-[240px] panels:grow panels:shrink panels:max-w-[280px] panels:flex-col">
       <div className="flex flex-col gap-1.5 rounded-card bg-tile p-6 text-on-tile">
         <span className={`${LABEL} text-on-dark-muted`}>Words / min</span>
         <span aria-live="off" className="break-all text-[88px] leading-none font-extrabold tracking-[-0.04em]">

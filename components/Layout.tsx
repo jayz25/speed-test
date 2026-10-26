@@ -65,7 +65,7 @@ const Layout = ({ children, title = DEFAULT_TITLE }: Props) => {
         {children}
       </div>
 
-      <footer className="py-4 text-center text-xs text-muted">SpeedType</footer>
+      <footer data-focus-fade className="transition-opacity duration-300 py-4 text-center text-xs text-muted">SpeedType</footer>
     </div>
   )
 }

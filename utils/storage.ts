@@ -1,5 +1,6 @@
 export const SETTINGS_KEY = "speedtype:v1:settings";
 export const HISTORY_KEY = "speedtype:v1:history";
+export const FOCUS_KEY = "speedtype:v1:focus";
 export const THEME_KEY = "speedtype:v1:theme";
 
 /** Read and validate JSON from localStorage; returns `fallback` on any failure. */
